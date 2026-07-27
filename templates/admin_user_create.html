@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLSMC — Yeni Üyelik Oluştur</title>
+<style>
+:root{
+  --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
+  --muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a;--good:#38d39f;
+  --shadow:0 14px 42px rgba(0,0,0,.26)
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)
+}
+a{text-decoration:none;color:inherit}input,select,button{font:inherit}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;padding:15px 22px;
+  background:rgba(8,13,25,.93);border-bottom:1px solid var(--line)
+}
+.btn{
+  border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:11px;
+  padding:10px 14px;font-weight:750;cursor:pointer
+}
+.btn-primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff);color:#fff}
+.shell{max-width:780px;margin:0 auto;padding:28px 20px 60px}
+.hero h1{margin:0 0 6px;font-size:25px}.hero p{margin:0;color:var(--muted)}
+.panel{
+  margin-top:22px;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:22px;box-shadow:var(--shadow)
+}
+.field{margin-bottom:16px}
+label{display:block;color:#c7d1ea;font-size:13px;margin-bottom:7px}
+input,select{
+  width:100%;background:#0d1426;border:1px solid var(--line);color:var(--text);
+  border-radius:11px;padding:11px 12px;outline:none
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.flash{padding:12px 14px;border-radius:11px;margin-top:16px;font-weight:700}
+.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
+.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
+.note{
+  margin:16px 0;padding:12px;border-radius:11px;background:#0d1426;
+  border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.6
+}
+.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}.topbar{gap:12px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <strong>CLSMC Admin • Yeni Üyelik</strong><br>
+    <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
+  </div>
+  <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <h1>Yeni Üyelik Oluştur</h1>
+    <p>Kullanıcının giriş bilgilerini ve raporlarda otomatik kullanılacak rütbesini belirle.</p>
+  </section>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form class="panel" method="post" action="{{ url_for('admin_create_user') }}">
+    <div class="field">
+      <label>Kullanıcı Adı / Ad Soyad</label>
+      <input name="username" autocomplete="off" required>
+    </div>
+
+    <div class="field">
+      <label>Rütbe</label>
+      <select name="rank" required>
+        <option value="">Rütbe Seçiniz</option>
+        <option value="Doctor">Doctor</option>
+        <option value="Attending Physician">Attending Physician</option>
+        <option value="Psychiatrist">Psychiatrist</option>
+      </select>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Şifre</label>
+        <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+      <div class="field">
+        <label>Şifre Tekrarı</label>
+        <input name="password_repeat" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+    </div>
+
+    <div class="note">
+      Şifre veritabanına düz metin olarak kaydedilmez. Üyelik oluşturulduğunda güvenli şekilde
+      hashlenir. Kullanıcı rapor oluşturduğunda adı ve rütbesi bu üyelikten otomatik alınır.
+    </div>
+
+    <button class="btn btn-primary" type="submit">Üyeliği Oluştur</button>
+  </form>
+</main>
+
+<div class="developer-credit">Developer: Veyrath</div>
+</body>
+</html>

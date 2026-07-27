@@ -1,0 +1,101 @@
+CLSMC RAPOR SİSTEMİ V19.4 — NEON KURULUM REHBERİ
+Developer: Veyrath
+==================================================
+
+BU PAKET HAZIRDIR. SADECE NEON DATABASE_URL DEĞERİNİ SEN GİRECEKSİN.
+
+1) NEON
+-------
+Neon hesabında projenin içine gir.
+Connect bölümünü aç.
+Web uygulaması için verilen PostgreSQL bağlantı adresini kopyala.
+Pooled connection seçeneği sunuluyorsa onu kullanabilirsin.
+
+Örnek biçim:
+postgresql://KULLANICI:SIFRE@SUNUCU.neon.tech/VERITABANI?sslmode=require
+
+GERÇEK ADRESİNİ BU DOSYAYA, GITHUB'A VEYA SOHBETE YAZMA.
+`.env.example` yalnızca örnektir; gerçek şifre içermez. `.gitignore` gerçek `.env` dosyalarını GitHub dışında tutar.
+
+2) GITHUB
+---------
+Bu paketin ZIP'ini bilgisayarında çıkart.
+GitHub repository'ni aç:
+Veyrath963/CLSMC-Rapor-Veritabani
+
+Add file > Upload files
+
+ZIP'in kendisini değil, ZIP'ten çıkan bütün dosyaları ve klasörleri repository köküne sürükle.
+Commit changes ile kaydet.
+
+3) RENDER — MEVCUT SERVİSİN VARSA
+----------------------------------
+Render Dashboard'a gir.
+clsmc-rapor-sistemi servisini aç.
+Environment bölümüne gir.
+
+DATABASE_URL anahtarını bul.
+Eski Render PostgreSQL adresi varsa Neon'dan kopyaladığın bağlantı adresiyle değiştir.
+Yoksa yeni Environment Variable oluştur:
+
+Key: DATABASE_URL
+Value: Neon'dan kopyaladığın bağlantı adresi
+
+Kaydet.
+Ardından Manual Deploy > Deploy latest commit yap veya Auto-Deploy'in çalışmasını bekle.
+
+ÖNEMLİ:
+Mevcut Blueprint güncellemesinde render.yaml içindeki sync:false Render'ın senden otomatik olarak yeni değeri istemesini garanti etmez. Mevcut serviste DATABASE_URL'yi Dashboard'dan elle ayarla.
+
+4) RENDER — İLK KURULUMSA
+---------------------------
+Render > New > Blueprint
+GitHub repository'ni seç.
+render.yaml algılanacak.
+DATABASE_URL için sorulduğunda Neon bağlantı adresini gir.
+Deploy Blueprint yap.
+
+5) İLK AÇILIŞ
+-------------
+Yeni Neon veritabanı boşsa uygulama tabloları otomatik oluşturur.
+Sonra:
+
+SITE_ADRESIN/admin/login
+
+adresinden admin paneline gir.
+Yeni kullanıcıları Admin Paneli > Yeni Üyelik Oluştur üzerinden aç.
+
+6) ESKİ VERİLER VARSA
+---------------------
+Eski Render PostgreSQL'de önemli kullanıcı/rapor verileri varsa DATABASE_URL'yi değiştirmeden önce verileri Neon'a taşı.
+Bağlantı adresini değiştirmek eski verileri otomatik kopyalamaz.
+
+En güvenli sıra:
+1. Eski DB'nin yedeğini al.
+2. Yedeği Neon'a aktar.
+3. Neon'da tablo ve kayıtları kontrol et.
+4. Render DATABASE_URL'yi Neon'a çevir.
+5. Siteyi test et.
+6. Her şey doğruysa eski DB'yi daha sonra kapat.
+
+7) TEST
+------
+Deploy Live olduktan sonra:
+- Ana giriş ekranını aç.
+- /admin/login aç.
+- Admin panelinden test kullanıcı oluştur.
+- Test kullanıcıyla giriş yap.
+- Bir test raporu oluştur/kopyala.
+- Admin > Kullanıcı İstatistikleri bölümünde raporun göründüğünü kontrol et.
+
+8) GÜVENLİK
+------------
+DATABASE_URL içinde veritabanı parolası vardır.
+GitHub'a commit etme.
+Ekran görüntüsünde paylaşma.
+Sohbete gönderme.
+Render Environment içinde Secret olarak tut.
+
+==================================================
+CLSMC Rapor Sistemi V19.4 — Neon PostgreSQL Ready
+Developer: Veyrath

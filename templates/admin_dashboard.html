@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLSMC — Admin Paneli</title>
+<style>
+:root{
+  --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
+  --muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a;--good:#38d39f;
+  --shadow:0 14px 42px rgba(0,0,0,.26)
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)
+}
+a{text-decoration:none;color:inherit}button{font:inherit}
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+  padding:15px 22px;background:rgba(8,13,25,.93);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line)
+}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#943C3C,var(--accent));font-weight:900}
+.brand h1{margin:0;font-size:16px}.brand small{color:var(--muted)}
+.btn{
+  border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:11px;
+  padding:9px 13px;font-weight:750;cursor:pointer
+}
+.btn-primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff);color:#fff}
+.btn-danger{border:1px solid rgba(255,107,122,.45);background:rgba(255,107,122,.10);color:#ffb5bd}
+.user-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.user-actions form{margin:0}
+.danger-link{border:0;background:none;color:#ff9da8;font-weight:750;padding:0;cursor:pointer}
+.shell{max-width:1380px;margin:0 auto;padding:26px 20px 55px}
+.hero h2{font-size:28px;margin:0 0 7px}.hero p{margin:0;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
+.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}
+.metric{padding:18px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:29px;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}.panel{padding:18px}.full{grid-column:1/-1}
+.panel h3{margin:0 0 5px;font-size:17px}.sub{color:var(--muted);font-size:12px;margin-bottom:15px}
+.table-wrap{overflow:auto;border:1px solid #202d4b;border-radius:13px}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{padding:11px 10px;border-bottom:1px solid #202d4b;text-align:left;font-size:12px;vertical-align:top}
+th{background:#0d1528;color:#cbd6ee;position:sticky;top:0}tr:last-child td{border-bottom:0}
+.badge{display:inline-block;padding:5px 8px;border:1px solid #304265;background:#182541;border-radius:999px;font-size:11px}
+.edit{color:#9fc0ff;font-weight:750}.empty{padding:28px;text-align:center;color:var(--muted)}
+.log-info{color:#8ff0ce}.log-warning{color:#ffd18c}.log-error{color:#ff9da8}
+.developer-credit{
+  position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;
+  font-weight:600;opacity:.78;pointer-events:none;z-index:30
+}
+@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+@media(max-width:560px){.metrics{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:12px}.shell{padding:20px 14px 50px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><h1>CLSMC Admin Paneli</h1><small>Yönetici: {{ admin_username }}</small></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <a class="btn" href="{{ url_for('admin_user_statistics') }}">👤 Kullanıcı İstatistikleri</a>
+    <a class="btn btn-primary" href="{{ url_for('admin_create_user') }}">＋ Yeni Üyelik Oluştur</a>
+    <form method="post" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <button class="btn" type="submit">Admin Çıkışı</button>
+    </form>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <h2>Yönetim Merkezi</h2>
+    <p>Kullanıcıları, rapor yazan doktorları ve veritabanındaki rapor içeriklerini yönet.</p>
+  </section>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div style="margin-top:16px;padding:12px 14px;border-radius:11px;border:1px solid #344264;background:#152039">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <section class="metrics">
+    <div class="metric"><span>Kayıtlı kullanıcı</span><strong>{{ users|length }}</strong></div>
+    <div class="metric"><span>Rapor yazan doktor</span><strong>{{ doctors|length }}</strong></div>
+    <div class="metric"><span>Toplam rapor</span><strong>{{ reports|length }}</strong></div>
+    <div class="metric"><span>Rapor türü</span><strong>{{ type_counts|length }}</strong></div>
+  </section>
+
+  <section class="grid">
+    <article class="panel">
+      <h3>Kullanıcı İstatistikleri</h3>
+      <div class="sub">
+        Bir kullanıcı seçerek yazdığı raporları kategori bazında inceleyebilir,
+        raporu görüntüleyebilir veya silebilirsiniz.
+      </div>
+
+      {% if users %}
+        <div style="display:grid;gap:9px">
+          {% for user in users[:6] %}
+            <a href="{{ url_for('admin_user_statistics', user=user.username) }}"
+               style="display:flex;justify-content:space-between;align-items:center;gap:12px;
+                      padding:12px 13px;border:1px solid #263654;border-radius:12px;background:#0d172b">
+              <div>
+                <strong>{{ user.username }}</strong>
+                <div style="font-size:11px;color:var(--muted);margin-top:3px">{{ user.rank or "Rütbe atanmadı" }}</div>
+              </div>
+              <span style="color:#9fc0ff;font-weight:800">İncele →</span>
+            </a>
+          {% endfor %}
+        </div>
+        <div style="margin-top:13px">
+          <a class="btn btn-primary" href="{{ url_for('admin_user_statistics') }}">👤 Kullanıcı İstatistiklerini Aç</a>
+        </div>
+      {% else %}
+        <div class="empty">Kayıtlı kullanıcı bulunmuyor.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <h3>Kayıtlı Kullanıcı Hesapları</h3>
+      <div class="sub">Kullanıcı adı, admin tarafından atanmış rütbe ve kayıt zamanı görüntülenir; parolalar gösterilmez.</div>
+      {% if users %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kullanıcı Adı</th><th>Rütbe</th><th>Kayıt Tarihi</th><th>İşlem</th></tr></thead>
+          <tbody>
+          {% for user in users %}
+            <tr>
+              <td><strong>{{ user.username }}</strong></td>
+              <td>{{ user.rank or "Atanmadı" }}</td>
+              <td>{{ user.created_at.strftime("%d.%m.%Y %H:%M") if user.created_at else "—" }}</td>
+              <td>
+                <div class="user-actions">
+                  <a class="edit" href="{{ url_for('admin_edit_user', user_id=user.id) }}">Düzenle →</a>
+                  <form method="post"
+                        action="{{ url_for('admin_delete_user', user_id=user.id) }}"
+                        onsubmit="return confirm('{{ user.username }} üyeliği Silinen Üyelikler arşivine taşınsın mı? Geçmiş raporları korunacaktır.');">
+                    <button class="danger-link" type="submit">Üyeliği Sil</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">Kayıtlı kullanıcı bulunmuyor.</div>
+      {% endif %}
+    </article>
+
+
+    <article class="panel full">
+      <h3>Silinen Üyelikler</h3>
+      <div class="sub">
+        Buradaki hesaplar tekrar aktif hale getirilebilir. Şifreler görüntülenmez;
+        geri getirildiğinde kullanıcının eski şifre hash'i ve rütbesi korunur.
+      </div>
+      {% if deleted_users %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kullanıcı Adı</th>
+              <th>Rütbe</th>
+              <th>Eski Kayıt Tarihi</th>
+              <th>Silinme Tarihi</th>
+              <th>Silen Yönetici</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for user in deleted_users %}
+            <tr>
+              <td><strong>{{ user.username }}</strong></td>
+              <td>{{ user.rank or "Atanmadı" }}</td>
+              <td>{{ user.original_created_at.strftime("%d.%m.%Y %H:%M") if user.original_created_at else "—" }}</td>
+              <td>{{ user.deleted_at.strftime("%d.%m.%Y %H:%M") if user.deleted_at else "—" }}</td>
+              <td>{{ user.deleted_by_admin or "—" }}</td>
+              <td>
+                <form method="post"
+                      action="{{ url_for('admin_restore_user', deleted_user_id=user.id) }}"
+                      onsubmit="return confirm('{{ user.username }} üyeliği eski şifresi ve rütbesiyle geri getirilsin mi?');">
+                  <button class="edit" type="submit">Üyeliği Geri Getir →</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">Geri getirilebilecek silinmiş üyelik bulunmuyor.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full">
+      <h3>Tüm Rapor Kayıtları</h3>
+      <div class="sub">Bir raporun tüm kayıt detaylarını görmek veya değiştirmek için Düzenle seçeneğini kullan.</div>
+      {% if reports %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rapor No</th>
+              <th>Tür</th>
+              <th>Doktor</th>
+              <th>Rütbe</th>
+              <th>Kaydeden Hesap</th>
+              <th>Rapor Tarihi</th>
+              <th>Son Güncelleme</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for report in reports %}
+            <tr>
+              <td><span class="badge">{{ report.report_number }}</span></td>
+              <td>{{ report_type_labels.get(report.report_type, report.report_type) }}</td>
+              <td>{{ report.doctor_name }}</td>
+              <td>{{ report.doctor_rank or "—" }}</td>
+              <td>{{ report.created_by_username }}</td>
+              <td>{{ report.report_date or "—" }}</td>
+              <td>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</td>
+              <td><a class="edit" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Detay / Düzenle →</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">Henüz rapor kaydı bulunmuyor.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full">
+      <h3>Son Sistem Logları</h3>
+      <div class="sub">Son 30 işlem kaydı. Parolalar loglanmaz.</div>
+      {% if recent_logs %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Zaman</th><th>Seviye</th><th>Olay</th><th>Detay</th></tr></thead>
+          <tbody>
+          {% for log in recent_logs %}
+            <tr>
+              <td>{{ log.created_at.strftime("%d.%m.%Y %H:%M") if log.created_at else "—" }}</td>
+              <td class="log-{{ log.level|lower }}">{{ log.level }}</td>
+              <td>{{ log.event }}</td>
+              <td>{{ log.message }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">Log kaydı bulunmuyor.</div>
+      {% endif %}
+    </article>
+  </section>
+</main>
+<div class="developer-credit">Developer: Veyrath</div>
+</body>
+</html>

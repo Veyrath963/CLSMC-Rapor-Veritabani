@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLSMC — Rapor Görüntüle</title>
+<style>
+:root{--bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)}
+a{text-decoration:none;color:inherit}button{font:inherit}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:15px 22px;background:#080d19;border-bottom:1px solid var(--line);position:sticky;top:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff)}.danger{border:1px solid rgba(255,107,122,.5);background:rgba(255,107,122,.1);color:#ffadb6}
+.shell{max-width:1250px;margin:0 auto;padding:25px 20px 55px}.hero h2{margin:0 0 6px;font-size:27px}.hero p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.card span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.card strong{font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:15px;overflow:hidden}.panel h3{margin:0;padding:14px 16px;border-bottom:1px solid var(--line);background:#0d1528;font-size:16px}.body{padding:16px}
+.data-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.data{padding:11px 12px;background:#0d172b;border:1px solid #263654;border-radius:10px}.data span{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.data strong{font-size:12px;word-break:break-word}
+pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;border:1px solid #243555;border-radius:12px;padding:15px;color:#dfe8fb;font-size:12px;line-height:1.5}
+.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;opacity:.78}
+@media(max-width:800px){.grid,.data-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('admin_user_statistics', user=report.created_by_username) }}">← Kullanıcı İstatistikleri</a>
+    <a class="btn primary" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Düzenle</a>
+    <form method="post" action="{{ url_for('admin_delete_report', report_id=report.id) }}" style="margin:0"
+          onsubmit="return confirm('{{ report.report_number }} numaralı rapor kalıcı olarak silinsin mi? Bu işlem geri alınamaz.');">
+      <button class="btn danger" type="submit">Sil</button>
+    </form>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <h2>{{ report_type_labels.get(report.report_type, report.report_type) }}</h2>
+    <p>{{ report.report_number }}</p>
+  </section>
+
+  <section class="grid">
+    <div class="card"><span>Raporlayan Hekim</span><strong>{{ report.doctor_name }}</strong></div>
+    <div class="card"><span>Rütbe</span><strong>{{ report.doctor_rank or "—" }}</strong></div>
+    <div class="card"><span>Kaydeden Hesap</span><strong>{{ report.created_by_username }}</strong></div>
+    <div class="card"><span>Rapor Tarihi</span><strong>{{ report.report_date or "—" }}</strong></div>
+    <div class="card"><span>Oluşturulma</span><strong>{{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</strong></div>
+    <div class="card"><span>Son Güncelleme</span><strong>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</strong></div>
+  </section>
+
+  {% if form_data %}
+  <section class="panel">
+    <h3>Rapor Form Verileri</h3>
+    <div class="body data-grid">
+      {% for key, value in form_data.items() %}
+        <div class="data">
+          <span>{{ key }}</span>
+          <strong>{{ value if value not in (None, "") else "—" }}</strong>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <h3>BBCode</h3>
+    <div class="body"><pre>{{ report.bbcode }}</pre></div>
+  </section>
+</main>
+
+<div class="developer-credit">Developer: Veyrath</div>
+</body>
+</html>
