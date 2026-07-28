@@ -59,19 +59,45 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
 })();
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_quick_menu_v2061.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_sidebar_v207.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_quick_menu_v2061.js') }}"></script>
+<script defer src="{{ url_for('static', filename='clsmc_sidebar_v207.js') }}"></script>
 </head>
-<body>
+<body class="clsmc-has-sidebar">
+<aside class="clsmc-sidebar" aria-label="Yönetici kontrol paneli">
+  <div class="clsmc-sidebar-brand">
+    <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+    <div><strong>CLSMC Yönetimi</strong><small>Admin Kontrol Paneli</small></div>
+  </div>
+  <nav class="clsmc-sidebar-nav">
+    <a class="clsmc-side-action" href="{{ url_for('admin_dashboard') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">🛡️</span><span class="clsmc-side-copy"><strong>Admin Paneli</strong><small>Yönetim merkezi</small></span>
+    </a>
+    <a class="clsmc-side-action" href="{{ url_for('admin_user_statistics') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">📊</span><span class="clsmc-side-copy"><strong>İstatistikler</strong><small>Kullanıcı raporları</small></span>
+    </a>
+    <a class="clsmc-side-action is-active" href="{{ url_for('admin_create_user') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">➕</span><span class="clsmc-side-copy"><strong>Yeni Üyelik</strong><small>Hesap oluştur</small></span>
+    </a>
+    <button class="clsmc-side-action" type="button" data-clsmc-theme-toggle>
+      <span class="clsmc-side-icon theme-icon" aria-hidden="true">☀️</span><span class="clsmc-side-copy"><strong class="theme-value">Aydınlık Mod</strong><small>Arayüz temasını değiştir</small></span>
+    </button>
+  </nav>
+  <div class="clsmc-side-spacer"></div>
+  <div class="clsmc-sidebar-footer">
+    <form method="post" action="{{ url_for('admin_logout') }}">
+      <button class="clsmc-side-action is-danger" type="submit"><span class="clsmc-side-icon" aria-hidden="true">↪</span><span class="clsmc-side-copy"><strong>Admin Çıkışı</strong><small>Oturumu kapat</small></span></button>
+    </form>
+  </div>
+</aside>
+
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
     <strong>CLSMC Admin • Yeni Üyelik</strong><br>
     <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
   </div></div>
-  <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
 <main class="shell">
@@ -129,18 +155,6 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
 
 <div class="developer-credit">Developer: Veyrath</div>
 
-<!-- CLSMC QUICK MENU START -->
-<div class="clsmc-quick-menu" data-clsmc-quick-menu>
-  <div class="clsmc-quick-menu-panel" id="clsmc-quick-menu-panel" role="menu" aria-label="Hızlı işlemler">
-    <button class="clsmc-quick-action" type="button" data-clsmc-theme-toggle role="menuitem" aria-label="Aydınlık arayüze geç" data-tooltip="Aydınlık arayüze geç" title="Aydınlık arayüze geç">
-      <span class="theme-icon" aria-hidden="true">☀️</span><span class="clsmc-sr-only">Tema değiştir</span>
-    </button>
-  </div>
-  <button class="clsmc-quick-menu-trigger" type="button" data-clsmc-quick-menu-trigger aria-controls="clsmc-quick-menu-panel" aria-expanded="false" aria-label="Hızlı menüyü aç" title="Hızlı menüyü aç">
-    <span class="quick-menu-icon" aria-hidden="true">☰</span><span class="clsmc-sr-only">Hızlı menü</span>
-  </button>
-</div>
-<!-- CLSMC QUICK MENU END -->
 
 </body>
 </html>

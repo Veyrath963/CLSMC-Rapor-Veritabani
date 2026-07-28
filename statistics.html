@@ -144,13 +144,40 @@ input:focus{
 })();
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_quick_menu_v2061.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_sidebar_v207.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_quick_menu_v2061.js') }}"></script>
+<script defer src="{{ url_for('static', filename='clsmc_sidebar_v207.js') }}"></script>
 </head>
-<body data-clsmc-settings-url="{{ url_for('settings') }}">
+<body class="clsmc-has-sidebar">
+<aside class="clsmc-sidebar" aria-label="Kullanıcı kontrol paneli">
+  <div class="clsmc-sidebar-brand">
+    <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+    <div><strong>CLSMC Rapor Sistemi</strong><small>Kullanıcı Kontrol Paneli</small></div>
+  </div>
+  <nav class="clsmc-sidebar-nav">
+    <a class="clsmc-side-action" href="{{ url_for('panel') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">🩺</span><span class="clsmc-side-copy"><strong>Rapor Paneli</strong><small>Rapor oluştur</small></span>
+    </a>
+    <a class="clsmc-side-action" href="{{ url_for('statistics') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">📊</span><span class="clsmc-side-copy"><strong>İstatistikler</strong><small>Kayıtları incele</small></span>
+    </a>
+    <a class="clsmc-side-action is-active" href="{{ url_for('settings') }}">
+      <span class="clsmc-side-icon" aria-hidden="true">⚙️</span><span class="clsmc-side-copy"><strong>Ayarlar</strong><small>Şifre ve hesap</small></span>
+    </a>
+    <button class="clsmc-side-action" type="button" data-clsmc-theme-toggle>
+      <span class="clsmc-side-icon theme-icon" aria-hidden="true">☀️</span><span class="clsmc-side-copy"><strong class="theme-value">Aydınlık Mod</strong><small>Arayüz temasını değiştir</small></span>
+    </button>
+  </nav>
+  <div class="clsmc-side-spacer"></div>
+  <div class="clsmc-sidebar-footer">
+    <form method="post" action="{{ url_for('logout') }}">
+      <button class="clsmc-side-action is-danger" type="submit"><span class="clsmc-side-icon" aria-hidden="true">↪</span><span class="clsmc-side-copy"><strong>Çıkış</strong><small>Oturumu kapat</small></span></button>
+    </form>
+  </div>
+</aside>
+
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
@@ -158,10 +185,6 @@ input:focus{
       <h1>CLSMC Ayarlar</h1>
       <small>{{ username }}</small>
     </div>
-  </div>
-  <div class="nav">
-    <a class="btn" href="{{ url_for('panel') }}">Rapor Paneli</a>
-    <a class="btn" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
   </div>
 </header>
 
@@ -226,21 +249,6 @@ input:focus{
 
 <div class="developer-credit">Developer: Veyrath</div>
 
-<!-- CLSMC QUICK MENU START -->
-<div class="clsmc-quick-menu" data-clsmc-quick-menu>
-  <div class="clsmc-quick-menu-panel" id="clsmc-quick-menu-panel" role="menu" aria-label="Hızlı işlemler">
-    <a class="clsmc-quick-action" href="{{ url_for('settings') }}" role="menuitem" aria-label="Ayarlar" data-tooltip="Ayarlar" title="Ayarlar">
-      <span aria-hidden="true">⚙️</span><span class="clsmc-sr-only">Ayarlar</span>
-    </a>
-    <button class="clsmc-quick-action" type="button" data-clsmc-theme-toggle role="menuitem" aria-label="Aydınlık arayüze geç" data-tooltip="Aydınlık arayüze geç" title="Aydınlık arayüze geç">
-      <span class="theme-icon" aria-hidden="true">☀️</span><span class="clsmc-sr-only">Tema değiştir</span>
-    </button>
-  </div>
-  <button class="clsmc-quick-menu-trigger" type="button" data-clsmc-quick-menu-trigger aria-controls="clsmc-quick-menu-panel" aria-expanded="false" aria-label="Hızlı menüyü aç" title="Hızlı menüyü aç">
-    <span class="quick-menu-icon" aria-hidden="true">☰</span><span class="clsmc-sr-only">Hızlı menü</span>
-  </button>
-</div>
-<!-- CLSMC QUICK MENU END -->
 
 </body>
 </html>
