@@ -1,7 +1,9 @@
 (function(){
   "use strict";
+
   var STORAGE_KEY = "clsmc-interface-theme";
   var LIGHT_ID = "clsmc-light-theme";
+  var MENU_ID = "clsmc-quick-menu-panel";
 
   function normalizeTheme(value){
     return value === "light" ? "light" : "dark";
@@ -21,14 +23,14 @@
     if(sheet){sheet.media = theme === "light" ? "all" : "not all";}
   }
 
-  function updateButton(button, theme){
+  function updateThemeButton(button, theme){
     var isLight = theme === "light";
     var icon = button.querySelector(".theme-icon");
-    var label = button.querySelector(".theme-label");
-    if(icon){icon.textContent = isLight ? "☀️" : "🌙";}
-    if(label){label.textContent = isLight ? "Aydınlık Mod" : "Karanlık Mod";}
-    button.setAttribute("aria-label", isLight ? "Karanlık arayüze geç" : "Aydınlık arayüze geç");
-    button.title = isLight ? "Karanlık arayüze geç" : "Aydınlık arayüze geç";
+    var actionLabel = isLight ? "Karanlık arayüze geç" : "Aydınlık arayüze geç";
+    if(icon){icon.textContent = isLight ? "🌙" : "☀️";}
+    button.setAttribute("aria-label", actionLabel);
+    button.title = actionLabel;
+    button.setAttribute("data-tooltip", actionLabel);
     button.setAttribute("aria-pressed", String(isLight));
   }
 
@@ -38,45 +40,108 @@
     document.documentElement.style.colorScheme = theme;
     setLightStylesheet(theme);
     document.querySelectorAll("[data-clsmc-theme-toggle]").forEach(function(button){
-      updateButton(button, theme);
+      updateThemeButton(button, theme);
     });
     if(persist){saveTheme(theme);}
     window.dispatchEvent(new CustomEvent("clsmc:themechange", {detail:{theme:theme}}));
   }
 
-  function locateHost(){
-    var topbar = document.querySelector(".topbar");
-    if(!topbar){return null;}
-    var children = Array.prototype.slice.call(topbar.children);
-    if(children.length > 1){return children[children.length - 1];}
-    return topbar;
+  function closeMenu(menu, trigger){
+    menu.classList.remove("is-open");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.querySelector(".quick-menu-icon").textContent = "☰";
+    trigger.title = "Hızlı menüyü aç";
+    trigger.setAttribute("aria-label", "Hızlı menüyü aç");
   }
 
-  function createButton(){
-    if(document.querySelector("[data-clsmc-theme-toggle]")){return;}
-    var button = document.createElement("button");
-    button.type = "button";
-    button.className = "clsmc-theme-toggle";
-    button.setAttribute("data-clsmc-theme-toggle", "");
-    button.innerHTML = '<span class="theme-icon" aria-hidden="true"></span><span class="theme-label"></span>';
-    button.addEventListener("click", function(){
+  function openMenu(menu, trigger){
+    menu.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    trigger.querySelector(".quick-menu-icon").textContent = "×";
+    trigger.title = "Hızlı menüyü kapat";
+    trigger.setAttribute("aria-label", "Hızlı menüyü kapat");
+  }
+
+  function createAction(tagName, className, iconText, label){
+    var action = document.createElement(tagName);
+    action.className = "clsmc-quick-action " + className;
+    action.setAttribute("aria-label", label);
+    action.setAttribute("data-tooltip", label);
+    action.title = label;
+    action.innerHTML = '<span aria-hidden="true">' + iconText + '</span><span class="clsmc-sr-only">' + label + '</span>';
+    return action;
+  }
+
+  function createQuickMenu(){
+    if(document.querySelector("[data-clsmc-quick-menu]")){return;}
+
+    var root = document.createElement("div");
+    root.className = "clsmc-quick-menu";
+    root.setAttribute("data-clsmc-quick-menu", "");
+
+    var panel = document.createElement("div");
+    panel.className = "clsmc-quick-menu-panel";
+    panel.id = MENU_ID;
+    panel.setAttribute("role", "menu");
+    panel.setAttribute("aria-label", "Hızlı işlemler");
+
+    var settingsUrl = document.body.getAttribute("data-clsmc-settings-url");
+    if(settingsUrl){
+      var settings = createAction("a", "clsmc-settings-action", "⚙️", "Ayarlar");
+      settings.href = settingsUrl;
+      settings.setAttribute("role", "menuitem");
+      panel.appendChild(settings);
+    }
+
+    var theme = createAction("button", "clsmc-theme-toggle", "☀️", "Aydınlık arayüze geç");
+    theme.type = "button";
+    theme.setAttribute("data-clsmc-theme-toggle", "");
+    theme.setAttribute("role", "menuitem");
+    theme.querySelector("span[aria-hidden='true']").className = "theme-icon";
+    theme.addEventListener("click", function(){
       var next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       applyTheme(next, true);
     });
+    panel.appendChild(theme);
 
-    var host = locateHost();
-    if(host){
-      host.appendChild(button);
-    }else{
-      button.classList.add("is-floating");
-      document.body.appendChild(button);
-    }
-    updateButton(button, readTheme());
+    var trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "clsmc-quick-menu-trigger";
+    trigger.setAttribute("aria-controls", MENU_ID);
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-label", "Hızlı menüyü aç");
+    trigger.title = "Hızlı menüyü aç";
+    trigger.innerHTML = '<span class="quick-menu-icon" aria-hidden="true">☰</span><span class="clsmc-sr-only">Hızlı menü</span>';
+
+    trigger.addEventListener("click", function(event){
+      event.stopPropagation();
+      if(panel.classList.contains("is-open")){
+        closeMenu(panel, trigger);
+      }else{
+        openMenu(panel, trigger);
+      }
+    });
+
+    root.appendChild(panel);
+    root.appendChild(trigger);
+    document.body.appendChild(root);
+
+    document.addEventListener("click", function(event){
+      if(!root.contains(event.target)){closeMenu(panel, trigger);}
+    });
+    document.addEventListener("keydown", function(event){
+      if(event.key === "Escape" && panel.classList.contains("is-open")){
+        closeMenu(panel, trigger);
+        trigger.focus();
+      }
+    });
+
+    updateThemeButton(theme, readTheme());
   }
 
   function start(){
     applyTheme(readTheme(), false);
-    createButton();
+    createQuickMenu();
   }
 
   if(document.readyState === "loading"){
@@ -85,5 +150,8 @@
     start();
   }
 
-  window.CLSMCTheme = {set: function(theme){applyTheme(theme, true);}, get: readTheme};
+  window.CLSMCTheme = {
+    set:function(theme){applyTheme(theme, true);},
+    get:readTheme
+  };
 })();

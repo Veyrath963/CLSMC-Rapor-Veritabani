@@ -78,14 +78,13 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body>
+<body data-clsmc-settings-url="{{ url_for('settings') }}">
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
     <div><h1>CLSMC Rapor İstatistikleri</h1><small>{{ username }}</small></div>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
-    <a class="btn" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
     <a class="btn" href="{{ url_for('panel') }}">← Rapor Paneli</a>
   </div>
 </header>

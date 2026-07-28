@@ -209,7 +209,7 @@ body .app{display:block!important}
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body>
+<body data-clsmc-settings-url="{{ url_for('settings') }}">
 <section class="app">
 
   <header class="topbar">
@@ -221,7 +221,6 @@ body .app{display:block!important}
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
-      <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
       <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
       <form method="post" action="{{ url_for('logout') }}" style="margin:0">
         <button class="btn btn-secondary" type="submit">Çıkış</button>
