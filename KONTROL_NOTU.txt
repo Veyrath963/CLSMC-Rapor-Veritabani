@@ -1,0 +1,7 @@
+CLSMC V20.5.4 Kurtarma Paketi
+Yalnızca app.py ve requirements.txt içerir.
+app.py Python sözdizimi kontrolünden geçti.
+DATABASE_URL satırı app.py içinde bulunmaz.
+requirements.txt services: satırı içermez.
+app.py SHA256: c28a7bad8fc829965e21918b6e56d8519ca6148a13871a9f9381e8e96cac9efb
+requirements.txt SHA256: baf89415e29ff4cf8ab77b1083afb3a7884c871d2da10f62b7c48edfbac54c17
