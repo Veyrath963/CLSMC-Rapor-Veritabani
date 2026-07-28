@@ -92,7 +92,7 @@
   .hero h1{font-size:28px;margin:0 0 8px}
   .hero p{margin:0;color:var(--muted)}
   .cards{
-    display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:28px
   }
   .card{
     background:linear-gradient(180deg,var(--panel),#10172a);
@@ -136,11 +136,12 @@
   }
   .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
   .footer-note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.6}
-  @media (max-width:950px){
-    .cards{grid-template-columns:1fr}
+  @media (max-width:1100px){
+    .cards{grid-template-columns:repeat(2,1fr)}
     .workspace{grid-template-columns:1fr}
   }
   @media (max-width:620px){
+    .cards{grid-template-columns:1fr}
     .shell{padding:16px}
     .topbar{padding:14px 16px}
     .grid2{grid-template-columns:1fr}
@@ -193,13 +194,27 @@ body .app{display:block!important}
 }
 
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <section class="app">
 
   <header class="topbar">
     <div class="left">
-      <div class="mini-logo">R</div>
+      <div class="mini-logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
       <div>
         <h2>CLSMC Rapor BBCode Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
         <small>Rapor Paneli</small>
@@ -219,7 +234,7 @@ body .app{display:block!important}
       <h1>Rapor oluştur</h1>
       <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
-        <span class="doctor-label">Raporlayan Hekim — Hesaptan Otomatik</span>
+        <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
         <strong>{{ username }} — {{ user_rank or "Rütbe Atanmadı" }}</strong>
         {% if not user_rank %}
           <div class="footer-note" style="margin-top:6px">Rapor kaydetmek için yöneticinin hesabınıza rütbe ataması gerekir.</div>
@@ -228,26 +243,41 @@ body .app{display:block!important}
     </section>
 
     <section class="cards">
-      <div class="card active" data-type="vaka" onclick="setReportType('vaka', this)">
+      {% if "vaka" in allowed_report_types %}
+      <div class="card {% if initial_report_type == 'vaka' %}active{% endif %}" data-type="vaka" onclick="setReportType('vaka', this)">
         <div class="icon">🩺</div>
         <h3>Vaka Raporu</h3>
         <p>Hasta/vaka bilgileri, muayene, müdahale ve sonuç alanları.</p>
       </div>
+      {% endif %}
+      {% if "adli" in allowed_report_types %}
       <div class="card" data-type="adli" onclick="setReportType('adli', this)">
         <div class="icon">⚖️</div>
         <h3>Adli Vaka Raporu</h3>
         <p>Adli vaka, bildirim, teslim ve delil bilgileri için kısıtlı kayıt formu.</p>
       </div>
+      {% endif %}
+      {% if "otopsi" in allowed_report_types %}
       <div class="card" data-type="otopsi" onclick="setReportType('otopsi', this)">
         <div class="icon">🔬</div>
         <h3>Otopsi Raporu</h3>
         <p>Dış/iç muayene, ölüm nedeni, materyaller ve onay bilgileri.</p>
       </div>
+      {% endif %}
+      {% if "ex" in allowed_report_types %}
       <div class="card" data-type="ex" onclick="setReportType('ex', this)">
         <div class="icon">📄</div>
         <h3>Ölüm (Ex) Raporu</h3>
         <p>Ölüm tespiti, müdahaleler, teslim ve hekim onay bilgileri.</p>
       </div>
+      {% endif %}
+      {% if "ems" in allowed_report_types %}
+      <div class="card {% if initial_report_type == 'ems' %}active{% endif %}" data-type="ems" onclick="setReportType('ems', this)">
+        <div class="icon">🚑</div>
+        <h3>EMS Saha Raporu</h3>
+        <p>Saha müdahalesi, hasta değerlendirmesi, nakil ve EMS personel bilgileri.</p>
+      </div>
+      {% endif %}
     </section>
 
     <section class="workspace">
@@ -262,12 +292,21 @@ body .app{display:block!important}
           <div class="actions">
             <button class="btn btn-primary" onclick="renderBBCode()">BBCode Oluştur</button>
             <button class="btn btn-secondary" onclick="saveDraft()">Taslağı Kaydet</button>
+            {% if not is_ems_user %}
             <button class="btn btn-secondary" onclick="fillSample()">Örnek Veriyi Doldur</button>
             <button class="btn btn-secondary" onclick="fillAdliSample()">Adli Örneği Doldur</button>
+            {% endif %}
+            {% if is_ems_user %}
+            <button class="btn btn-secondary" onclick="fillEmsSample()">EMS Örneğini Doldur</button>
+            {% endif %}
             <button class="btn btn-danger" onclick="clearForm()">Formu Temizle</button>
           </div>
           <div class="footer-note">
-            Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporları ayrı formlar olarak BBCode üretir.
+            {% if is_ems_user %}
+              EMS rütbeli hesaplar yalnızca EMS Saha Raporu oluşturabilir.
+            {% else %}
+              Tıbbi rütbeli hesaplar Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarını oluşturabilir.
+            {% endif %}
           </div>
         </div>
       </div>
@@ -292,8 +331,10 @@ body .app{display:block!important}
 </section>
 <script>
 
-let currentType = 'vaka';
-
+const ALLOWED_REPORT_TYPES = {{ allowed_report_types|tojson }};
+const INITIAL_REPORT_TYPE = {{ initial_report_type|tojson }};
+let EMS_DEFAULT_REPORT_NUMBER = {{ ems_report_number|tojson }};
+let currentType = INITIAL_REPORT_TYPE;
 
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
 const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
@@ -804,6 +845,135 @@ const reportConfig = {
         <label>Ekran Görüntüsü Linki</label>
         <input data-field="ex_ekran" placeholder="Örn. https://imgur.com/a/..." oninput="renderBBCode()">
       </div>`
+  },
+  ems: {
+    title: 'EMS Saha Raporu',
+    fields: `
+      <div class="grid2">
+        <div class="field">
+          <label>Rapor Numarası</label>
+          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" readonly>
+        </div>
+        <div class="field">
+          <label>Vaka Tarihi ve Saati</label>
+          <input data-field="ems_vaka_tarih" type="datetime-local" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Vaka Konumu</label>
+          <input data-field="ems_konum" placeholder="Örn. Strawberry Avenue / Los Santos" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Vaka Türü</label>
+          <select data-field="ems_vaka_turu" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Trafik Kazası</option>
+            <option>Darp</option>
+            <option>Ateşli Silah</option>
+            <option>Kesici Alet</option>
+            <option>Bayılma</option>
+            <option>Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>İhbar Açıklaması</label>
+        <textarea data-field="ems_ihbar" placeholder="Çağrı/ihbar bilgisini ve olayın ilk bildirimini yazın..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Hastanın Adı ve Soyadı</label>
+          <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Bilinç Durumu</label>
+          <select data-field="ems_bilinc" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Açık</option>
+            <option>Bulanık</option>
+            <option>Kapalı</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Genel Durumu</label>
+          <select data-field="ems_genel_durum" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Stabil</option>
+            <option>Orta</option>
+            <option>Ciddi</option>
+            <option>Kritik</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tespit Edilen Bulgular</label>
+        <textarea data-field="ems_bulgular" placeholder="Vital bulgular, yaralanmalar ve klinik gözlemler..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Olay Yeri Değerlendirmesi</label>
+        <textarea data-field="ems_olay_degerlendirme" placeholder="Olay yeri güvenliği, mekanizma ve saha değerlendirmesi..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Uygulanan Müdahaleler</label>
+        <textarea data-field="ems_mudahale" placeholder="Saha müdahalelerini ayrıntılı biçimde yazın..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Uygulanan İlaçlar</label>
+        <textarea data-field="ems_ilaclar" placeholder="Bulunmuyor veya uygulanan ilaçları yazın" oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Nakil Durumu</label>
+          <select data-field="ems_nakil_durumu" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>CLSMC’ye Nakledildi</option>
+            <option>Olay Yerinde Müdahale Edildi</option>
+            <option>Nakli Reddetti</option>
+            <option>Ex</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nakil Sırasındaki Durumu</label>
+          <select data-field="ems_nakil_sirasinda" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Stabil</option>
+            <option>Gözetim Gerektiriyor</option>
+            <option>Hayati Tehlikesi Var</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Teslim Edilen Birim veya Hekim</label>
+          <input data-field="ems_teslim" placeholder="Birim veya teslim alan personel" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      ${doctorIdentityHtml('Sorumlu Paramedik')}
+
+      <div class="grid2">
+        <div class="field">
+          <label>Ekip Personelleri</label>
+          <textarea data-field="ems_ekip" placeholder="Ad Soyad — Görev" oninput="renderBBCode()"></textarea>
+        </div>
+        <div class="field">
+          <label>Ambulans Birimi</label>
+          <input data-field="ems_ambulans" placeholder="Örn. RA-1" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Dijital İmza</label>
+          <input data-field="ems_imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ekran Görüntüsü veya Bağlantısı</label>
+        <input data-field="ems_ekran" placeholder="Örn. https://imgur.com/a/..." oninput="renderBBCode()">
+      </div>`
   }
 };
 
@@ -814,9 +984,10 @@ const reportConfig = {
 
 
 function setReportType(type, el){
+  if(!ALLOWED_REPORT_TYPES.includes(type) || !reportConfig[type]) return;
   currentType = type;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  if(el) el.classList.add('active');
   document.getElementById('formTitle').textContent = reportConfig[type].title + ' Formu';
   document.getElementById('dynamicFields').innerHTML = reportConfig[type].fields;
   if(type === 'adli') toggleAdliOther();
@@ -1162,7 +1333,7 @@ ${screenshotBBCode(getVal('otp_ekran'))}
 [size=65][i][color=#7A8891]Adli Tıbbi İnceleme ve Morg Kayıt Sistemi[/color][/i][/size]
 [/center]`;
 
-  } else {
+  } else if(currentType === 'ex'){
     out = `[center]
 [size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=140][b][color=#6A6A6A]ÖLÜM (EX) RAPORU[/color][/b][/size]
@@ -1246,6 +1417,102 @@ ${screenshotBBCode(getVal('ex_ekran'))}
 [size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=65][i][color=#7A8891]Morg ve Ölüm Kayıt Sistemi[/color][/i][/size]
 [/center]`;
+  } else if(currentType === 'ems'){
+    out = `[center]
+[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=140][b][color=#4C88A8]EMERGENCY MEDICAL SERVICES[/color][/b][/size]
+[size=120][b][color=#6C7A84]FIELD REPORT[/color][/b][/size]
+
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[size=80][i][color=#6C7A84]Bu rapor, acil sağlık ekipleri tarafından gerçekleştirilen saha müdahalesini kayıt altına almak amacıyla düzenlenmiştir.[/color][/i][/size]
+[/center]
+
+[quote]
+[center][size=125][b][color=#183B56]VAKA BİLGİLERİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Rapor Numarası:[/color][/b]
+${getVal('ems_rapor_no') || 'CLSMC-EMS-0000'}
+
+[b][color=#4C88A8]Vaka Tarihi ve Saati:[/color][/b]
+${fmtAdliDateTR(getVal('ems_vaka_tarih'))}
+
+[b][color=#4C88A8]Vaka Konumu:[/color][/b]
+${textOrDash(getVal('ems_konum'))}
+
+[b][color=#4C88A8]Vaka Türü:[/color][/b]
+${getVal('ems_vaka_turu') || 'Trafik Kazası / Darp / Ateşli Silah / Kesici Alet / Bayılma / Diğer'}
+
+[b][color=#4C88A8]İhbar Açıklaması:[/color][/b]
+${textOrDash(getVal('ems_ihbar'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]HASTA DEĞERLENDİRMESİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Hastanın Adı ve Soyadı:[/color][/b]
+${textOrDash(getVal('ems_adsoyad'))}
+
+[b][color=#4C88A8]Bilinç Durumu:[/color][/b]
+${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}
+
+[b][color=#4C88A8]Genel Durumu:[/color][/b]
+${getVal('ems_genel_durum') || 'Stabil / Orta / Ciddi / Kritik'}
+
+[b][color=#4C88A8]Tespit Edilen Bulgular:[/color][/b]
+${textOrDash(getVal('ems_bulgular'))}
+
+[b][color=#4C88A8]Olay Yeri Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('ems_olay_degerlendirme'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]SAHA MÜDAHALESİ VE NAKİL[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Uygulanan Müdahaleler:[/color][/b]
+${textOrDash(getVal('ems_mudahale'))}
+
+[b][color=#4C88A8]Uygulanan İlaçlar:[/color][/b]
+${getVal('ems_ilaclar') || 'Bulunmuyor / —'}
+
+[b][color=#4C88A8]Nakil Durumu:[/color][/b]
+${getVal('ems_nakil_durumu') || 'CLSMC’ye Nakledildi / Olay Yerinde Müdahale Edildi / Nakli Reddetti / Ex'}
+
+[b][color=#4C88A8]Nakil Sırasındaki Durumu:[/color][/b]
+${getVal('ems_nakil_sirasinda') || 'Stabil / Gözetim Gerektiriyor / Hayati Tehlikesi Var'}
+
+[b][color=#4C88A8]Teslim Edilen Birim veya Hekim:[/color][/b]
+${textOrDash(getVal('ems_teslim'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]EMS PERSONELİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Sorumlu Paramedik:[/color][/b]
+${CURRENT_DOCTOR_NAME} — ${CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı'}
+
+[b][color=#4C88A8]Ekip Personelleri:[/color][/b]
+${textOrDash(getVal('ems_ekip'))}
+
+[b][color=#4C88A8]Ambulans Birimi:[/color][/b]
+${getVal('ems_ambulans') || 'RA-1'}
+
+[b][color=#4C88A8]Dijital İmza:[/color][/b]
+${textOrDash(getVal('ems_imza'))}
+[/quote]
+
+[spoiler="Ekran Görüntüsü"]
+${getVal('ems_ekran') || 'Ekran görüntüsü veya bağlantısı'}
+[/spoiler]
+
+[center]
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[size=75][b][color=#183B56]EMERGENCY MEDICAL SERVICES[/color][/b][/size]
+[size=65][i][color=#7A8891]Field Operations Division[/color][/i][/size]
+
+[size=68][color=#6C7A84]Rapor, CLSMC saha kayıt sistemine işlenmiştir.[/color][/size]
+[/center]`;
   }
 
   document.getElementById('bbcodePreview').textContent = out;
@@ -1286,6 +1553,12 @@ function getReportMetadata(){
       doctor_name: CURRENT_DOCTOR_NAME,
       doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('ex_olum_tarih') || getVal('ex_kabul_tarih')
+    },
+    ems: {
+      report_number: getVal('ems_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
+      report_date: getVal('ems_vaka_tarih')
     }
   };
   return all[currentType] || {};
@@ -1346,6 +1619,10 @@ async function copyBBCode(){
       t.remove();
     }
 
+    if(currentType === 'ems' && saveResult.next_report_number){
+      EMS_DEFAULT_REPORT_NUMBER = saveResult.next_report_number;
+    }
+
     setStatus(
       saveResult.created
         ? 'BBCode kopyalandı • İstatistiğe kaydedildi'
@@ -1375,7 +1652,7 @@ function loadDraft(){
   if(!raw) return;
   try{
     const data = JSON.parse(raw);
-    if(data.type && reportConfig[data.type]){
+    if(data.type && reportConfig[data.type] && ALLOWED_REPORT_TYPES.includes(data.type)){
       const card = document.querySelector(`.card[data-type="${data.type}"]`);
       setReportType(data.type, card);
     }
@@ -1398,7 +1675,7 @@ function fillSample(){
     adsoyad: 'Peter Burrington',
     tarih: '2026-07-26T19:48',
     olayyeri: 'Central Los Santos Medical Center — Hasta Odası',
-    basvuru: 'Ayaktan',
+    basvuru: 'Acil Giriş',
     vaka_aciklama: 'Hasta; boğaz ağrısı, hapşırma, burun akıntısı ve üşüme-terleme şikâyetleriyle başvurdu. Genel değerlendirme ve üst solunum yolu muayenesi gerçekleştirildi.',
     muayene: 'Dil basacağı yardımıyla ağız ve boğaz bölgesi muayene edildi. Hastada aralıklı üşüme ve terleme gözlendi. Yapılan ölçümde vücut sıcaklığı 33 °C olarak kaydedildi. Hastanın bilinci açık ve genel durumu ayaktan tedaviye uygun olarak değerlendirildi.',
     tani: 'Üst solunum yolu enfeksiyonu / gribal enfeksiyon bulguları.',
@@ -1454,8 +1731,47 @@ function fillAdliSample(){
   setStatus('Adli vaka örneği yüklendi');
 }
 
+
+function fillEmsSample(){
+  const emsCard = document.querySelector('.card[data-type="ems"]');
+  setReportType('ems', emsCard);
+
+  const values = {
+    ems_rapor_no: EMS_DEFAULT_REPORT_NUMBER,
+    ems_vaka_tarih: '2026-07-28T21:15',
+    ems_konum: 'Strawberry Avenue — Los Santos',
+    ems_vaka_turu: 'Trafik Kazası',
+    ems_ihbar: 'İki araçlı trafik kazası ve bir yaralı ihbarı üzerine ekip olay yerine sevk edildi.',
+    ems_adsoyad: 'John Doe',
+    ems_bilinc: 'Açık',
+    ems_genel_durum: 'Stabil',
+    ems_bulgular: 'Sağ ön kolda yüzeysel laserasyon, hafif baş dönmesi ve hassasiyet tespit edildi. Solunum ve dolaşım bulguları stabildi.',
+    ems_olay_degerlendirme: 'Olay yeri güvenliği sağlandı. Hasta araç dışında oturur pozisyonda bulundu ve travma mekanizması değerlendirildi.',
+    ems_mudahale: 'Primer değerlendirme yapıldı, kanama kontrolü sağlandı, yara steril pansuman ile kapatıldı ve servikal değerlendirme gerçekleştirildi.',
+    ems_ilaclar: 'Bulunmuyor',
+    ems_nakil_durumu: 'CLSMC’ye Nakledildi',
+    ems_nakil_sirasinda: 'Stabil',
+    ems_teslim: 'CLSMC Acil Servis — Nöbetçi Hekim',
+    ems_ekip: 'Alex Morgan — Paramedic\nJamie Lee — EMT',
+    ems_ambulans: 'RA-1',
+    ems_imza: 'D. Blackwell',
+    ems_ekran: 'https://imgur.com/a/example'
+  };
+
+  Object.entries(values).forEach(([key, value]) => {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if(el) el.value = value;
+  });
+  renderBBCode();
+  setStatus('EMS saha raporu örneği yüklendi');
+}
+
 function clearForm(){
   document.querySelectorAll('[data-field]').forEach(el => el.value = '');
+  if(currentType === 'ems'){
+    const reportNo = document.querySelector('[data-field="ems_rapor_no"]');
+    if(reportNo) reportNo.value = EMS_DEFAULT_REPORT_NUMBER;
+  }
   renderBBCode();
   setStatus('Form temizlendi');
 }
@@ -1478,10 +1794,9 @@ window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('raporDemoDraft');
   if(saved){
     loadDraft();
-  } else {
-    const firstCard = document.querySelector('.card[data-type="vaka"]');
-    if(firstCard) setReportType('vaka', firstCard);
   }
+  const activeCard = document.querySelector(`.card[data-type="${currentType}"]`);
+  if(activeCard) setReportType(currentType, activeCard);
   renderBBCode();
 });
 

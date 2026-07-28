@@ -63,11 +63,25 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
 }
 
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
   <div class="brand">
-    <div class="logo">R</div>
+    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
     <div><h1>CLSMC Rapor İstatistikleri</h1><small>{{ username }}</small></div>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
@@ -106,7 +120,7 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
     </article>
 
     <article class="panel">
-      <h3>Doktor performansı</h3>
+      <h3>Raporlayan personel dağılımı</h3>
       <div class="sub">Hangi doktor kaç rapor yazdı?</div>
       {% if doctor_counts %}
         {% for item in doctor_counts %}
@@ -129,7 +143,7 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
         <table>
           <thead>
             <tr>
-              <th>Rapor No</th><th>Tür</th><th>Doktor</th><th>Rütbe</th><th>Kaydeden</th><th>Tarih</th>
+              <th>Rapor No</th><th>Tür</th><th>Raporlayan Personel</th><th>Rütbe</th><th>Kaydeden</th><th>Tarih</th>
             </tr>
           </thead>
           <tbody>

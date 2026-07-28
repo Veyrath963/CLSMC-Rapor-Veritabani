@@ -19,10 +19,24 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
 .developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;opacity:.78}
 @media(max-width:800px){.grid,.data-grid{grid-template-columns:1fr}}
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
-  <div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
   <div class="actions">
     <a class="btn" href="{{ url_for('admin_user_statistics', user=report.created_by_username) }}">← Kullanıcı İstatistikleri</a>
     <a class="btn primary" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Düzenle</a>
@@ -40,7 +54,7 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
   </section>
 
   <section class="grid">
-    <div class="card"><span>Raporlayan Hekim</span><strong>{{ report.doctor_name }}</strong></div>
+    <div class="card"><span>Raporlayan Personel</span><strong>{{ report.doctor_name }}</strong></div>
     <div class="card"><span>Rütbe</span><strong>{{ report.doctor_rank or "—" }}</strong></div>
     <div class="card"><span>Kaydeden Hesap</span><strong>{{ report.created_by_username }}</strong></div>
     <div class="card"><span>Rapor Tarihi</span><strong>{{ report.report_date or "—" }}</strong></div>

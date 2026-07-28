@@ -282,26 +282,86 @@ def panel():
     # Admin kullanıcı adını değiştirdiyse aktif oturuma da yansıt.
     session["username"] = user.username
 
+    allowed_report_types = sorted(allowed_report_types_for_rank(user.rank))
+    if not allowed_report_types:
+        flash(
+            "Hesabınıza rapor erişimi sağlayan geçerli bir rütbe atanmadı. Yöneticiniz ile iletişime geçin.",
+            "error",
+        )
+        return redirect(url_for("settings"))
+
+    initial_report_type = "ems" if "ems" in allowed_report_types else "vaka"
+    ems_report_number = (
+        next_report_number("ems", "CLSMC-EMS")
+        if "ems" in allowed_report_types
+        else "CLSMC-EMS-0001"
+    )
+
     return render_template(
         "panel.html",
         username=user.username,
         user_rank=user.rank or "",
+        allowed_report_types=allowed_report_types,
+        initial_report_type=initial_report_type,
+        ems_report_number=ems_report_number,
+        is_ems_user=initial_report_type == "ems",
     )
 
 
 
 
-ALLOWED_USER_RANKS = {
+MEDICAL_USER_RANKS = {
     "Doctor",
     "Attending Physician",
     "Psychiatrist",
 }
+
+EMS_USER_RANKS = {
+    "Paramedic",
+    "Senior Paramedic",
+    "Emergency Medical Technician (EMT)",
+}
+
+ALLOWED_USER_RANKS = MEDICAL_USER_RANKS | EMS_USER_RANKS
+
+MEDICAL_REPORT_TYPES = {"vaka", "adli", "otopsi", "ex"}
+EMS_REPORT_TYPES = {"ems"}
+
+
+def allowed_report_types_for_rank(rank: str | None) -> set[str]:
+    normalized_rank = (rank or "").strip()
+    if normalized_rank in EMS_USER_RANKS:
+        return set(EMS_REPORT_TYPES)
+    if normalized_rank in MEDICAL_USER_RANKS:
+        return set(MEDICAL_REPORT_TYPES)
+    return set()
+
+
+def next_report_number(report_type: str, prefix: str) -> str:
+    """Return the next display number without changing the database."""
+    highest = 0
+    rows = (
+        db.session.query(Report.report_number)
+        .filter(Report.report_type == report_type)
+        .all()
+    )
+    expected_prefix = f"{prefix}-"
+    for (number,) in rows:
+        value = (number or "").strip()
+        if not value.startswith(expected_prefix):
+            continue
+        suffix = value.rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return f"{prefix}-{highest + 1:04d}"
+
 
 REPORT_TYPE_LABELS = {
     "vaka": "Vaka Raporu",
     "adli": "Adli Vaka Raporu",
     "otopsi": "Otopsi Raporu",
     "ex": "Ölüm (Ex) Raporu",
+    "ems": "EMS Saha Raporu",
 }
 
 
@@ -332,6 +392,19 @@ def save_report():
 
     if report_type not in REPORT_TYPE_LABELS:
         return {"ok": False, "message": "Geçersiz rapor türü."}, 400
+
+    allowed_report_types = allowed_report_types_for_rank(doctor_rank)
+    if report_type not in allowed_report_types:
+        write_log(
+            "WARNING",
+            "REPORT_ACCESS_DENIED",
+            f"username={doctor_name}; rank={doctor_rank}; report_type={report_type}",
+        )
+        return {
+            "ok": False,
+            "message": "Rütbeniz bu rapor türünü oluşturma yetkisine sahip değil.",
+        }, 403
+
     if not report_number:
         return {"ok": False, "message": "Rapor numarası zorunludur."}, 400
     if not doctor_name:
@@ -390,6 +463,11 @@ def save_report():
             "ok": True,
             "message": "Rapor kaydedildi." if is_new else "Rapor kaydı güncellendi.",
             "created": is_new,
+            "next_report_number": (
+                next_report_number("ems", "CLSMC-EMS")
+                if report_type == "ems"
+                else None
+            ),
         }, 201 if is_new else 200
 
     except Exception as exc:
@@ -421,8 +499,14 @@ def statistics():
     # Admin kullanıcı adını değiştirdiyse açık oturumdaki isim de güncel kalsın.
     session["username"] = user.username
 
+    allowed_report_types = sorted(allowed_report_types_for_rank(user.rank))
+    if not allowed_report_types:
+        flash("Hesabınıza geçerli bir rapor rütbesi atanmadı.", "error")
+        return redirect(url_for("settings"))
+
     type_rows = (
         db.session.query(Report.report_type, db.func.count(Report.id))
+        .filter(Report.report_type.in_(allowed_report_types))
         .group_by(Report.report_type)
         .order_by(db.func.count(Report.id).desc())
         .all()
@@ -430,6 +514,7 @@ def statistics():
 
     doctor_rows = (
         db.session.query(Report.doctor_name, db.func.count(Report.id))
+        .filter(Report.report_type.in_(allowed_report_types))
         .group_by(Report.doctor_name)
         .order_by(db.func.count(Report.id).desc(), Report.doctor_name.asc())
         .all()
@@ -450,12 +535,24 @@ def statistics():
     max_type_count = max([x["count"] for x in type_counts], default=1)
     max_doctor_count = max([x["count"] for x in doctor_counts], default=1)
 
-    recent_reports = Report.query.order_by(Report.updated_at.desc()).limit(20).all()
+    recent_reports = (
+        Report.query
+        .filter(Report.report_type.in_(allowed_report_types))
+        .order_by(Report.updated_at.desc())
+        .limit(20)
+        .all()
+    )
+    total_reports = (
+        Report.query
+        .filter(Report.report_type.in_(allowed_report_types))
+        .count()
+    )
 
     return render_template(
         "statistics.html",
         username=user.username,
-        total_reports=Report.query.count(),
+        user_rank=user.rank or "",
+        total_reports=total_reports,
         doctor_counts=doctor_counts,
         type_counts=type_counts,
         max_type_count=max_type_count,
@@ -665,6 +762,7 @@ def admin_dashboard():
                 "adli_count": 0,
                 "otopsi_count": 0,
                 "ex_count": 0,
+                "ems_count": 0,
                 "last_report": report.report_number,
                 "last_updated": report.updated_at,
             }
@@ -679,6 +777,8 @@ def admin_dashboard():
             doctor_map[doctor_name]["otopsi_count"] += 1
         elif report.report_type == "ex":
             doctor_map[doctor_name]["ex_count"] += 1
+        elif report.report_type == "ems":
+            doctor_map[doctor_name]["ems_count"] += 1
 
     doctors = sorted(
         doctor_map.values(),
@@ -771,6 +871,7 @@ def admin_user_statistics():
         "adli": [],
         "otopsi": [],
         "ex": [],
+        "ems": [],
     }
 
     stats = {
@@ -779,6 +880,7 @@ def admin_user_statistics():
         "adli": 0,
         "otopsi": 0,
         "ex": 0,
+        "ems": 0,
     }
 
     if selected_name and not selected_user:
@@ -1339,12 +1441,14 @@ def admin_edit_report(report_id: int):
             "adli": "adli_rapor_no",
             "otopsi": "otp_rapor_no",
             "ex": "ex_rapor_no",
+            "ems": "ems_rapor_no",
         }
         date_fields = {
             "vaka": "rapor_tarihi",
             "adli": "adli_tarih",
             "otopsi": "otp_otopsi_tarih",
             "ex": "ex_olum_tarih",
+            "ems": "ems_vaka_tarih",
         }
         if report.report_type in number_fields:
             fallback[number_fields[report.report_type]] = report.report_number or ""

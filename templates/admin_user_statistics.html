@@ -54,7 +54,7 @@ a{text-decoration:none;color:inherit}button{font:inherit}
 }
 .profile h3{margin:0 0 5px;font-size:21px}.profile p{margin:0;color:var(--muted);font-size:12px}
 .status{display:inline-block;margin-left:6px;padding:4px 8px;border-radius:999px;border:1px solid #36517b;background:#172844;font-size:10px}
-.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
 .metric{padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:15px}
 .metric span{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:27px;margin-top:5px}
 .category{overflow:hidden;margin-bottom:16px}
@@ -74,11 +74,25 @@ tr:last-child td{border-bottom:0}
 @media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{position:static}.user-list{grid-template-columns:repeat(2,1fr);max-height:none}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.user-list,.metrics{grid-template-columns:1fr}.shell{padding:20px 13px 50px}.topbar{align-items:flex-start;gap:10px}}
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
   <div class="brand">
-    <div class="logo">A</div>
+    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
     <div><h1>CLSMC Kullanıcı İstatistikleri</h1><small>Yönetici: {{ admin_username }}</small></div>
   </div>
   <div class="actions">
@@ -139,13 +153,15 @@ tr:last-child td{border-bottom:0}
           <div class="metric"><span>Adli Vaka</span><strong>{{ stats.adli }}</strong></div>
           <div class="metric"><span>Otopsi</span><strong>{{ stats.otopsi }}</strong></div>
           <div class="metric"><span>Ölüm (Ex)</span><strong>{{ stats.ex }}</strong></div>
+          <div class="metric"><span>EMS</span><strong>{{ stats.ems }}</strong></div>
         </section>
 
         {% set categories = [
           ('vaka', '🩺 Vaka Raporları'),
           ('adli', '⚖️ Adli Vaka Raporları'),
           ('otopsi', '🔬 Otopsi Raporları'),
-          ('ex', '📄 Ölüm (Ex) Raporları')
+          ('ex', '📄 Ölüm (Ex) Raporları'),
+          ('ems', '🚑 EMS Saha Raporları')
         ] %}
 
         {% for key, title in categories %}
@@ -161,7 +177,7 @@ tr:last-child td{border-bottom:0}
                   <thead>
                     <tr>
                       <th>Rapor No</th>
-                      <th>Raporlayan Hekim</th>
+                      <th>Raporlayan Personel</th>
                       <th>Rütbe</th>
                       <th>Rapor Tarihi</th>
                       <th>Son Güncelleme</th>

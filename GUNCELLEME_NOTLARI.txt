@@ -371,3 +371,122 @@ CLSMC Rapor Sistemi V19.4 — Neon PostgreSQL Ready
 • `.gitignore` ve güvenli `.env.example` eklendi; gerçek Neon şifresinin GitHub’a gitmesi engelleniyor.
 
 — Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+V20 — EMS SAHA RAPORU
+CLSMC Rapor Sistemi V20 — EMS Field Operations
+
+• Kullanıcı paneline beşinci bağımsız rapor türü olarak “EMS Saha Raporu” eklendi.
+• EMS için ayrı rapor kartı ve seçmeli saha formu oluşturuldu.
+• Rapor numarası CLSMC-EMS-0000 düzeninde hazırlanıyor.
+• Vaka tarihi, konumu, türü ve ihbar açıklaması alanları eklendi.
+• Hasta adı, bilinç durumu, genel durum, bulgular ve olay yeri değerlendirmesi alanları eklendi.
+• Saha müdahaleleri, ilaçlar, nakil durumu, nakil sırasındaki durum ve teslim bilgileri eklendi.
+• EMS personeli, ekip personelleri, ambulans birimi, dijital imza ve ekran görüntüsü alanları eklendi.
+• Verilen EMS BBCode tasarımı sisteme birebir uyarlanarak canlı önizlemeye bağlandı.
+• BBCode kopyalandığında EMS raporu Neon PostgreSQL veritabanına kaydediliyor.
+• Aynı CLSMC-EMS rapor numarası yeniden kullanılırsa mevcut kayıt güncelleniyor.
+• Admin seçmeli rapor düzenleyicisine EMS formu ve canlı BBCode desteği eklendi.
+• Admin Kullanıcı İstatistikleri bölümüne EMS sayacı ve EMS rapor kategorisi eklendi.
+• Normal istatistikler ve Admin rapor listeleri EMS türünü tanıyor.
+• Admin hesap yönetimine “Paramedic” rütbesi eklendi.
+• Hekim/personel ortak kullanımını desteklemek için bazı arayüz etiketleri “Raporlayan Personel” olarak güncellendi.
+• Mevcut kullanıcılar, raporlar ve Neon bağlantısı için veritabanı taşıması gerekmiyor.
+
+— Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+V20.1 — RÜTBE BAZLI RAPOR ERİŞİMİ VE EMS FORM İYİLEŞTİRMELERİ
+CLSMC Rapor Sistemi V20.1 — Role-Based Report Access
+
+• EMS rütbeli hesaplar yalnızca EMS Saha Raporu kartını ve formunu görebilir.
+• Doctor, Attending Physician ve Psychiatrist rütbeleri EMS Saha Raporunu göremez.
+• Yetkilendirme yalnızca arayüzde değil, `/api/reports` backend kayıt noktasında da uygulanır.
+• Yetkisiz rapor kaydetme girişimleri 403 ile engellenir ve REPORT_ACCESS_DENIED olarak loglanır.
+• Kullanıcı İstatistikleri ekranı kullanıcının rütbesine göre yalnızca erişebildiği rapor türlerini gösterir.
+• Admin hesap oluşturma/düzenleme ekranlarına Senior Paramedic ve Emergency Medical Technician (EMT) rütbeleri eklendi.
+• EMS Rapor Numarası veritabanındaki son EMS kaydına göre CLSMC-EMS-0001 biçiminde hazır gelir.
+• EMS rapor numarası kullanıcı formunda salt okunur yapıldı; form temizlendiğinde otomatik geri yüklenir.
+• EMS raporu kaydedildikten sonra bir sonraki hazır rapor numarası backend tarafından hesaplanır ve yeni form için kullanılır.
+• “Nakil Sırasındaki Durumu” seçenekleri Stabil / Gözetim Gerektiriyor / Hayati Tehlikesi Var olarak netleştirildi.
+• Ambulans Birimi alanındaki sabit RA-00 / AMB-00 değeri kaldırıldı; “Örn. RA-1” örnek metni eklendi.
+• EMS BBCode varsayılan Ambulans Birimi örneği RA-1 olarak güncellendi.
+• V20 panelindeki yinelenen API fetch satırı temizlendi.
+• Vaka örnek verisindeki eski “Ayaktan” başvuru seçeneği “Acil Giriş” olarak düzeltildi.
+
+— Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+V20.2 — CLSMC LOGO RENKLERİ ARAYÜZ TEMASI
+CLSMC Rapor Sistemi V20.2 — Corporate Logo Color Theme
+
+• Kullanıcı, EMS ve Admin arayüzleri CLSMC logosunun koyu yeşil, limon sarısı ve krem renkleriyle yenilendi.
+• Mavi/mor ağırlıklı eski arayüz renkleri kurumsal yeşil tema ile değiştirildi.
+• Giriş ekranı, kullanıcı paneli, ayarlar, istatistikler ve tüm Admin sayfaları aynı tasarım diline geçirildi.
+• Üst menülerde harf ikonları yerine gerçek CLSMC logosu kullanılmaya başlandı.
+• Aktif rapor kartları limon sarısı vurgu ve yeşil yüzeylerle daha belirgin hale getirildi.
+• Butonlar, form alanları, tablolar, rozetler, BBCode kutuları ve bilgi panelleri yeni renk paletine uyarlandı.
+• Mobil görünüm, mevcut responsive yapı ve bütün işlevler korunuyor.
+• Raporların oluşturduğu BBCode içerik renklerine dokunulmadı; değişiklik yalnızca web arayüzü tasarımını kapsıyor.
+• Neon PostgreSQL verileri, kullanıcı hesapları, raporlar ve yetkilendirme kuralları etkilenmedi.
+
+— Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+V20.3 — KLİNİK MEDİKAL ARAYÜZ TEMASI
+CLSMC Rapor Sistemi V20.3 — Clinical Medical Interface
+
+• CLSMC logosu bütün ekranlarda korunmaya devam ediyor.
+• Logo renklerinden alınan yoğun yeşil/sarı arayüz yerine klinik lacivert, medikal turkuaz, steril beyaz ve açık mavi ağırlıklı yeni renk sistemi getirildi.
+• Doctor, Attending Physician, Psychiatrist, Paramedic, Senior Paramedic ve EMT kullanıcı panelleri aynı medikal tasarım diline uyarlandı.
+• Admin giriş ekranı, yönetim merkezi, üyelik işlemleri, kullanıcı istatistikleri, rapor görüntüleme ve rapor düzenleme sayfaları aynı tema kapsamına alındı.
+• Kullanıcı giriş ekranı, rapor paneli, Ayarlar ve İstatistikler ekranları ortak yüzey, form, buton ve durum renklerini kullanıyor.
+• Aktif rapor kartları medikal turkuaz çerçeveyle; ana işlem butonları turkuaz–mavi geçişle belirginleştirildi.
+• Başarı, uyarı ve hata mesajlarında klinik arayüze uygun ayrı durum renkleri korundu.
+• Form alanları, tablolar, rozetler, kullanıcı listeleri, BBCode alanları ve admin kayıt tabloları yeni palete geçirildi.
+• Masaüstü ve mobil responsive yapı korunuyor.
+• Rütbe bazlı EMS erişimi, otomatik EMS rapor numarası, Neon PostgreSQL verileri ve rapor BBCode içerikleri etkilenmedi.
+
+— Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+V20.4 — STERİL SAĞLIK SEKTÖRÜ ARAYÜZÜ
+CLSMC Rapor Sistemi V20.4 — Healthcare UI Theme
+
+• CLSMC logosu özgün renkleriyle bütün ekranlarda korunuyor.
+• Arayüz renkleri logo paletinden bağımsız hale getirildi.
+• Hastane ve sağlık sektörü arayüzlerinde yaygın kullanılan steril beyaz, medikal mavi, turkuaz ve açık camgöbeği tonlarından oluşan yeni palet uygulandı.
+• Koyu arka plan yerine daha ferah ve okunaklı açık klinik yüzeyler getirildi.
+• Üst menüler yüksek kontrastlı medikal mavi olarak tasarlandı; içerik kartları beyaz ve açık mavi yüzeylere geçirildi.
+• Doctor, Attending Physician, Psychiatrist, Paramedic, Senior Paramedic ve EMT kullanıcı panelleri aynı tasarım sistemini kullanıyor.
+• Admin giriş ekranı, yönetim merkezi, üyelik oluşturma/düzenleme, kullanıcı istatistikleri, rapor görüntüleme ve rapor düzenleme ekranları aynı temaya uyarlandı.
+• Form alanları, butonlar, aktif rapor kartları, tablolar, rozetler, mesaj kutuları ve BBCode alanları ortak klinik renk sistemine geçirildi.
+• Başarı, uyarı ve hata durumları erişilebilir yeşil, amber ve kırmızı tonlarıyla ayrıştırıldı.
+• Masaüstü ve mobil responsive yapı korunuyor.
+• EMS rütbe erişimleri, otomatik rapor numarası, Neon PostgreSQL verileri ve BBCode içerikleri etkilenmedi.
+
+— Developer: Veyrath
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLSMC V20.5 — KARANLIK / AYDINLIK ARAYÜZ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Sisteme iki ayrı arayüz seçeneği eklendi.
+• Karanlık Mod, CLSMC sisteminin ilk kullanılan lacivert ve mavi arayüzünü geri getirir.
+• Aydınlık Mod, V20.4 ile hazırlanan steril beyaz, medikal mavi ve turkuaz sağlık temasını kullanır.
+• Varsayılan görünüm Karanlık Mod olarak ayarlandı.
+• Kullanıcının seçimi tarayıcıda saklanır; sayfa yenilendiğinde ve farklı CLSMC ekranlarına geçildiğinde korunur.
+• Tema düğmesi üst menüsü bulunan sayfalarda menüye, giriş sayfalarında ise sağ üst köşeye yerleştirilir.
+• Doktor, Paramedic/EMS ve Admin panellerinin tamamı aynı tema sistemini kullanır.
+• Giriş, Ayarlar, İstatistikler, kullanıcı yönetimi, rapor görüntüleme ve rapor düzenleme ekranları da iki temayı destekler.
+• CLSMC logosu her iki temada da özgün renkleriyle korunur.
+• Tema seçimi yalnızca cihazın/tarayıcının görünüm tercihini değiştirir; kullanıcı hesapları, Neon verileri, raporlar ve BBCode çıktıları etkilenmez.
+
+Yeni dosyalar:
+• static/clsmc_theme_toggle.css
+• static/clsmc_theme_toggle.js
+
+Güncellenen dosyalar:
+• templates klasöründeki 11 ekran şablonunun tamamı
+
+Developer: Veyrath

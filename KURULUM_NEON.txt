@@ -99,3 +99,9 @@ Render Environment içinde Secret olarak tut.
 ==================================================
 CLSMC Rapor Sistemi V19.4 — Neon PostgreSQL Ready
 Developer: Veyrath
+
+V20 ile EMS Saha Raporu ve Paramedic rütbesi sisteme eklenmiştir. Bu güncelleme yeni Neon veritabanı veya DATABASE_URL değişikliği gerektirmez.
+
+V20.1 RÜTBE BAZLI ERİŞİM
+
+Bu sürüm yalnızca uygulama yetkilendirmesini ve EMS formunu günceller. Neon DATABASE_URL veya tablo göçü gerektirmez.

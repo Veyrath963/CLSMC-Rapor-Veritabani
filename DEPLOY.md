@@ -46,3 +46,12 @@ V19.3 ve sonrasında public kayıt kapalıdır. Yeni kullanıcılar yalnızca `/
 ## Eski Render Postgres kaynağı
 
 `render.yaml` artık Render PostgreSQL kaynağı tanımlamaz. Blueprint'ten tanımın kaldırılması mevcut Render DB'yi otomatik silmez. Neon'un doğru çalıştığını ve gerekiyorsa verilerin taşındığını doğruladıktan sonra eski Render DB'yi Dashboard'dan ayrıca silebilirsiniz.
+
+
+## V20 — EMS Field Operations
+
+EMS Saha Raporu is stored in the existing `reports` table using `report_type=ems` and structured `form_data` JSON. No database migration or new Neon environment variable is required. Upload the updated files to GitHub; Render can deploy the new commit using the existing `DATABASE_URL`.
+
+## V20.1 — Role-Based Report Access
+
+EMS ranks can create only `report_type=ems`; medical ranks can create only `vaka`, `adli`, `otopsi`, and `ex`. The restriction is enforced in both the rendered panel and `/api/reports`. No Neon migration or new environment variable is required.

@@ -48,13 +48,27 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
 .flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
 .developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
-  <div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
     <strong>CLSMC Admin • Kullanıcı Hesabı</strong><br>
     <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
-  </div>
+  </div></div>
   <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
@@ -84,6 +98,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
         <option value="Doctor" {% if user.rank == "Doctor" %}selected{% endif %}>Doctor</option>
         <option value="Attending Physician" {% if user.rank == "Attending Physician" %}selected{% endif %}>Attending Physician</option>
         <option value="Psychiatrist" {% if user.rank == "Psychiatrist" %}selected{% endif %}>Psychiatrist</option>
+        <option value="Paramedic" {% if user.rank == "Paramedic" %}selected{% endif %}>Paramedic</option>
+        <option value="Senior Paramedic" {% if user.rank == "Senior Paramedic" %}selected{% endif %}>Senior Paramedic</option>
+        <option value="Emergency Medical Technician (EMT)" {% if user.rank == "Emergency Medical Technician (EMT)" %}selected{% endif %}>Emergency Medical Technician (EMT)</option>
       </select>
     </div>
 
@@ -110,8 +127,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
     </div>
 
     <div class="note">
-      Rütbe yalnızca yönetici tarafından belirlenir ve kullanıcının hazırladığı raporlara
-      otomatik yazılır. Rütbeyi açılır listeden seçebilirsiniz. Mevcut şifre görüntülenmez; şifre alanlarını boş bırakırsanız parola değişmez.
+      Rütbe yalnızca yönetici tarafından belirlenir. EMS rütbeleri yalnızca EMS Saha Raporuna;
+      tıbbi rütbeler yalnızca Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarına erişir. Şifre alanlarını boş bırakırsanız parola değişmez.
     </div>
 
     <button class="btn btn-primary" type="submit">Hesabı Güncelle</button>

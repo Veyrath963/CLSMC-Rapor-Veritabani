@@ -49,12 +49,26 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
   font-weight:600;opacity:.78;pointer-events:none
 }
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <section class="wrap">
   <div class="card">
     <div class="brand">
-      <div class="logo">A</div>
+      <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
       <div>
         <h1>CLSMC Yönetici Paneli</h1>
         <p>Kısıtlı yönetici erişimi</p>

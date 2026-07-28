@@ -55,11 +55,25 @@ th{background:#0d1528;color:#cbd6ee;position:sticky;top:0}tr:last-child td{borde
 @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.full{grid-column:auto}}
 @media(max-width:560px){.metrics{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:12px}.shell{padding:20px 14px 50px}}
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
   <div class="brand">
-    <div class="logo">A</div>
+    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
     <div><h1>CLSMC Admin Paneli</h1><small>Yönetici: {{ admin_username }}</small></div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -210,7 +224,7 @@ th{background:#0d1528;color:#cbd6ee;position:sticky;top:0}tr:last-child td{borde
             <tr>
               <th>Rapor No</th>
               <th>Tür</th>
-              <th>Doktor</th>
+              <th>Raporlayan Personel</th>
               <th>Rütbe</th>
               <th>Kaydeden Hesap</th>
               <th>Rapor Tarihi</th>

@@ -50,7 +50,7 @@ input,select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
 textarea{min-height:110px;resize:vertical}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .card{
   background:linear-gradient(180deg,var(--panel),#10172a);border:1px solid var(--line);
   border-radius:17px;padding:17px;cursor:pointer;transition:.18s ease
@@ -79,16 +79,30 @@ details.legacy{margin-top:20px;background:#0d1426;border:1px solid var(--line);b
 details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
 .legacy-code{white-space:pre-wrap;word-break:break-word;color:#aebddd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;max-height:360px;overflow:auto;margin-top:12px}
 .developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
-@media(max-width:980px){.cards{grid-template-columns:1fr 1fr}.workspace{grid-template-columns:1fr}}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.workspace{grid-template-columns:1fr}}
 @media(max-width:650px){.cards,.grid2,.doctor-box{grid-template-columns:1fr}.shell{padding:16px}.topbar{padding:14px 16px;gap:12px}}
 </style>
+<script>
+(function(){
+  var selected = "dark";
+  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
+  document.documentElement.dataset.theme = selected;
+  document.documentElement.style.colorScheme = selected;
+})();
+</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<script>
+  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
+</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
 <header class="topbar">
-  <div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
     <strong>CLSMC Admin • Seçmeli Rapor Düzenleme</strong><br>
     <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
-  </div>
+  </div></div>
   <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
@@ -128,7 +142,7 @@ details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
 
     <section class="doctor-box">
       <div class="field" style="margin:0">
-        <label>Raporlayan Hekim</label>
+        <label>Raporlayan Personel</label>
         <select id="doctorSelect" onchange="changeDoctor()" required>
           {% set active_names = users|map(attribute='username')|list %}
           {% if report.doctor_name not in active_names %}
@@ -145,7 +159,7 @@ details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
         </select>
       </div>
       <div class="field" style="margin:0">
-        <label>Rütbe — Otomatik</label>
+        <label>Görev / Rütbe — Otomatik</label>
         <input id="doctorRankDisplay" value="{{ report.doctor_rank or '' }}" readonly>
       </div>
     </section>
@@ -162,6 +176,9 @@ details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
       </div>
       <div class="card" data-type="ex" onclick="setReportType('ex', this)">
         <div class="icon">📄</div><h3>Ölüm (Ex) Raporu</h3><p>Ölüm tespiti, müdahaleler ve teslim bilgileri.</p>
+      </div>
+      <div class="card" data-type="ems" onclick="setReportType('ems', this)">
+        <div class="icon">🚑</div><h3>EMS Saha Raporu</h3><p>Saha müdahalesi, hasta değerlendirmesi ve nakil bilgileri.</p>
       </div>
     </section>
 
@@ -721,6 +738,135 @@ const reportConfig = {
         <label>Ekran Görüntüsü Linki</label>
         <input data-field="ex_ekran" placeholder="Örn. https://imgur.com/a/..." oninput="renderBBCode()">
       </div>`
+  },
+  ems: {
+    title: 'EMS Saha Raporu',
+    fields: `
+      <div class="grid2">
+        <div class="field">
+          <label>Rapor Numarası</label>
+          <input data-field="ems_rapor_no" value="CLSMC-EMS-0001" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Vaka Tarihi ve Saati</label>
+          <input data-field="ems_vaka_tarih" type="datetime-local" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Vaka Konumu</label>
+          <input data-field="ems_konum" placeholder="Örn. Strawberry Avenue / Los Santos" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Vaka Türü</label>
+          <select data-field="ems_vaka_turu" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Trafik Kazası</option>
+            <option>Darp</option>
+            <option>Ateşli Silah</option>
+            <option>Kesici Alet</option>
+            <option>Bayılma</option>
+            <option>Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>İhbar Açıklaması</label>
+        <textarea data-field="ems_ihbar" placeholder="Çağrı/ihbar bilgisini ve olayın ilk bildirimini yazın..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Hastanın Adı ve Soyadı</label>
+          <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Bilinç Durumu</label>
+          <select data-field="ems_bilinc" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Açık</option>
+            <option>Bulanık</option>
+            <option>Kapalı</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Genel Durumu</label>
+          <select data-field="ems_genel_durum" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Stabil</option>
+            <option>Orta</option>
+            <option>Ciddi</option>
+            <option>Kritik</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tespit Edilen Bulgular</label>
+        <textarea data-field="ems_bulgular" placeholder="Vital bulgular, yaralanmalar ve klinik gözlemler..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Olay Yeri Değerlendirmesi</label>
+        <textarea data-field="ems_olay_degerlendirme" placeholder="Olay yeri güvenliği, mekanizma ve saha değerlendirmesi..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Uygulanan Müdahaleler</label>
+        <textarea data-field="ems_mudahale" placeholder="Saha müdahalelerini ayrıntılı biçimde yazın..." oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Uygulanan İlaçlar</label>
+        <textarea data-field="ems_ilaclar" placeholder="Bulunmuyor veya uygulanan ilaçları yazın" oninput="renderBBCode()"></textarea>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Nakil Durumu</label>
+          <select data-field="ems_nakil_durumu" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>CLSMC’ye Nakledildi</option>
+            <option>Olay Yerinde Müdahale Edildi</option>
+            <option>Nakli Reddetti</option>
+            <option>Ex</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nakil Sırasındaki Durumu</label>
+          <select data-field="ems_nakil_sirasinda" onchange="renderBBCode()">
+            <option value="">Seçiniz</option>
+            <option>Stabil</option>
+            <option>Gözetim Gerektiriyor</option>
+            <option>Hayati Tehlikesi Var</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Teslim Edilen Birim veya Hekim</label>
+          <input data-field="ems_teslim" placeholder="Birim veya teslim alan personel" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      ${doctorIdentityHtml('Sorumlu Paramedik')}
+
+      <div class="grid2">
+        <div class="field">
+          <label>Ekip Personelleri</label>
+          <textarea data-field="ems_ekip" placeholder="Ad Soyad — Görev" oninput="renderBBCode()"></textarea>
+        </div>
+        <div class="field">
+          <label>Ambulans Birimi</label>
+          <input data-field="ems_ambulans" placeholder="Örn. RA-1" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Dijital İmza</label>
+          <input data-field="ems_imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ekran Görüntüsü veya Bağlantısı</label>
+        <input data-field="ems_ekran" placeholder="Örn. https://imgur.com/a/..." oninput="renderBBCode()">
+      </div>`
   }
 };
 
@@ -1082,7 +1228,7 @@ ${screenshotBBCode(getVal('otp_ekran'))}
 [size=65][i][color=#7A8891]Adli Tıbbi İnceleme ve Morg Kayıt Sistemi[/color][/i][/size]
 [/center]`;
 
-  } else {
+  } else if(currentType === 'ex'){
     out = `[center]
 [size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=140][b][color=#6A6A6A]ÖLÜM (EX) RAPORU[/color][/b][/size]
@@ -1166,6 +1312,102 @@ ${screenshotBBCode(getVal('ex_ekran'))}
 [size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=65][i][color=#7A8891]Morg ve Ölüm Kayıt Sistemi[/color][/i][/size]
 [/center]`;
+  } else if(currentType === 'ems'){
+    out = `[center]
+[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=140][b][color=#4C88A8]EMERGENCY MEDICAL SERVICES[/color][/b][/size]
+[size=120][b][color=#6C7A84]FIELD REPORT[/color][/b][/size]
+
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[size=80][i][color=#6C7A84]Bu rapor, acil sağlık ekipleri tarafından gerçekleştirilen saha müdahalesini kayıt altına almak amacıyla düzenlenmiştir.[/color][/i][/size]
+[/center]
+
+[quote]
+[center][size=125][b][color=#183B56]VAKA BİLGİLERİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Rapor Numarası:[/color][/b]
+${getVal('ems_rapor_no') || 'CLSMC-EMS-0001'}
+
+[b][color=#4C88A8]Vaka Tarihi ve Saati:[/color][/b]
+${fmtAdliDateTR(getVal('ems_vaka_tarih'))}
+
+[b][color=#4C88A8]Vaka Konumu:[/color][/b]
+${textOrDash(getVal('ems_konum'))}
+
+[b][color=#4C88A8]Vaka Türü:[/color][/b]
+${getVal('ems_vaka_turu') || 'Trafik Kazası / Darp / Ateşli Silah / Kesici Alet / Bayılma / Diğer'}
+
+[b][color=#4C88A8]İhbar Açıklaması:[/color][/b]
+${textOrDash(getVal('ems_ihbar'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]HASTA DEĞERLENDİRMESİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Hastanın Adı ve Soyadı:[/color][/b]
+${textOrDash(getVal('ems_adsoyad'))}
+
+[b][color=#4C88A8]Bilinç Durumu:[/color][/b]
+${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}
+
+[b][color=#4C88A8]Genel Durumu:[/color][/b]
+${getVal('ems_genel_durum') || 'Stabil / Orta / Ciddi / Kritik'}
+
+[b][color=#4C88A8]Tespit Edilen Bulgular:[/color][/b]
+${textOrDash(getVal('ems_bulgular'))}
+
+[b][color=#4C88A8]Olay Yeri Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('ems_olay_degerlendirme'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]SAHA MÜDAHALESİ VE NAKİL[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Uygulanan Müdahaleler:[/color][/b]
+${textOrDash(getVal('ems_mudahale'))}
+
+[b][color=#4C88A8]Uygulanan İlaçlar:[/color][/b]
+${getVal('ems_ilaclar') || 'Bulunmuyor / —'}
+
+[b][color=#4C88A8]Nakil Durumu:[/color][/b]
+${getVal('ems_nakil_durumu') || 'CLSMC’ye Nakledildi / Olay Yerinde Müdahale Edildi / Nakli Reddetti / Ex'}
+
+[b][color=#4C88A8]Nakil Sırasındaki Durumu:[/color][/b]
+${getVal('ems_nakil_sirasinda') || 'Stabil / Gözetim Gerektiriyor / Hayati Tehlikesi Var'}
+
+[b][color=#4C88A8]Teslim Edilen Birim veya Hekim:[/color][/b]
+${textOrDash(getVal('ems_teslim'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]EMS PERSONELİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Sorumlu Paramedik:[/color][/b]
+${CURRENT_DOCTOR_NAME} — ${CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı'}
+
+[b][color=#4C88A8]Ekip Personelleri:[/color][/b]
+${textOrDash(getVal('ems_ekip'))}
+
+[b][color=#4C88A8]Ambulans Birimi:[/color][/b]
+${getVal('ems_ambulans') || 'RA-1'}
+
+[b][color=#4C88A8]Dijital İmza:[/color][/b]
+${textOrDash(getVal('ems_imza'))}
+[/quote]
+
+[spoiler="Ekran Görüntüsü"]
+${getVal('ems_ekran') || 'Ekran görüntüsü veya bağlantısı'}
+[/spoiler]
+
+[center]
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[size=75][b][color=#183B56]EMERGENCY MEDICAL SERVICES[/color][/b][/size]
+[size=65][i][color=#7A8891]Field Operations Division[/color][/i][/size]
+
+[size=68][color=#6C7A84]Rapor, CLSMC saha kayıt sistemine işlenmiştir.[/color][/size]
+[/center]`;
   }
 
   document.getElementById('bbcodePreview').textContent = out;
@@ -1221,6 +1463,10 @@ function getReportMetadataAdmin(){
     ex: {
       report_number: getVal('ex_rapor_no'),
       report_date: getVal('ex_olum_tarih') || getVal('ex_kabul_tarih')
+    },
+    ems: {
+      report_number: getVal('ems_rapor_no'),
+      report_date: getVal('ems_vaka_tarih')
     }
   };
   return all[currentType] || {};
@@ -1236,7 +1482,7 @@ function prepareSubmit(){
     return false;
   }
   if(!CURRENT_DOCTOR_NAME){
-    alert('Raporlayan hekim seçilmelidir.');
+    alert('Raporlayan personel seçilmelidir.');
     return false;
   }
   if(!CURRENT_DOCTOR_RANK){
