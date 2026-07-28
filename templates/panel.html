@@ -852,7 +852,8 @@ const reportConfig = {
       <div class="grid2">
         <div class="field">
           <label>Rapor Numarası</label>
-          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" readonly>
+          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" placeholder="Örn. CLSMC-EMS-0001" oninput="renderBBCode()" required>
+          <div class="footer-note" style="margin-top:7px">Sistem sıradaki numarayı önerir; bu alanı elle değiştirebilirsiniz.</div>
         </div>
         <div class="field">
           <label>Vaka Tarihi ve Saati</label>
