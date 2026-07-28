@@ -3,84 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Seçmeli Rapor Düzenleme</title>
+<title>Rapor Paneli</title>
 <style>
-:root{
-  --bg:#0b1020;--panel:#121a2f;--panel2:#17213b;--line:#2a3657;
-  --text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--good:#38d39f;
-  --danger:#ff6b7a;--shadow:0 16px 50px rgba(0,0,0,.28)
+  :root{
+    --bg:#0b1020;
+    --panel:#121a2f;
+    --panel2:#17213b;
+    --line:#2a3657;
+    --text:#eef3ff;
+    --muted:#9eabc8;
+    --accent:#5b8cff;
+    --accent2:#7aa2ff;
+    --good:#38d39f;
+    --danger:#ff6b7a;
+    --shadow:0 16px 50px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(91,140,255,.15), transparent 30%),
+      radial-gradient(circle at 85% 10%, rgba(56,211,159,.10), transparent 25%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  button,input,select,textarea{font:inherit}
+  .hidden{display:none!important}
+  .login-wrap{
+    min-height:100vh;display:grid;place-items:center;padding:24px;
+  }
+  .login-card{
+    width:min(460px,100%);
+    background:rgba(18,26,47,.95);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:32px;
+    box-shadow:var(--shadow);
+  }
+  .brand{
+    display:flex;align-items:center;gap:12px;margin-bottom:28px;
+  }
+  .logo{
+    width:48px;height:48px;border-radius:14px;
+    display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),#785bff);
+    font-size:24px;font-weight:800;
+  }
+  .brand h1{font-size:20px;margin:0}
+  .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  label{display:block;font-size:13px;color:#c7d1ea;margin-bottom:7px}
+  input,select,textarea{
+    width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);
+    border-radius:12px;padding:12px 13px;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+  textarea{min-height:110px;resize:vertical}
+  .field{margin-bottom:16px}
+  .btn{
+    border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;
+    transition:.18s ease;
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#7b61ff);color:white}
+  .btn-secondary{background:#202b49;color:#dce6ff;border:1px solid #344264}
+  .btn-good{background:var(--good);color:#07140f}
+  .btn-danger{background:#3a1f2a;color:#ffdce2;border:1px solid #603040}
+  .full{width:100%}
+  .hint{
+    margin-top:15px;padding:11px 12px;border-radius:12px;background:#0f162a;
+    border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.5
+  }
+
+  .app{min-height:100vh}
+  .topbar{
+    position:sticky;top:0;z-index:5;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 24px;background:rgba(11,16,32,.87);backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(42,54,87,.7)
+  }
+  .topbar .left{display:flex;align-items:center;gap:10px}
+  .mini-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#785bff);display:grid;place-items:center;font-weight:800}
+  .topbar h2{font-size:15px;margin:0}
+  .topbar small{color:var(--muted)}
+  .shell{max-width:1320px;margin:0 auto;padding:24px}
+  .hero{margin:10px 0 22px}
+  .hero h1{font-size:28px;margin:0 0 8px}
+  .hero p{margin:0;color:var(--muted)}
+  .cards{
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:28px
+  }
+  .card{
+    background:linear-gradient(180deg,var(--panel),#10172a);
+    border:1px solid var(--line);border-radius:18px;padding:20px;
+    cursor:pointer;transition:.18s ease;box-shadow:0 8px 26px rgba(0,0,0,.12)
+  }
+  .card:hover{transform:translateY(-3px);border-color:#4966a5}
+  .card.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+  .icon{
+    width:44px;height:44px;border-radius:12px;background:#1b2a4d;display:grid;place-items:center;
+    font-size:22px;margin-bottom:14px
+  }
+  .card h3{margin:0 0 7px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+
+  .workspace{
+    display:grid;grid-template-columns:minmax(0,1.05fr) minmax(380px,.95fr);gap:20px;
+    align-items:start
+  }
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--shadow);overflow:hidden
+  }
+  .panel-head{
+    padding:17px 20px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:12px
+  }
+  .panel-head h3{margin:0;font-size:16px}
+  .panel-body{padding:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .bbcode{
+    background:#090f1d;border:1px solid #263453;border-radius:14px;padding:16px;
+    white-space:pre-wrap;word-break:break-word;min-height:430px;max-height:650px;overflow:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;color:#dce7ff
+  }
+  .status{font-size:12px;color:var(--muted)}
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;
+    background:#0f1a31;border:1px solid #2a3a60;color:#b8c9ef;font-size:12px
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+  .footer-note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.6}
+  @media (max-width:1100px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .workspace{grid-template-columns:1fr}
+  }
+  @media (max-width:620px){
+    .cards{grid-template-columns:1fr}
+    .shell{padding:16px}
+    .topbar{padding:14px 16px}
+    .grid2{grid-template-columns:1fr}
+    .hero h1{font-size:23px}
+  }
+
+body .app{display:block!important}
+
+.developer-credit{
+  position:fixed;
+  right:14px;
+  bottom:10px;
+  z-index:1000;
+  color:var(--muted, #7A8891);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.2px;
+  opacity:.78;
+  user-select:none;
+  pointer-events:none;
 }
-*{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;color:var(--text);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  background:
-    radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),
-    radial-gradient(circle at 85% 10%,rgba(56,211,159,.10),transparent 25%),var(--bg)
+@media(max-width:600px){
+  .developer-credit{
+    right:10px;
+    bottom:8px;
+    font-size:10px;
+  }
 }
-a{text-decoration:none;color:inherit}button,input,select,textarea{font:inherit}
-.hidden{display:none!important}
-.topbar{
-  position:sticky;top:0;z-index:8;display:flex;justify-content:space-between;align-items:center;
-  padding:16px 24px;background:rgba(11,16,32,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(42,54,87,.7)
+
+
+.doctor-identity{
+  margin:0 0 16px;
+  padding:13px 14px;
+  border:1px solid #344264;
+  border-radius:12px;
+  background:#0f162a;
 }
-.btn{border:0;border-radius:12px;padding:11px 15px;cursor:pointer;font-weight:750}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#7b61ff);color:#fff}
-.btn-secondary{background:#202b49;color:#dce6ff;border:1px solid #344264}
-.btn-good{background:var(--good);color:#07140f}
-.shell{max-width:1380px;margin:0 auto;padding:24px}
-.hero{margin:8px 0 20px}.hero h1{margin:0 0 7px;font-size:27px}.hero p{margin:0;color:var(--muted)}
-.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.chip{border:1px solid #304265;background:#182541;border-radius:999px;padding:6px 9px;color:#b8c9ef;font-size:12px}
-.notice{padding:12px 14px;border-radius:12px;margin:14px 0;font-size:13px;line-height:1.55}
-.notice.warning{border:1px solid rgba(255,190,92,.45);background:rgba(255,190,92,.09);color:#ffd596}
-.flash{padding:12px 14px;border-radius:11px;margin:14px 0;font-weight:700}
-.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
-.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
-.doctor-box{
-  display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin:18px 0;
-  padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:17px
+.doctor-identity .doctor-label{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:5px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
 }
-.field{margin-bottom:16px}
-label{display:block;font-size:13px;color:#c7d1ea;margin-bottom:7px}
-input,select,textarea{
-  width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);
-  border-radius:12px;padding:12px 13px;outline:none
-}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
-textarea{min-height:110px;resize:vertical}
-.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:20px}
-.card{
-  background:linear-gradient(180deg,var(--panel),#10172a);border:1px solid var(--line);
-  border-radius:17px;padding:17px;cursor:pointer;transition:.18s ease
-}
-.card:hover{transform:translateY(-2px);border-color:#4966a5}
-.card.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
-.icon{width:40px;height:40px;border-radius:11px;background:#1b2a4d;display:grid;place-items:center;font-size:20px;margin-bottom:10px}
-.card h3{margin:0 0 5px;font-size:15px}.card p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
-.workspace{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(380px,.92fr);gap:20px;align-items:start}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
-.panel-head{padding:16px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
-.panel-head h3{margin:0;font-size:16px}.panel-body{padding:20px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.bbcode{
-  background:#090f1d;border:1px solid #263453;border-radius:14px;padding:16px;
-  white-space:pre-wrap;word-break:break-word;min-height:500px;max-height:700px;overflow:auto;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;color:#dce7ff
-}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.badge{padding:7px 10px;border-radius:999px;background:#0f1a31;border:1px solid #2a3a60;color:#b8c9ef;font-size:12px}
-.footer-note{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.6}
-.doctor-identity{margin:0 0 16px;padding:13px 14px;border:1px solid #344264;border-radius:12px;background:#0f162a}
-.doctor-identity .doctor-label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
 .doctor-identity strong{font-size:14px}
-details.legacy{margin-top:20px;background:#0d1426;border:1px solid var(--line);border-radius:13px;padding:12px 14px}
-details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
-.legacy-code{white-space:pre-wrap;word-break:break-word;color:#aebddd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;max-height:360px;overflow:auto;margin-top:12px}
-.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
-@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.workspace{grid-template-columns:1fr}}
-@media(max-width:650px){.cards,.grid2,.doctor-box{grid-template-columns:1fr}.shell{padding:16px}.topbar{padding:14px 16px;gap:12px}}
+.doctor-identity.warning{
+  border-color:rgba(255,107,122,.48);
+  background:rgba(255,107,122,.08);
+}
+
 </style>
 <script>
 (function(){
@@ -98,104 +210,103 @@ details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
-    <strong>CLSMC Admin • Seçmeli Rapor Düzenleme</strong><br>
-    <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
-  </div></div>
-  <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
-</header>
+<section class="app">
 
-<main class="shell">
-  <section class="hero">
-    <h1>{{ report.report_number }}</h1>
-    <p>Raporu kullanıcı panelindeki gibi alanlardan ve seçim menülerinden düzenle. BBCode anlık olarak yeniden oluşturulur.</p>
-    <div class="meta">
-      <span class="chip">Kaydeden hesap: {{ report.created_by_username }}</span>
-      <span class="chip">Oluşturma: {{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</span>
-      <span class="chip">Son Güncelleme: {{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</span>
-    </div>
-  </section>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endwith %}
-
-  {% if report_is_legacy %}
-    <div class="notice warning">
-      Bu kayıt, seçmeli form verisi eklenmeden önce oluşturulmuş eski bir rapordur.
-      Rapor numarası ve tarih otomatik dolduruldu; diğer alanları düzenlerken aşağıdaki
-      “Eski BBCode Referansı” bölümünden mevcut içeriği kontrol edebilirsin.
-    </div>
-  {% endif %}
-
-  <form id="reportEditForm" method="post" action="{{ url_for('admin_edit_report', report_id=report.id) }}" onsubmit="return prepareSubmit();">
-    <input type="hidden" name="report_type" id="submitReportType">
-    <input type="hidden" name="report_number" id="submitReportNumber">
-    <input type="hidden" name="doctor_name" id="submitDoctorName">
-    <input type="hidden" name="doctor_rank" id="submitDoctorRank">
-    <input type="hidden" name="report_date" id="submitReportDate">
-    <input type="hidden" name="bbcode" id="submitBBCode">
-    <input type="hidden" name="form_data" id="submitFormData">
-
-    <section class="doctor-box">
-      <div class="field" style="margin:0">
-        <label>Raporlayan Personel</label>
-        <select id="doctorSelect" onchange="changeDoctor()" required>
-          {% set active_names = users|map(attribute='username')|list %}
-          {% if report.doctor_name not in active_names %}
-            <option value="{{ report.doctor_name }}" data-rank="{{ report.doctor_rank or '' }}" selected>
-              {{ report.doctor_name }} — {{ report.doctor_rank or "Rütbe Atanmadı" }} (Geçmiş Kayıt)
-            </option>
-          {% endif %}
-          {% for user in users %}
-            <option value="{{ user.username }}" data-rank="{{ user.rank or '' }}"
-              {% if report.doctor_name == user.username %}selected{% endif %}>
-              {{ user.username }} — {{ user.rank or "Rütbe Atanmadı" }}
-            </option>
-          {% endfor %}
-        </select>
+  <header class="topbar">
+    <div class="left">
+      <div class="mini-logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
+      <div>
+        <h2>CLSMC Rapor BBCode Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
+        <small>Rapor Paneli</small>
       </div>
-      <div class="field" style="margin:0">
-        <label>Görev / Rütbe — Otomatik</label>
-        <input id="doctorRankDisplay" value="{{ report.doctor_rank or '' }}" readonly>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
+      <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
+      <form method="post" action="{{ url_for('logout') }}" style="margin:0">
+        <button class="btn btn-secondary" type="submit">Çıkış</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <h1>Rapor oluştur</h1>
+      <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
+      <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
+        <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
+        <strong>{{ username }} — {{ user_rank or "Rütbe Atanmadı" }}</strong>
+        {% if not user_rank %}
+          <div class="footer-note" style="margin-top:6px">Rapor kaydetmek için yöneticinin hesabınıza rütbe ataması gerekir.</div>
+        {% endif %}
       </div>
     </section>
 
     <section class="cards">
-      <div class="card" data-type="vaka" onclick="setReportType('vaka', this)">
-        <div class="icon">🩺</div><h3>Vaka Raporu</h3><p>Hasta, muayene, tanı ve sonuç bilgileri.</p>
+      {% if "vaka" in allowed_report_types %}
+      <div class="card {% if initial_report_type == 'vaka' %}active{% endif %}" data-type="vaka" onclick="setReportType('vaka', this)">
+        <div class="icon">🩺</div>
+        <h3>Vaka Raporu</h3>
+        <p>Hasta/vaka bilgileri, muayene, müdahale ve sonuç alanları.</p>
       </div>
+      {% endif %}
+      {% if "adli" in allowed_report_types %}
       <div class="card" data-type="adli" onclick="setReportType('adli', this)">
-        <div class="icon">⚖️</div><h3>Adli Vaka Raporu</h3><p>Adli vaka, bildirim, delil ve teslim bilgileri.</p>
+        <div class="icon">⚖️</div>
+        <h3>Adli Vaka Raporu</h3>
+        <p>Adli vaka, bildirim, teslim ve delil bilgileri için kısıtlı kayıt formu.</p>
       </div>
+      {% endif %}
+      {% if "otopsi" in allowed_report_types %}
       <div class="card" data-type="otopsi" onclick="setReportType('otopsi', this)">
-        <div class="icon">🔬</div><h3>Otopsi Raporu</h3><p>Otopsi bulguları, ölüm nedeni ve materyaller.</p>
+        <div class="icon">🔬</div>
+        <h3>Otopsi Raporu</h3>
+        <p>Dış/iç muayene, ölüm nedeni, materyaller ve onay bilgileri.</p>
       </div>
+      {% endif %}
+      {% if "ex" in allowed_report_types %}
       <div class="card" data-type="ex" onclick="setReportType('ex', this)">
-        <div class="icon">📄</div><h3>Ölüm (Ex) Raporu</h3><p>Ölüm tespiti, müdahaleler ve teslim bilgileri.</p>
+        <div class="icon">📄</div>
+        <h3>Ölüm (Ex) Raporu</h3>
+        <p>Ölüm tespiti, müdahaleler, teslim ve hekim onay bilgileri.</p>
       </div>
-      <div class="card" data-type="ems" onclick="setReportType('ems', this)">
-        <div class="icon">🚑</div><h3>EMS Saha Raporu</h3><p>Saha müdahalesi, hasta değerlendirmesi ve nakil bilgileri.</p>
+      {% endif %}
+      {% if "ems" in allowed_report_types %}
+      <div class="card {% if initial_report_type == 'ems' %}active{% endif %}" data-type="ems" onclick="setReportType('ems', this)">
+        <div class="icon">🚑</div>
+        <h3>EMS Saha Raporu</h3>
+        <p>Saha müdahalesi, hasta değerlendirmesi, nakil ve EMS personel bilgileri.</p>
       </div>
+      {% endif %}
     </section>
 
     <section class="workspace">
       <div class="panel">
         <div class="panel-head">
-          <h3 id="formTitle">Rapor Düzenleme Formu</h3>
-          <span class="badge">Seçmeli Düzenleme</span>
+          <h3 id="formTitle">Vaka Raporu Formu</h3>
+          <span class="badge"><span class="dot"></span> Otomatik oluşturma açık</span>
         </div>
         <div class="panel-body">
           <div id="dynamicFields"></div>
+
           <div class="actions">
-            <button class="btn btn-primary" type="button" onclick="renderBBCode()">BBCode'u Yenile</button>
-            <button class="btn btn-secondary" type="button" onclick="restoreOriginalData()">Kayıtlı Veriyi Geri Yükle</button>
+            <button class="btn btn-primary" onclick="renderBBCode()">BBCode Oluştur</button>
+            <button class="btn btn-secondary" onclick="saveDraft()">Taslağı Kaydet</button>
+            {% if not is_ems_user %}
+            <button class="btn btn-secondary" onclick="fillSample()">Örnek Veriyi Doldur</button>
+            <button class="btn btn-secondary" onclick="fillAdliSample()">Adli Örneği Doldur</button>
+            {% endif %}
+            {% if is_ems_user %}
+            <button class="btn btn-secondary" onclick="fillEmsSample()">EMS Örneğini Doldur</button>
+            {% endif %}
+            <button class="btn btn-danger" onclick="clearForm()">Formu Temizle</button>
           </div>
           <div class="footer-note">
-            Seçim ve metin alanlarındaki değişiklikler sağdaki BBCode önizlemesine anlık yansır.
+            {% if is_ems_user %}
+              EMS rütbeli hesaplar yalnızca EMS Saha Raporu oluşturabilir.
+            {% else %}
+              Tıbbi rütbeli hesaplar Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarını oluşturabilir.
+            {% endif %}
           </div>
         </div>
       </div>
@@ -203,36 +314,30 @@ details.legacy summary{cursor:pointer;font-weight:750;color:#cdd8ee}
       <div class="panel">
         <div class="panel-head">
           <h3>BBCode Önizleme</h3>
-          <span class="badge">Canlı</span>
+          <span id="saveStatus" class="status">Hazır</span>
         </div>
         <div class="panel-body">
           <div id="bbcodePreview" class="bbcode"></div>
           <div class="actions">
-            <button class="btn btn-good" type="submit">Değişiklikleri Kaydet</button>
+            <button class="btn btn-good" onclick="copyBBCode()">BBCode'u Kopyala</button>
+            <span class="status" style="align-self:center">Kopyalandığında otomatik olarak istatistiğe kaydedilir.</span>
+            <button class="btn btn-secondary" onclick="downloadTxt()">TXT İndir</button>
           </div>
         </div>
       </div>
     </section>
+  </main>
 
-    <details class="legacy">
-      <summary>Eski BBCode Referansı</summary>
-      <div class="legacy-code">{{ report.bbcode }}</div>
-    </details>
-  </form>
-</main>
-
-<div class="developer-credit">Developer: Veyrath</div>
-
+</section>
 <script>
-const INITIAL_TYPE = {{ report.report_type|tojson }};
-const INITIAL_FORM_DATA = {{ report_form_data|tojson }};
-const ORIGINAL_FORM_DATA = JSON.parse(JSON.stringify(INITIAL_FORM_DATA));
-const PREVIEW_MODE = {{ preview_mode|default(false)|tojson }};
 
-let currentType = INITIAL_TYPE;
-let CURRENT_DOCTOR_NAME = {{ report.doctor_name|tojson }};
-let CURRENT_DOCTOR_RANK = {{ (report.doctor_rank or '')|tojson }};
-let formState = {[INITIAL_TYPE]: JSON.parse(JSON.stringify(INITIAL_FORM_DATA))};
+const ALLOWED_REPORT_TYPES = {{ allowed_report_types|tojson }};
+const INITIAL_REPORT_TYPE = {{ initial_report_type|tojson }};
+let EMS_DEFAULT_REPORT_NUMBER = {{ ems_report_number|tojson }};
+let currentType = INITIAL_REPORT_TYPE;
+
+const CURRENT_DOCTOR_NAME = {{ username|tojson }};
+const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -244,11 +349,13 @@ function escapeHtml(value){
 }
 
 function doctorIdentityHtml(label){
+  const missingRank = !CURRENT_DOCTOR_RANK;
   const rank = CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı';
   return `
-    <div class="doctor-identity">
-      <span class="doctor-label">${escapeHtml(label)} — Admin Tarafından Seçildi</span>
-      <strong data-doctor-identity>${escapeHtml(CURRENT_DOCTOR_NAME)} — ${escapeHtml(rank)}</strong>
+    <div class="doctor-identity ${missingRank ? 'warning' : ''}">
+      <span class="doctor-label">${escapeHtml(label)} — Otomatik Hesap Bilgisi</span>
+      <strong>${escapeHtml(CURRENT_DOCTOR_NAME)} — ${escapeHtml(rank)}</strong>
+      ${missingRank ? '<div class="footer-note" style="margin-top:6px">Yönetici hesabınıza rütbe atayana kadar rapor kaydedilemez.</div>' : ''}
     </div>
   `;
 }
@@ -745,7 +852,7 @@ const reportConfig = {
       <div class="grid2">
         <div class="field">
           <label>Rapor Numarası</label>
-          <input data-field="ems_rapor_no" value="CLSMC-EMS-0001" oninput="renderBBCode()">
+          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" placeholder="Örn. CLSMC-EMS-0001" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Vaka Tarihi ve Saati</label>
@@ -877,15 +984,13 @@ const reportConfig = {
 
 
 function setReportType(type, el){
-  captureCurrentForm();
+  if(!ALLOWED_REPORT_TYPES.includes(type) || !reportConfig[type]) return;
   currentType = type;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
   if(el) el.classList.add('active');
-  document.getElementById('formTitle').textContent = reportConfig[type].title + ' Düzenleme Formu';
+  document.getElementById('formTitle').textContent = reportConfig[type].title + ' Formu';
   document.getElementById('dynamicFields').innerHTML = reportConfig[type].fields;
-  restoreCurrentForm();
   if(type === 'adli') toggleAdliOther();
-  refreshDoctorIdentity();
   renderBBCode();
 }
 
@@ -1327,7 +1432,7 @@ ${screenshotBBCode(getVal('ex_ekran'))}
 [center][size=125][b][color=#183B56]VAKA BİLGİLERİ[/color][/b][/size][/center]
 
 [b][color=#4C88A8]Rapor Numarası:[/color][/b]
-${getVal('ems_rapor_no') || 'CLSMC-EMS-0001'}
+${getVal('ems_rapor_no') || 'CLSMC-EMS-0000'}
 
 [b][color=#4C88A8]Vaka Tarihi ve Saati:[/color][/b]
 ${fmtAdliDateTR(getVal('ems_vaka_tarih'))}
@@ -1413,109 +1518,291 @@ ${getVal('ems_ekran') || 'Ekran görüntüsü veya bağlantısı'}
   document.getElementById('bbcodePreview').textContent = out;
 }
 
-function captureCurrentForm(){
-  if(!currentType) return;
+
+
+function collectFormData(){
   const values = {};
   document.querySelectorAll('[data-field]').forEach(el => {
     values[el.dataset.field] = el.value ?? '';
   });
-  formState[currentType] = values;
+  return values;
 }
 
-function restoreCurrentForm(){
-  const values = formState[currentType] || {};
-  Object.entries(values).forEach(([key, value]) => {
-    const el = document.querySelector(`[data-field="${key}"]`);
-    if(el) el.value = value ?? '';
-  });
-}
-
-function refreshDoctorIdentity(){
-  document.querySelectorAll('[data-doctor-identity]').forEach(el => {
-    el.textContent = `${CURRENT_DOCTOR_NAME} — ${CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı'}`;
-  });
-}
-
-function changeDoctor(){
-  const select = document.getElementById('doctorSelect');
-  const option = select.options[select.selectedIndex];
-  CURRENT_DOCTOR_NAME = option ? option.value : '';
-  CURRENT_DOCTOR_RANK = option ? (option.dataset.rank || '') : '';
-  document.getElementById('doctorRankDisplay').value = CURRENT_DOCTOR_RANK;
-  refreshDoctorIdentity();
-  renderBBCode();
-}
-
-function getReportMetadataAdmin(){
+function getReportMetadata(){
   const all = {
     vaka: {
       report_number: getVal('rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('rapor_tarihi') || getVal('tarih')
     },
     adli: {
       report_number: getVal('adli_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('adli_tarih')
     },
     otopsi: {
       report_number: getVal('otp_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('otp_otopsi_tarih') || getVal('otp_olum_tarih')
     },
     ex: {
       report_number: getVal('ex_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('ex_olum_tarih') || getVal('ex_kabul_tarih')
     },
     ems: {
       report_number: getVal('ems_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('ems_vaka_tarih')
     }
   };
   return all[currentType] || {};
 }
 
-function prepareSubmit(){
-  captureCurrentForm();
-  renderBBCode();
+async function saveReportAutomatically(bbcode){
+  const meta = getReportMetadata();
 
-  const meta = getReportMetadataAdmin();
   if(!meta.report_number){
-    alert('Rapor numarası boş bırakılamaz.');
-    return false;
+    throw new Error('Rapor numarasını girmeden BBCode kopyalanamaz.');
   }
-  if(!CURRENT_DOCTOR_NAME){
-    alert('Raporlayan personel seçilmelidir.');
-    return false;
+  if(!meta.doctor_name){
+    throw new Error('Hesap kullanıcı adı bulunamadı.');
   }
-  if(!CURRENT_DOCTOR_RANK){
-    alert('Seçilen hekimin rütbesi bulunmuyor.');
-    return false;
+  if(!meta.doctor_rank){
+    throw new Error('Hesabınıza henüz rütbe atanmadı. Yönetici rütbe atadıktan sonra raporu kopyalayabilirsiniz.');
   }
 
-  document.getElementById('submitReportType').value = currentType;
-  document.getElementById('submitReportNumber').value = meta.report_number;
-  document.getElementById('submitDoctorName').value = CURRENT_DOCTOR_NAME;
-  document.getElementById('submitDoctorRank').value = CURRENT_DOCTOR_RANK;
-  document.getElementById('submitReportDate').value = meta.report_date || '';
-  document.getElementById('submitBBCode').value = document.getElementById('bbcodePreview').textContent;
-  document.getElementById('submitFormData').value = JSON.stringify(formState[currentType] || {});
+  const response = await fetch('/api/reports', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      report_type: currentType,
+      report_number: meta.report_number,
+      doctor_name: meta.doctor_name,
+      doctor_rank: meta.doctor_rank || '',
+      report_date: meta.report_date || '',
+      bbcode: bbcode,
+      form_data: collectFormData()
+    })
+  });
 
-  if(PREVIEW_MODE){
-    alert('Önizleme modu: Seçmeli rapor düzenleme formu başarıyla hazırlandı. Gerçek veritabanına kayıt yapılmadı.');
-    return false;
+  const result = await response.json().catch(() => ({}));
+  if(!response.ok || !result.ok){
+    throw new Error(result.message || 'Rapor veritabanına kaydedilemedi.');
   }
-  return true;
+
+  return result;
 }
 
-function restoreOriginalData(){
-  formState = {[INITIAL_TYPE]: JSON.parse(JSON.stringify(ORIGINAL_FORM_DATA))};
-  const card = document.querySelector(`.card[data-type="${INITIAL_TYPE}"]`);
-  setReportType(INITIAL_TYPE, card);
+async function copyBBCode(){
+  renderBBCode();
+  const text = document.getElementById('bbcodePreview').textContent;
+
+  try{
+    setStatus('Rapor kaydediliyor...');
+    const saveResult = await saveReportAutomatically(text);
+
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const t = document.createElement('textarea');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      t.remove();
+    }
+
+    if(currentType === 'ems' && saveResult.next_report_number){
+      EMS_DEFAULT_REPORT_NUMBER = saveResult.next_report_number;
+    }
+
+    setStatus(
+      saveResult.created
+        ? 'BBCode kopyalandı • İstatistiğe kaydedildi'
+        : 'BBCode kopyalandı • Kayıt güncellendi'
+    );
+  }catch(error){
+    setStatus('Kayıt başarısız');
+    alert(error.message || 'Rapor kaydedilemedi ve BBCode kopyalanmadı.');
+  }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const initialCard = document.querySelector(`.card[data-type="${INITIAL_TYPE}"]`);
-  setReportType(INITIAL_TYPE, initialCard);
-  changeDoctor();
+function setStatus(text){
+  const el = document.getElementById('saveStatus');
+  el.textContent = text;
+  setTimeout(()=>el.textContent='Hazır', 1800);
+}
+
+function saveDraft(){
+  const values = {};
+  document.querySelectorAll('[data-field]').forEach(el => values[el.dataset.field] = el.value);
+  localStorage.setItem('raporDemoDraft', JSON.stringify({type:currentType, values}));
+  setStatus('Taslak tarayıcıya kaydedildi');
+}
+
+function loadDraft(){
+  const raw = localStorage.getItem('raporDemoDraft');
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+    if(data.type && reportConfig[data.type] && ALLOWED_REPORT_TYPES.includes(data.type)){
+      const card = document.querySelector(`.card[data-type="${data.type}"]`);
+      setReportType(data.type, card);
+    }
+    setTimeout(()=>{
+      Object.entries(data.values || {}).forEach(([k,v])=>{
+        const el = document.querySelector(`[data-field="${k}"]`);
+        if(el) el.value = v;
+      });
+      renderBBCode();
+    },0);
+  }catch(e){}
+}
+
+function fillSample(){
+  const firstCard = document.querySelector('.card[data-type="vaka"]');
+  setReportType('vaka', firstCard);
+
+  const values = {
+    rapor_no: 'CLSMC-VKR-0017',
+    adsoyad: 'Peter Burrington',
+    tarih: '2026-07-26T19:48',
+    olayyeri: 'Central Los Santos Medical Center — Hasta Odası',
+    basvuru: 'Acil Giriş',
+    vaka_aciklama: 'Hasta; boğaz ağrısı, hapşırma, burun akıntısı ve üşüme-terleme şikâyetleriyle başvurdu. Genel değerlendirme ve üst solunum yolu muayenesi gerçekleştirildi.',
+    muayene: 'Dil basacağı yardımıyla ağız ve boğaz bölgesi muayene edildi. Hastada aralıklı üşüme ve terleme gözlendi. Yapılan ölçümde vücut sıcaklığı 33 °C olarak kaydedildi. Hastanın bilinci açık ve genel durumu ayaktan tedaviye uygun olarak değerlendirildi.',
+    tani: 'Üst solunum yolu enfeksiyonu / gribal enfeksiyon bulguları.',
+    islemler: 'Hastanın boğaz muayenesi ve vücut sıcaklığı kontrolü gerçekleştirildi. Medikal tedavi kapsamında oral antibiyotik uygulandı ve devam tedavisi reçete edildi. İlacın 12 saatte bir, tok karnına kullanılması gerektiği hastaya bildirildi. Dinlenme, yeterli sıvı tüketimi ve belirtilerin kötüleşmesi hâlinde yeniden başvuru önerildi.',
+    hasta_sonucu: 'Taburcu',
+    ekran: 'https://imgur.com/a/ZViG0H8',
+    hekim: 'Darius Blackwell',
+    rutbe: 'Attending Physician',
+    hemsire: '',
+    rapor_tarihi: '2026-07-26T19:52',
+    imza: 'D. Blackwell'
+  };
+
+  Object.entries(values).forEach(([key, value]) => {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if(el) el.value = value;
+  });
+  renderBBCode();
+  setStatus('Örnek vaka verisi yüklendi');
+}
+
+function fillAdliSample(){
+  const adliCard = document.querySelector('.card[data-type="adli"]');
+  setReportType('adli', adliCard);
+
+  const values = {
+    adli_rapor_no: 'CLSMC-ADL-0001',
+    adli_adsoyad: 'Katarina Belrova',
+    adli_tarih: '2026-07-26T04:11',
+    adli_vaka_turu: 'Diğer',
+    adli_vaka_diger: 'Travmatik yüz ve burun yaralanması',
+    adli_getiren: 'Belirtilmemiş',
+    adli_olay: 'Hasta, yüz ve ağız bölgesinde yoğun kanama ile ameliyathaneye alınmıştır. İlk değerlendirmede ağız ve yüz çevresinin yoğun şekilde kan içerisinde olduğu, burun üzerinde geniş ve derin açık yara bulunduğu ve burun kemiğinde kırık olduğu tespit edilmiştir. Ağız ve orofarenks bölgesinde devam eden kanama nedeniyle hava yolu güvenliği sağlanmıştır. Olayın meydana geliş şekline ilişkin doğrulanabilir bilgi bulunmadığından rapor mevcut muayene ve cerrahi bulgular üzerinden düzenlenmiştir.',
+    adli_yaralanmalar: 'Burun kemiğinde kırık ve burun sırtında deformite, burun üzerinde cilt ve cilt altı dokuları aşarak derin dokulara uzanan geniş açık yara, yüz bölgesinde yumuşak doku hasarı ve ağız-orofarenks içerisinde yoğun kanama tespit edilmiştir. Yaralanma alanında pıhtılaşmış kan ve yabancı materyaller gözlenmiştir.',
+    adli_islemler: 'Hasta ameliyathanede monitörize edilerek hava yolu ve oksijenizasyonu güvence altına alınmış, aspirasyon ile ağız ve orofarenks içerisindeki kan temizlenmiştir. Damar yolu üzerinden kanama kontrolüne yönelik medikal tedavi uygulanmıştır. Yüz ve burun çevresi antiseptik solüsyonla temizlenerek steril saha oluşturulmuş; açık yara cerrahi olarak değerlendirilmiş, yabancı materyaller uzaklaştırılmış, yara serum fizyolojik ile irrigasyon yapılarak temizlenmiş ve canlılığını kaybetmiş dokular debride edilmiştir. Aktif kanama odakları elektrokoter ve kontrollü koterizasyon ile durdurulmuştur.\n\nBurun kemiği muayenesinin ardından nazal septum değerlendirilmiş, burun içerisindeki kan ve pıhtılar aspire edilmiştir. Deplase burun kemiğine kapalı redüksiyon uygulanarak kemik yapılar anatomik hizaya yaklaştırılmıştır. Açık yara anatomik katmanlara uygun şekilde primer olarak sütüre edilmiş, steril pansuman uygulanmış ve burun sırtına dış nazal splint yerleştirilmiştir. Operasyon sonunda aktif kanama izlenmemiş, hava yolu açıklığı ve vital bulgular kontrol edilerek hasta postoperatif takip ünitesine alınmıştır.',
+    adli_durum: 'Stabil',
+    adli_delil: 'Bulunmuyor',
+    adli_bildirim_birim: 'LSPD',
+    adli_bildirim_tarih: '2026-07-26T15:52',
+    adli_teslim_yetkili: '1560 Police Officer II Rick Sterling',
+    adli_hekim: 'Darius Blackwell',
+    adli_rutbe: 'Attending Physician',
+    adli_imza: 'D. Blackwell',
+    adli_ekran: 'https://imgur.com/a/7i5giF9'
+  };
+
+  Object.entries(values).forEach(([key, value]) => {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if(el) el.value = value;
+  });
+  toggleAdliOther();
+  renderBBCode();
+  setStatus('Adli vaka örneği yüklendi');
+}
+
+
+function fillEmsSample(){
+  const emsCard = document.querySelector('.card[data-type="ems"]');
+  setReportType('ems', emsCard);
+
+  const values = {
+    ems_rapor_no: EMS_DEFAULT_REPORT_NUMBER,
+    ems_vaka_tarih: '2026-07-28T21:15',
+    ems_konum: 'Strawberry Avenue — Los Santos',
+    ems_vaka_turu: 'Trafik Kazası',
+    ems_ihbar: 'İki araçlı trafik kazası ve bir yaralı ihbarı üzerine ekip olay yerine sevk edildi.',
+    ems_adsoyad: 'John Doe',
+    ems_bilinc: 'Açık',
+    ems_genel_durum: 'Stabil',
+    ems_bulgular: 'Sağ ön kolda yüzeysel laserasyon, hafif baş dönmesi ve hassasiyet tespit edildi. Solunum ve dolaşım bulguları stabildi.',
+    ems_olay_degerlendirme: 'Olay yeri güvenliği sağlandı. Hasta araç dışında oturur pozisyonda bulundu ve travma mekanizması değerlendirildi.',
+    ems_mudahale: 'Primer değerlendirme yapıldı, kanama kontrolü sağlandı, yara steril pansuman ile kapatıldı ve servikal değerlendirme gerçekleştirildi.',
+    ems_ilaclar: 'Bulunmuyor',
+    ems_nakil_durumu: 'CLSMC’ye Nakledildi',
+    ems_nakil_sirasinda: 'Stabil',
+    ems_teslim: 'CLSMC Acil Servis — Nöbetçi Hekim',
+    ems_ekip: 'Alex Morgan — Paramedic\nJamie Lee — EMT',
+    ems_ambulans: 'RA-1',
+    ems_imza: 'D. Blackwell',
+    ems_ekran: 'https://imgur.com/a/example'
+  };
+
+  Object.entries(values).forEach(([key, value]) => {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if(el) el.value = value;
+  });
+  renderBBCode();
+  setStatus('EMS saha raporu örneği yüklendi');
+}
+
+function clearForm(){
+  document.querySelectorAll('[data-field]').forEach(el => el.value = '');
+  if(currentType === 'ems'){
+    const reportNo = document.querySelector('[data-field="ems_rapor_no"]');
+    if(reportNo) reportNo.value = EMS_DEFAULT_REPORT_NUMBER;
+  }
+  renderBBCode();
+  setStatus('Form temizlendi');
+}
+
+function downloadTxt(){
+  const text = document.getElementById('bbcodePreview').textContent;
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentType}-raporu-bbcode.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('raporDemoDraft');
+  if(saved){
+    loadDraft();
+  }
+  const activeCard = document.querySelector(`.card[data-type="${currentType}"]`);
+  if(activeCard) setReportType(currentType, activeCard);
+  renderBBCode();
 });
+
 </script>
+
+<div class="developer-credit">Developer: Veyrath</div>
+
 </body>
 </html>
