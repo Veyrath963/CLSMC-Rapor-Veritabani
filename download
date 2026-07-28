@@ -1,6 +1,21 @@
-# EXAMPLE ONLY — do not put your real Neon password in GitHub.
-# On Render, set DATABASE_URL in Dashboard > Service > Environment.
-DATABASE_URL=postgresql://USER:PASSWORD@YOUR-NEON-ENDPOINT/neondb?sslmode=require
+# Secrets / local environment
+.env
+.env.*
+!.env.example
 
-# Render generates SECRET_KEY from render.yaml in production.
-SECRET_KEY=change-me-for-local-development
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local development database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

@@ -3,21 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Rapor Görüntüle</title>
+<title>CLSMC — Yönetici Girişi</title>
 <style>
-:root{--bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a}
+:root{
+  --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
+  --muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a;--good:#38d39f;
+  --shadow:0 18px 55px rgba(0,0,0,.32)
+}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)}
-a{text-decoration:none;color:inherit}button{font:inherit}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:15px 22px;background:#080d19;border-bottom:1px solid var(--line);position:sticky;top:0}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff)}.danger{border:1px solid rgba(255,107,122,.5);background:rgba(255,107,122,.1);color:#ffadb6}
-.shell{max-width:1250px;margin:0 auto;padding:25px 20px 55px}.hero h2{margin:0 0 6px;font-size:27px}.hero p{margin:0;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.card span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.card strong{font-size:14px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:15px;overflow:hidden}.panel h3{margin:0;padding:14px 16px;border-bottom:1px solid var(--line);background:#0d1528;font-size:16px}.body{padding:16px}
-.data-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.data{padding:11px 12px;background:#0d172b;border:1px solid #263654;border-radius:10px}.data span{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.data strong{font-size:12px;word-break:break-word}
-pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;border:1px solid #243555;border-radius:12px;padding:15px;color:#dfe8fb;font-size:12px;line-height:1.5}
-.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;opacity:.78}
-@media(max-width:800px){.grid,.data-grid{grid-template-columns:1fr}}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),
+    radial-gradient(circle at 90% 15%,rgba(148,60,60,.12),transparent 25%),
+    var(--bg)
+}
+input,button{font:inherit}
+.wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card{
+  width:min(470px,100%);background:rgba(17,26,46,.97);border:1px solid var(--line);
+  border-radius:24px;padding:32px;box-shadow:var(--shadow)
+}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.logo{
+  width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#943C3C,var(--accent));font-weight:900
+}
+.brand h1{margin:0;font-size:20px}.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.field{margin-bottom:16px}label{display:block;color:#c7d1ea;font-size:13px;margin-bottom:7px}
+input{
+  width:100%;background:#0d1426;border:1px solid var(--line);color:var(--text);
+  border-radius:12px;padding:12px 13px;outline:none
+}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.btn{
+  width:100%;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;
+  background:linear-gradient(135deg,#943C3C,#6c4cff);color:#fff;font-weight:800
+}
+.flash{padding:13px 14px;border-radius:12px;margin-bottom:16px;font-weight:700;font-size:14px}
+.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
+.note{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.55}
+.developer-credit{
+  position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;
+  font-weight:600;opacity:.78;pointer-events:none
+}
 </style>
 <script>
 (function(){
@@ -28,88 +58,47 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
 })();
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_sidebar_v207.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_sidebar_v207.js') }}"></script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-has-sidebar">
-<aside class="clsmc-sidebar" aria-label="Yönetici kontrol paneli">
-  <div class="clsmc-sidebar-brand">
-    <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
-    <div><strong>CLSMC Yönetimi</strong><small>Admin Kontrol Paneli</small></div>
-  </div>
-  <nav class="clsmc-sidebar-nav">
-    <a class="clsmc-side-action" href="{{ url_for('admin_dashboard') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">🛡️</span><span class="clsmc-side-copy"><strong>Admin Paneli</strong><small>Yönetim merkezi</small></span>
-    </a>
-    <a class="clsmc-side-action is-active" href="{{ url_for('admin_user_statistics') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">📊</span><span class="clsmc-side-copy"><strong>İstatistikler</strong><small>Kullanıcı raporları</small></span>
-    </a>
-    <a class="clsmc-side-action" href="{{ url_for('admin_create_user') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">➕</span><span class="clsmc-side-copy"><strong>Yeni Üyelik</strong><small>Hesap oluştur</small></span>
-    </a>
-    <button class="clsmc-side-action" type="button" data-clsmc-theme-toggle>
-      <span class="clsmc-side-icon theme-icon" aria-hidden="true">☀️</span><span class="clsmc-side-copy"><strong class="theme-value">Aydınlık Mod</strong><small>Arayüz temasını değiştir</small></span>
-    </button>
-  </nav>
-  <div class="clsmc-side-spacer"></div>
-  <div class="clsmc-sidebar-footer">
-    <form method="post" action="{{ url_for('admin_logout') }}">
-      <button class="clsmc-side-action is-danger" type="submit"><span class="clsmc-side-icon" aria-hidden="true">↪</span><span class="clsmc-side-copy"><strong>Admin Çıkışı</strong><small>Oturumu kapat</small></span></button>
-    </form>
-  </div>
-</aside>
-
-<header class="topbar">
-  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
-  <div class="actions">
-    <a class="btn primary" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Düzenle</a>
-    <form method="post" action="{{ url_for('admin_delete_report', report_id=report.id) }}" style="margin:0"
-          onsubmit="return confirm('{{ report.report_number }} numaralı rapor kalıcı olarak silinsin mi? Bu işlem geri alınamaz.');">
-      <button class="btn danger" type="submit">Sil</button>
-    </form>
-  </div>
-</header>
-
-<main class="shell">
-  <section class="hero">
-    <h2>{{ report_type_labels.get(report.report_type, report.report_type) }}</h2>
-    <p>{{ report.report_number }}</p>
-  </section>
-
-  <section class="grid">
-    <div class="card"><span>Raporlayan Personel</span><strong>{{ report.doctor_name }}</strong></div>
-    <div class="card"><span>Rütbe</span><strong>{{ report.doctor_rank or "—" }}</strong></div>
-    <div class="card"><span>Kaydeden Hesap</span><strong>{{ report.created_by_username }}</strong></div>
-    <div class="card"><span>Rapor Tarihi</span><strong>{{ report.report_date or "—" }}</strong></div>
-    <div class="card"><span>Oluşturulma</span><strong>{{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</strong></div>
-    <div class="card"><span>Son Güncelleme</span><strong>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</strong></div>
-  </section>
-
-  {% if form_data %}
-  <section class="panel">
-    <h3>Rapor Form Verileri</h3>
-    <div class="body data-grid">
-      {% for key, value in form_data.items() %}
-        <div class="data">
-          <span>{{ key }}</span>
-          <strong>{{ value if value not in (None, "") else "—" }}</strong>
-        </div>
-      {% endfor %}
+<body>
+<section class="wrap">
+  <div class="card">
+    <div class="brand">
+      <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
+      <div>
+        <h1>CLSMC Yönetici Paneli</h1>
+        <p>Kısıtlı yönetici erişimi</p>
+      </div>
     </div>
-  </section>
-  {% endif %}
 
-  <section class="panel">
-    <h3>BBCode</h3>
-    <div class="body"><pre>{{ report.bbcode }}</pre></div>
-  </section>
-</main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
 
+    <form method="post" action="{{ url_for('admin_login') }}">
+      <div class="field">
+        <label>Giriş Adı</label>
+        <input name="username" value="{{ username|default('') }}" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn" type="submit">Yönetici Girişi</button>
+    </form>
+
+    <div class="note">
+      Bu sayfa normal kullanıcı panelinde gösterilmez. Yönetici erişimleri ve yapılan
+      rapor düzenlemeleri sistem loglarına kaydedilir.
+    </div>
+  </div>
+</section>
 <div class="developer-credit">Developer: Veyrath</div>
-
-
 </body>
 </html>

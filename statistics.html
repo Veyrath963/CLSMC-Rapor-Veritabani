@@ -2,126 +2,71 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Ayarlar</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLSMC — Giriş</title>
 <style>
 :root{
-  --bg:#0b1020;
-  --panel:#121a2f;
-  --line:#2a3657;
-  --text:#eef3ff;
-  --muted:#9eabc8;
-  --accent:#5b8cff;
-  --good:#38d39f;
-  --danger:#ff6b7a;
+  --bg:#0b1020; --panel:#121a2f; --line:#2a3657; --text:#eef3ff;
+  --muted:#9eabc8; --accent:#5b8cff; --good:#38d39f; --danger:#ff6b7a;
   --shadow:0 16px 50px rgba(0,0,0,.28);
 }
 *{box-sizing:border-box}
 body{
-  margin:0;
-  min-height:100vh;
-  color:var(--text);
+  margin:0;min-height:100vh;color:var(--text);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   background:
-    radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),
-    radial-gradient(circle at 85% 10%,rgba(56,211,159,.08),transparent 25%),
+    radial-gradient(circle at 20% 0%, rgba(91,140,255,.15), transparent 30%),
+    radial-gradient(circle at 85% 10%, rgba(56,211,159,.10), transparent 25%),
     var(--bg);
 }
-a{text-decoration:none;color:inherit}
 button,input{font:inherit}
-.topbar{
-  position:sticky;top:0;z-index:5;
-  display:flex;justify-content:space-between;align-items:center;
-  padding:16px 24px;
-  background:rgba(11,16,32,.90);
-  backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line);
+a{text-decoration:none}
+.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.auth-card{
+  width:min(470px,100%);background:rgba(18,26,47,.96);border:1px solid var(--line);
+  border-radius:24px;padding:32px;box-shadow:var(--shadow)
 }
-.brand{display:flex;align-items:center;gap:10px}
+
+.login-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
+.login-logo{
+  width:108px;height:108px;display:block;object-fit:contain;
+  background:transparent;border:0;box-shadow:none;
+}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
 .logo{
-  width:36px;height:36px;border-radius:10px;
-  display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--accent),#785bff);
-  font-weight:800;
+  width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),#785bff);font-size:22px;font-weight:800
 }
-.brand h1{margin:0;font-size:16px}
-.brand small{color:var(--muted)}
-.nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{
-  border:1px solid #344264;
-  background:#202b49;
-  color:#e6edff;
-  border-radius:12px;
-  padding:10px 14px;
-  font-weight:700;
-  cursor:pointer;
-}
-.btn-primary{
-  border:0;
-  background:linear-gradient(135deg,var(--accent),#7b61ff);
-  color:white;
-}
-.shell{max-width:900px;margin:0 auto;padding:30px 22px 60px}
-.hero h2{font-size:28px;margin:0 0 8px}
-.hero p{margin:0;color:var(--muted)}
-.panel{
-  margin-top:24px;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:20px;
-  padding:24px;
-  box-shadow:var(--shadow);
-}
-.panel h3{margin:0 0 5px;font-size:18px}
-.subtitle{color:var(--muted);font-size:13px;margin-bottom:22px}
-.field{margin-bottom:17px}
+.brand h1{font-size:20px;margin:0}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.field{margin-bottom:16px}
 label{display:block;font-size:13px;color:#c7d1ea;margin-bottom:7px}
 input{
-  width:100%;
-  background:#0f162a;
-  border:1px solid var(--line);
-  color:var(--text);
-  border-radius:12px;
-  padding:12px 13px;
-  outline:none;
+  width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);
+  border-radius:12px;padding:12px 13px;outline:none
 }
-input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(91,140,255,.12);
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.btn{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;transition:.18s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#7b61ff);color:white}
+.btn-secondary{background:#202b49;color:#dce6ff;border:1px solid #344264}
+.btn-good{background:var(--good);color:#07140f}
+.full{width:100%}
+.flash{padding:13px 14px;border-radius:12px;margin-bottom:16px;font-weight:750;font-size:14px}
+.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
+.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
+.example{
+  margin-top:16px;padding:12px;border-radius:12px;background:#0f162a;
+  border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.6
 }
-.flash{
-  padding:13px 14px;
-  border-radius:12px;
-  margin-top:18px;
-  font-weight:700;
-  font-size:14px;
-}
-.flash.success{
-  background:rgba(56,211,159,.13);
-  border:1px solid rgba(56,211,159,.5);
-  color:#8ff0ce;
-}
-.flash.error{
-  background:rgba(255,107,122,.12);
-  border:1px solid rgba(255,107,122,.45);
-  color:#ffb5bd;
-}
-.note{
-  margin-top:16px;
-  padding:12px;
-  border-radius:12px;
-  background:#0f162a;
-  border:1px dashed #344264;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.55;
-}
+.note{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.55}
+
 .developer-credit{
   position:fixed;
   right:14px;
   bottom:10px;
   z-index:1000;
-  color:var(--muted);
+  color:var(--muted, #7A8891);
   font-size:11px;
   font-weight:600;
   letter-spacing:.2px;
@@ -129,11 +74,14 @@ input:focus{
   user-select:none;
   pointer-events:none;
 }
-@media(max-width:650px){
-  .topbar{padding:14px 16px;align-items:flex-start;gap:12px}
-  .nav{justify-content:flex-end}
-  .developer-credit{right:10px;bottom:8px;font-size:10px}
+@media(max-width:600px){
+  .developer-credit{
+    right:10px;
+    bottom:8px;
+    font-size:10px;
+  }
 }
+
 </style>
 <script>
 (function(){
@@ -144,111 +92,53 @@ input:focus{
 })();
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_sidebar_v207.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_sidebar_v207.js') }}"></script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-has-sidebar">
-<aside class="clsmc-sidebar" aria-label="Kullanıcı kontrol paneli">
-  <div class="clsmc-sidebar-brand">
-    <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
-    <div><strong>CLSMC Rapor Sistemi</strong><small>Kullanıcı Kontrol Paneli</small></div>
-  </div>
-  <nav class="clsmc-sidebar-nav">
-    <a class="clsmc-side-action" href="{{ url_for('panel') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">🩺</span><span class="clsmc-side-copy"><strong>Rapor Paneli</strong><small>Rapor oluştur</small></span>
-    </a>
-    <a class="clsmc-side-action" href="{{ url_for('statistics') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">📊</span><span class="clsmc-side-copy"><strong>İstatistikler</strong><small>Kayıtları incele</small></span>
-    </a>
-    <a class="clsmc-side-action is-active" href="{{ url_for('settings') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">⚙️</span><span class="clsmc-side-copy"><strong>Ayarlar</strong><small>Şifre ve hesap</small></span>
-    </a>
-    <button class="clsmc-side-action" type="button" data-clsmc-theme-toggle>
-      <span class="clsmc-side-icon theme-icon" aria-hidden="true">☀️</span><span class="clsmc-side-copy"><strong class="theme-value">Aydınlık Mod</strong><small>Arayüz temasını değiştir</small></span>
-    </button>
-  </nav>
-  <div class="clsmc-side-spacer"></div>
-  <div class="clsmc-sidebar-footer">
-    <form method="post" action="{{ url_for('logout') }}">
-      <button class="clsmc-side-action is-danger" type="submit"><span class="clsmc-side-icon" aria-hidden="true">↪</span><span class="clsmc-side-copy"><strong>Çıkış</strong><small>Oturumu kapat</small></span></button>
-    </form>
-  </div>
-</aside>
-
-<header class="topbar">
-  <div class="brand">
-    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div>
-      <h1>CLSMC Ayarlar</h1>
-      <small>{{ username }}</small>
+<body>
+<section class="auth-wrap">
+  <div class="auth-card">
+    <div class="login-logo-wrap">
+      <img class="login-logo" src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="Central Los Santos Medical Center logosu">
     </div>
-  </div>
-</header>
 
-<main class="shell">
-  <section class="hero">
-    <h2>Ayarlar</h2>
-    <p>Hesabınızla ilgili güvenlik ayarlarını buradan yönetebilirsiniz.</p>
-  </section>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endwith %}
-
-  <section class="panel">
-    <h3>Şifreyi Değiştir</h3>
-    <div class="subtitle">Mevcut şifrenizi doğrulayarak yeni bir şifre belirleyin.</div>
-
-    <form method="post" action="{{ url_for('settings') }}">
-      <div class="field">
-        <label>Eski Şifre</label>
-        <input
-          name="old_password"
-          type="password"
-          autocomplete="current-password"
-          required
-        >
+    <div class="brand" style="justify-content:center;text-align:center;">
+      <div>
+        <h1>CLSMC Rapor Sistemi</h1>
+        <p>Central Los Santos Medical Center</p>
       </div>
+    </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('login') }}">
       <div class="field">
-        <label>Yeni Şifre</label>
-        <input
-          name="new_password"
-          type="password"
-          autocomplete="new-password"
-          minlength="6"
-          required
-        >
+        <label>Kullanıcı Adı</label>
+        <input id="loginUsername" name="username" value="{{ prefill_username|default('') }}" autocomplete="username" required>
       </div>
-
       <div class="field">
-        <label>Yeni Şifre Tekrarı</label>
-        <input
-          name="new_password_repeat"
-          type="password"
-          autocomplete="new-password"
-          minlength="6"
-          required
-        >
+        <label>Şifre</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
       </div>
-
-      <button class="btn btn-primary" type="submit">Şifreyi Değiştir</button>
+      <button class="btn btn-primary full" type="submit">Giriş Yap</button>
     </form>
 
-    <div class="note">
-      Yeni şifre en az 6 karakter olmalıdır. Eski şifre doğru değilse veya yeni şifreler
-      eşleşmiyorsa değişiklik yapılmaz.
+    <div class="example">
+      Örnek:<br>
+      <b>Kullanıcı Adı:</b> Darius Blackwell<br>
+      <b>Şifre:</b> Darius123
     </div>
-  </section>
-</main>
+  </div>
+</section>
 
 <div class="developer-credit">Developer: Veyrath</div>
-
 
 </body>
 </html>

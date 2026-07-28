@@ -1,0 +1,27 @@
+CLSMC V20.5.3 — KARARLI ARAYÜZE GERİ DÖNÜŞ
+
+Bu paket, hızlı menü ve sabit sol panel çalışmalarından önceki kararlı sürümü geri yükler.
+
+KORUNAN ÖZELLİKLER
+- Karanlık ve aydınlık tema seçimi
+- Varsayılan karanlık arayüz
+- Giriş ekranında beyaz çembersiz, doğrudan CLSMC logosu
+- Doktor panelinde Ayarlar, İstatistikler ve Çıkış düğmeleri üst menüde
+- Paramedic ve EMT rütbelerinin Admin panelinden atanabilmesi
+- Paramedic/EMT hesaplarının yalnızca EMS arayüzüne erişmesi
+- Neon PostgreSQL bağlantısı ve mevcut verilerin korunması
+
+KALDIRILAN ARAYÜZLER
+- Sol-alt hızlı menü
+- Açılır hızlı menü penceresi
+- Sabit sol kontrol paneli
+- Mobil alt gezinme paneli
+
+TEKNİK DÜZELTMELER
+- app.py doğrulandı; DATABASE_URL örnek satırı Python kodu içinde bulunmaz.
+- requirements.txt doğrulandı ve yalnızca Python paketlerini içerir.
+- render.yaml Neon DATABASE_URL değişkenini Render ortamından almaya devam eder.
+
+KURULUM
+ZIP dosyasını çıkartın. İçindeki tüm dosya ve klasörleri GitHub repository ana dizinine yükleyip mevcut dosyaların üzerine yazın.
+DATABASE_URL değerini GitHub'a eklemeyin ve Render Environment ayarını değiştirmeyin.

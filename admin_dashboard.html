@@ -1,172 +1,90 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — İstatistikler</title>
-<style>
-:root{
-  --bg:#0b1020;--panel:#121a2f;--line:#2a3657;--text:#eef3ff;
-  --muted:#9eabc8;--accent:#5b8cff;--shadow:0 14px 40px rgba(0,0,0,.24)
-}
-*{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;color:var(--text);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)
-}
-a{text-decoration:none;color:inherit}
-.topbar{
-  position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;
-  align-items:center;padding:16px 24px;background:rgba(11,16,32,.9);
-  backdrop-filter:blur(12px);border-bottom:1px solid var(--line)
-}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#785bff);display:grid;place-items:center;font-weight:800}
-.brand h1{margin:0;font-size:16px}.brand small{color:var(--muted)}
-.btn{padding:10px 14px;border-radius:12px;background:#202b49;border:1px solid #344264;font-weight:700}
-.shell{max-width:1200px;margin:0 auto;padding:28px 22px 50px}
-.hero h2{margin:0 0 7px;font-size:28px}.hero p{margin:0;color:var(--muted)}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:24px 0}
-.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
-.metric{padding:20px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:30px;margin-top:7px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:20px}.full{grid-column:1/-1}
-.panel h3{margin:0 0 5px;font-size:17px}.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
-.bar-row{display:grid;grid-template-columns:minmax(135px,1.2fr) 3fr 38px;align-items:center;gap:12px;margin:13px 0}
-.label{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.track{height:12px;border-radius:999px;background:#0c1428;border:1px solid #263454;overflow:hidden}
-.fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#7b61ff);min-width:4px}
-.count{text-align:right;font-weight:800}.empty{text-align:center;color:var(--muted);padding:28px}
-table{width:100%;border-collapse:collapse}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
-th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-block;padding:5px 8px;border:1px solid #304265;background:#182541;border-radius:999px;font-size:11px}
-@media(max-width:800px){.metrics,.grid{grid-template-columns:1fr}.bar-row{grid-template-columns:115px 1fr 30px}.topbar{padding:14px 16px}}
+/* CLSMC V20.5 — Karanlık / Aydınlık Tema Denetimi */
+html{transition:background-color .18s ease}
+body{transition:background-color .18s ease,color .18s ease}
 
-.developer-credit{
+/* Logo her iki temada da özgün haliyle kalır. */
+.logo,.mini-logo,.topbar-logo-shell{
+  overflow:hidden !important;
+  background:#ffffff !important;
+  border:1px solid rgba(148,181,198,.72) !important;
+  box-shadow:0 0 0 3px rgba(37,139,171,.08),0 9px 22px rgba(0,0,0,.15) !important;
+  flex:0 0 auto;
+}
+.logo img,.mini-logo img,.topbar-logo-shell img{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:inherit !important;
+}
+.topbar-logo-shell{width:40px;height:40px;border-radius:12px}
+
+.clsmc-theme-toggle{
+  appearance:none;
+  border:1px solid rgba(164,191,213,.48);
+  border-radius:11px;
+  min-height:38px;
+  padding:8px 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.01em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.clsmc-theme-toggle:hover{transform:translateY(-1px)}
+.clsmc-theme-toggle:active{transform:translateY(0)}
+.clsmc-theme-toggle:focus-visible{outline:3px solid rgba(47,145,197,.30);outline-offset:2px}
+.clsmc-theme-toggle .theme-icon{font-size:15px;line-height:1}
+
+html[data-theme="dark"] .clsmc-theme-toggle{
+  background:#202b49;
+  color:#eef3ff;
+  border-color:#405075;
+  box-shadow:0 7px 18px rgba(0,0,0,.20);
+}
+html[data-theme="dark"] .clsmc-theme-toggle:hover{
+  background:#293657;
+  border-color:#6074a0;
+}
+html[data-theme="light"] .clsmc-theme-toggle{
+  background:#ffffff;
+  color:#17465b;
+  border-color:#aed0da;
+  box-shadow:0 7px 18px rgba(22,75,94,.10);
+}
+html[data-theme="light"] .clsmc-theme-toggle:hover{
+  background:#eef8fa;
+  border-color:#79b5c5;
+}
+.topbar .clsmc-theme-toggle{
+  background:rgba(255,255,255,.11) !important;
+  color:#ffffff !important;
+  border-color:rgba(255,255,255,.30) !important;
+  box-shadow:none !important;
+}
+.topbar .clsmc-theme-toggle:hover{
+  background:rgba(255,255,255,.19) !important;
+  border-color:rgba(255,255,255,.50) !important;
+}
+.clsmc-theme-toggle.is-floating{
   position:fixed;
+  top:14px;
   right:14px;
-  bottom:10px;
-  z-index:1000;
-  color:var(--muted, #7A8891);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.2px;
-  opacity:.78;
-  user-select:none;
-  pointer-events:none;
-}
-@media(max-width:600px){
-  .developer-credit{
-    right:10px;
-    bottom:8px;
-    font-size:10px;
-  }
+  z-index:9999;
+  backdrop-filter:blur(12px);
 }
 
-</style>
-<script>
-(function(){
-  var selected = "dark";
-  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
-  document.documentElement.dataset.theme = selected;
-  document.documentElement.style.colorScheme = selected;
-})();
-</script>
-<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
-<script>
-  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
-</script>
-<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-</head>
-<body data-clsmc-settings-url="{{ url_for('settings') }}">
-<header class="topbar">
-  <div class="brand">
-    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div><h1>CLSMC Rapor İstatistikleri</h1><small>{{ username }}</small></div>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <a class="btn" href="{{ url_for('panel') }}">← Rapor Paneli</a>
-  </div>
-</header>
-
-<main class="shell">
-  <section class="hero">
-    <h2>İstatistikler</h2>
-    <p>BBCode'u Kopyala işlemiyle otomatik kaydedilen raporlar.</p>
-  </section>
-
-  <section class="metrics">
-    <div class="metric"><span>Toplam rapor</span><strong>{{ total_reports }}</strong></div>
-    <div class="metric"><span>Rapor yazan doktor</span><strong>{{ doctor_counts|length }}</strong></div>
-    <div class="metric"><span>Kullanılan rapor türü</span><strong>{{ type_counts|length }}</strong></div>
-  </section>
-
-  <section class="grid">
-    <article class="panel">
-      <h3>Rapor türleri</h3>
-      <div class="sub">Kaydedilen raporların türlere göre dağılımı</div>
-      {% if type_counts %}
-        {% for item in type_counts %}
-        <div class="bar-row">
-          <div class="label">{{ item.label }}</div>
-          <div class="track"><div class="fill" style="width:{{ (item.count / max_type_count * 100)|round(1) }}%"></div></div>
-          <div class="count">{{ item.count }}</div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty">Henüz rapor kaydı yok.</div>
-      {% endif %}
-    </article>
-
-    <article class="panel">
-      <h3>Raporlayan personel dağılımı</h3>
-      <div class="sub">Hangi doktor kaç rapor yazdı?</div>
-      {% if doctor_counts %}
-        {% for item in doctor_counts %}
-        <div class="bar-row">
-          <div class="label" title="{{ item.doctor }}">{{ item.doctor }}</div>
-          <div class="track"><div class="fill" style="width:{{ (item.count / max_doctor_count * 100)|round(1) }}%"></div></div>
-          <div class="count">{{ item.count }}</div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty">Henüz doktor istatistiği yok.</div>
-      {% endif %}
-    </article>
-
-    <article class="panel full">
-      <h3>Son rapor kayıtları</h3>
-      <div class="sub">En son kaydedilen/güncellenen 20 rapor</div>
-      {% if recent_reports %}
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Rapor No</th><th>Tür</th><th>Raporlayan Personel</th><th>Rütbe</th><th>Kaydeden</th><th>Tarih</th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for report in recent_reports %}
-            <tr>
-              <td><span class="badge">{{ report.report_number }}</span></td>
-              <td>{{ report_type_labels.get(report.report_type, report.report_type) }}</td>
-              <td>{{ report.doctor_name }}</td>
-              <td>{{ report.doctor_rank or "—" }}</td>
-              <td>{{ report.created_by_username }}</td>
-              <td>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-        <div class="empty">BBCode kopyalandığında kayıtlar burada görünür.</div>
-      {% endif %}
-    </article>
-  </section>
-</main>
-
-<div class="developer-credit">Developer: Veyrath</div>
-
-</body>
-</html>
+@media(max-width:650px){
+  .clsmc-theme-toggle{padding:8px 10px}
+  .clsmc-theme-toggle .theme-label{display:none}
+  .clsmc-theme-toggle.is-floating .theme-label{display:inline}
+}
+@media(prefers-reduced-motion:reduce){
+  html,body,.clsmc-theme-toggle{transition:none !important}
+}

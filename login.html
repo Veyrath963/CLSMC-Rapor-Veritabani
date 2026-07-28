@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Kullanıcı İstatistikleri</title>
+<title>CLSMC — Yeni Üyelik Oluştur</title>
 <style>
 :root{
   --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
@@ -16,63 +16,39 @@ body{
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)
 }
-a{text-decoration:none;color:inherit}button{font:inherit}
+a{text-decoration:none;color:inherit}input,select,button{font:inherit}
 .topbar{
-  position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;
-  padding:15px 22px;background:rgba(8,13,25,.94);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line)
+  display:flex;justify-content:space-between;align-items:center;padding:15px 22px;
+  background:rgba(8,13,25,.93);border-bottom:1px solid var(--line)
 }
-.brand{display:flex;gap:10px;align-items:center}
-.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#943C3C,var(--accent));font-weight:900}
-.brand h1{margin:0;font-size:16px}.brand small{color:var(--muted)}
-.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;border:1px solid #344264;
-  background:#202b49;color:#e6edff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer
+  border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:11px;
+  padding:10px 14px;font-weight:750;cursor:pointer
 }
-.btn-primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff)}
-.btn-danger{border:1px solid rgba(255,107,122,.48);background:rgba(255,107,122,.10);color:#ff9eaa}
-.shell{max-width:1500px;margin:0 auto;padding:25px 20px 60px}
-.hero h2{font-size:29px;margin:0 0 7px}.hero p{margin:0;color:var(--muted)}
-.layout{display:grid;grid-template-columns:300px 1fr;gap:18px;margin-top:22px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}
-.sidebar{padding:15px;height:fit-content;position:sticky;top:88px}
-.sidebar h3{margin:0 0 5px}.sub{font-size:11px;color:var(--muted);margin-bottom:13px}
-.user-list{display:grid;gap:8px;max-height:70vh;overflow:auto;padding-right:3px}
-.user{
-  display:block;padding:12px;border:1px solid #263654;border-radius:12px;background:#0d172b;
-  transition:.15s ease
+.btn-primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff);color:#fff}
+.shell{max-width:780px;margin:0 auto;padding:28px 20px 60px}
+.hero h1{margin:0 0 6px;font-size:25px}.hero p{margin:0;color:var(--muted)}
+.panel{
+  margin-top:22px;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:22px;box-shadow:var(--shadow)
 }
-.user:hover{border-color:#4b6ca5;transform:translateY(-1px)}
-.user.active{border-color:#628fff;background:#162747;box-shadow:0 0 0 1px rgba(98,143,255,.16) inset}
-.user strong{display:block;font-size:13px}.user span{display:block;font-size:10px;color:var(--muted);margin-top:4px}
-.content{min-width:0}
-.profile{
-  display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap;
-  padding:18px;margin-bottom:15px;background:linear-gradient(135deg,rgba(91,140,255,.14),rgba(17,26,46,.96));
-  border:1px solid #365183;border-radius:17px
+.field{margin-bottom:16px}
+label{display:block;color:#c7d1ea;font-size:13px;margin-bottom:7px}
+input,select{
+  width:100%;background:#0d1426;border:1px solid var(--line);color:var(--text);
+  border-radius:11px;padding:11px 12px;outline:none
 }
-.profile h3{margin:0 0 5px;font-size:21px}.profile p{margin:0;color:var(--muted);font-size:12px}
-.status{display:inline-block;margin-left:6px;padding:4px 8px;border-radius:999px;border:1px solid #36517b;background:#172844;font-size:10px}
-.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
-.metric{padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:15px}
-.metric span{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:27px;margin-top:5px}
-.category{overflow:hidden;margin-bottom:16px}
-.category-head{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;background:#0d1528;border-bottom:1px solid var(--line)}
-.category-head h3{margin:0;font-size:16px}
-.count{display:grid;place-items:center;min-width:31px;height:26px;padding:0 9px;border-radius:999px;background:#1b3159;border:1px solid #395b94;font-size:11px;font-weight:900}
-.table-wrap{overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:1040px}
-th,td{padding:11px 10px;border-bottom:1px solid #202d4b;text-align:left;font-size:12px;vertical-align:middle}
-th{background:#0a1222;color:#cbd6ee;white-space:nowrap}
-tr:last-child td{border-bottom:0}
-.badge{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #304265;background:#182541;font-size:10px}
-.row-actions{display:flex;gap:7px;align-items:center}.row-actions form{margin:0}
-.empty{padding:27px;text-align:center;color:var(--muted)}
-.choose{padding:55px 24px;text-align:center}.choose strong{display:block;font-size:20px;margin-bottom:7px}
-.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;opacity:.78}
-@media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{position:static}.user-list{grid-template-columns:repeat(2,1fr);max-height:none}.metrics{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){.user-list,.metrics{grid-template-columns:1fr}.shell{padding:20px 13px 50px}.topbar{align-items:flex-start;gap:10px}}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.flash{padding:12px 14px;border-radius:11px;margin-top:16px;font-weight:700}
+.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
+.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
+.note{
+  margin:16px 0;padding:12px;border-radius:11px;background:#0d1426;
+  border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.6
+}
+.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}.topbar{gap:12px}}
 </style>
 <script>
 (function(){
@@ -83,168 +59,74 @@ tr:last-child td{border-bottom:0}
 })();
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_sidebar_v207.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_sidebar_v207.js') }}"></script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-has-sidebar">
-<aside class="clsmc-sidebar" aria-label="Yönetici kontrol paneli">
-  <div class="clsmc-sidebar-brand">
-    <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
-    <div><strong>CLSMC Yönetimi</strong><small>Admin Kontrol Paneli</small></div>
-  </div>
-  <nav class="clsmc-sidebar-nav">
-    <a class="clsmc-side-action" href="{{ url_for('admin_dashboard') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">🛡️</span><span class="clsmc-side-copy"><strong>Admin Paneli</strong><small>Yönetim merkezi</small></span>
-    </a>
-    <a class="clsmc-side-action is-active" href="{{ url_for('admin_user_statistics') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">📊</span><span class="clsmc-side-copy"><strong>İstatistikler</strong><small>Kullanıcı raporları</small></span>
-    </a>
-    <a class="clsmc-side-action" href="{{ url_for('admin_create_user') }}">
-      <span class="clsmc-side-icon" aria-hidden="true">➕</span><span class="clsmc-side-copy"><strong>Yeni Üyelik</strong><small>Hesap oluştur</small></span>
-    </a>
-    <button class="clsmc-side-action" type="button" data-clsmc-theme-toggle>
-      <span class="clsmc-side-icon theme-icon" aria-hidden="true">☀️</span><span class="clsmc-side-copy"><strong class="theme-value">Aydınlık Mod</strong><small>Arayüz temasını değiştir</small></span>
-    </button>
-  </nav>
-  <div class="clsmc-side-spacer"></div>
-  <div class="clsmc-sidebar-footer">
-    <form method="post" action="{{ url_for('admin_logout') }}">
-      <button class="clsmc-side-action is-danger" type="submit"><span class="clsmc-side-icon" aria-hidden="true">↪</span><span class="clsmc-side-copy"><strong>Admin Çıkışı</strong><small>Oturumu kapat</small></span></button>
-    </form>
-  </div>
-</aside>
-
+<body>
 <header class="topbar">
-  <div class="brand">
-    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div><h1>CLSMC Kullanıcı İstatistikleri</h1><small>Yönetici: {{ admin_username }}</small></div>
-  </div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
+    <strong>CLSMC Admin • Yeni Üyelik</strong><br>
+    <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
+  </div></div>
+  <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
 <main class="shell">
   <section class="hero">
-    <h2>Kullanıcı Rapor Merkezi</h2>
-    <p>Kullanıcıyı seçin; yazdığı bütün raporları kategori bazında görüntüleyin ve yönetin.</p>
+    <h1>Yeni Üyelik Oluştur</h1>
+    <p>Kullanıcının giriş bilgilerini ve raporlarda otomatik kullanılacak rütbesini belirle.</p>
   </section>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
-      <div style="margin-top:15px;padding:12px 14px;border-radius:11px;border:1px solid #344264;background:#152039">
-        {{ message }}
-      </div>
+      <div class="flash {{ category }}">{{ message }}</div>
     {% endfor %}
   {% endwith %}
 
-  <section class="layout">
-    <aside class="panel sidebar">
-      <h3>Kullanıcılar</h3>
-      <div class="sub">İstatistiklerini açmak için bir kullanıcı seçin.</div>
-      <div class="user-list">
-        {% for item in user_list %}
-          <a class="user {% if item.name == selected_name %}active{% endif %}"
-             href="{{ url_for('admin_user_statistics', user=item.name) }}">
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.rank }} · {{ item.status }}</span>
-          </a>
-        {% else %}
-          <div class="empty">Kullanıcı bulunmuyor.</div>
-        {% endfor %}
-      </div>
-    </aside>
-
-    <div class="content">
-      {% if selected_user %}
-        <section class="profile">
-          <div>
-            <h3>{{ selected_user.name }} <span class="status">{{ selected_user.status }}</span></h3>
-            <p>Rütbe: <strong style="color:#fff">{{ selected_user.rank }}</strong> · Raporlar “Kaydeden Hesap” bilgisine göre listelenir.</p>
-          </div>
-          <div style="text-align:right">
-            <strong style="display:block;font-size:31px">{{ stats.total }}</strong>
-            <span style="font-size:11px;color:var(--muted)">toplam rapor</span>
-          </div>
-        </section>
-
-        <section class="metrics">
-          <div class="metric"><span>Toplam</span><strong>{{ stats.total }}</strong></div>
-          <div class="metric"><span>Vaka</span><strong>{{ stats.vaka }}</strong></div>
-          <div class="metric"><span>Adli Vaka</span><strong>{{ stats.adli }}</strong></div>
-          <div class="metric"><span>Otopsi</span><strong>{{ stats.otopsi }}</strong></div>
-          <div class="metric"><span>Ölüm (Ex)</span><strong>{{ stats.ex }}</strong></div>
-          <div class="metric"><span>EMS</span><strong>{{ stats.ems }}</strong></div>
-        </section>
-
-        {% set categories = [
-          ('vaka', '🩺 Vaka Raporları'),
-          ('adli', '⚖️ Adli Vaka Raporları'),
-          ('otopsi', '🔬 Otopsi Raporları'),
-          ('ex', '📄 Ölüm (Ex) Raporları'),
-          ('ems', '🚑 EMS Saha Raporları')
-        ] %}
-
-        {% for key, title in categories %}
-          <article class="panel category">
-            <div class="category-head">
-              <h3>{{ title }}</h3>
-              <span class="count">{{ grouped_reports[key]|length }}</span>
-            </div>
-
-            {% if grouped_reports[key] %}
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Rapor No</th>
-                      <th>Raporlayan Personel</th>
-                      <th>Rütbe</th>
-                      <th>Rapor Tarihi</th>
-                      <th>Son Güncelleme</th>
-                      <th>İşlem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for report in grouped_reports[key] %}
-                      <tr>
-                        <td><strong>{{ report.report_number }}</strong></td>
-                        <td>{{ report.doctor_name }}</td>
-                        <td><span class="badge">{{ report.doctor_rank or "—" }}</span></td>
-                        <td>{{ report.report_date or "—" }}</td>
-                        <td>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</td>
-                        <td>
-                          <div class="row-actions">
-                            <a class="btn btn-primary" href="{{ url_for('admin_view_report', report_id=report.id) }}">Görüntüle</a>
-                            <form method="post"
-                                  action="{{ url_for('admin_delete_report', report_id=report.id) }}"
-                                  onsubmit="return confirm('{{ report.report_number }} numaralı rapor kalıcı olarak silinsin mi? Bu işlem geri alınamaz.');">
-                              <button class="btn btn-danger" type="submit">Sil</button>
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% else %}
-              <div class="empty">Bu kategoride rapor bulunmuyor.</div>
-            {% endif %}
-          </article>
-        {% endfor %}
-      {% else %}
-        <section class="panel choose">
-          <strong>Soldan bir kullanıcı seçin</strong>
-          Kullanıcının toplam rapor sayıları ve bütün raporları kategori halinde burada açılacaktır.
-        </section>
-      {% endif %}
+  <form class="panel" method="post" action="{{ url_for('admin_create_user') }}">
+    <div class="field">
+      <label>Kullanıcı Adı / Ad Soyad</label>
+      <input name="username" autocomplete="off" required>
     </div>
-  </section>
+
+    <div class="field">
+      <label>Rütbe</label>
+      <select name="rank" required>
+        <option value="">Rütbe Seçiniz</option>
+        <option value="Doctor">Doctor</option>
+        <option value="Attending Physician">Attending Physician</option>
+        <option value="Psychiatrist">Psychiatrist</option>
+        <option value="Paramedic">Paramedic</option>
+        <option value="Senior Paramedic">Senior Paramedic</option>
+        <option value="EMT">EMT</option>
+      </select>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Şifre</label>
+        <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+      <div class="field">
+        <label>Şifre Tekrarı</label>
+        <input name="password_repeat" type="password" autocomplete="new-password" minlength="6" required>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Paramedic ve EMT hesapları yalnızca EMS/Paramedic paneline erişir.</strong><br>
+
+      Şifre veritabanına düz metin olarak kaydedilmez. Üyelik oluşturulduğunda güvenli şekilde
+      hashlenir. EMS rütbeleri yalnızca EMS Saha Raporuna; tıbbi rütbeler ise yalnızca tıbbi raporlara erişir.
+    </div>
+
+    <button class="btn btn-primary" type="submit">Üyeliği Oluştur</button>
+  </form>
 </main>
 
 <div class="developer-credit">Developer: Veyrath</div>
-
-
 </body>
 </html>

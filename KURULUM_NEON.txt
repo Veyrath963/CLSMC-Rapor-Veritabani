@@ -1,543 +1,107 @@
-CLSMC V20.7 — Sabit Sol Kontrol Paneli
-- Çalışmayan hızlı menü sistemi tamamen kaldırıldı.
-- Doktor ve Paramedic ekranlarında Rapor Paneli, İstatistikler, Ayarlar, Tema ve Çıkış işlemleri sol taraftaki sabit kontrol paneline taşındı.
-- Admin ekranlarında Admin Paneli, İstatistikler, Yeni Üyelik, Tema ve Admin Çıkışı aynı sabit panelde toplandı.
-- Üst menüler sadeleştirildi; yalnızca sayfa başlığı ve rapora özel düzenleme/silme işlemleri bırakıldı.
-- Mobil ekranlarda sol panel otomatik olarak alt gezinme çubuğuna dönüşür.
-- Giriş ekranlarında tema seçimi kartın sağ üst köşesindeki tek simgeyle yapılır.
-- Değişiklik yalnızca arayüz dosyalarını etkiler; Neon, kullanıcılar, raporlar ve app.py değiştirilmez.
-
-CLSMC V20.6.3 — Sol Alt Hızlı Menü Kesin Düzeltme
-- Başarısız deploy sonrasında canlıda kalan eski üst menü görünümü giderildi.
-- Hızlı menü dosyaları yeni adlarla yayımlandı; tarayıcı ve CDN önbelleği atlandı.
-- Sol alttaki menü düğmesi 11 şablonun tamamında doğrudan HTML içine yerleştirildi.
-- Doktor/Paramedic ekranlarında Ayarlar ve Tema simgeleri; admin/giriş ekranlarında Tema simgesi bulunur.
-- Üst menüdeki eski Ayarlar ve Karanlık/Aydınlık düğmeleri kaldırıldı.
-- app.py, DATABASE_URL ve Neon yapılandırmasına dokunulmadı.
-
-CLSMC V20.6.1 — Sol Alt Hızlı Menü Görünürlük Düzeltmesi
-- Sol alt hızlı menü düğmesinin bazı tarayıcılarda görünmemesi düzeltildi.
-- Menü artık JavaScript ile sonradan oluşturulmak yerine doğrudan bütün sayfalara yerleştirildi.
-- Yeni sürümlü CSS/JS dosyaları kullanılarak tarayıcı önbelleği sorunu önlendi.
-- Doktor, Paramedic, giriş ve admin ekranlarının tamamında menü simgesi görünür.
-- Doktor/Paramedic ekranlarında Ayarlar ve Tema; admin/giriş ekranlarında Tema seçeneği bulunur.
-
-CLSMC V20.6 — Sol Alt Hızlı Menü
-- Ayarlar düğmesi kullanıcı üst menülerinden kaldırıldı.
-- Karanlık/Aydınlık tema düğmesi tüm üst menülerden kaldırıldı.
-- Kontroller sol alt köşede açılır hızlı menü içine taşındı.
-- Hızlı menü kapalıyken yalnızca tek menü simgesi görünür.
-- Kullanıcı panellerinde Ayarlar ve Tema simgeleri alt alta açılır.
-- Admin ekranlarında yalnızca Tema simgesi gösterilir; ayrı bir admin ayar sayfası bulunmadığı için kullanıcı Ayarları bağlantısı eklenmez.
-- Tema seçimi aynı tarayıcıda korunmaya devam eder.
-- Menü dışına tıklama ve Escape tuşuyla kapatma desteği eklendi.
-
-CLSMC V20.5.3 — Admin Paneline Paramedic ve EMT Rütbeleri
-- Admin panelindeki Yeni Üyelik Oluştur ekranına Paramedic ve EMT rütbeleri eklendi.
-- Üyelik Düzenle ekranında Paramedic ve EMT seçilebilir hale getirildi.
-- Paramedic ve EMT kullanıcıları yalnızca EMS/Paramedic arayüzüne erişebilir.
-- Doctor, Attending Physician ve Psychiatrist kullanıcıları EMS arayüzüne erişemez.
-- Eski “Emergency Medical Technician (EMT)” kayıtları geriye dönük olarak desteklenir.
-
-CLSMC V20.5.2 — Giriş Logosunda Beyaz Çember Kaldırıldı
-- Giriş ekranındaki logo etrafındaki beyaz çember tamamen kaldırıldı.
-- Logo artık giriş alanında doğrudan kendi haliyle gösterilir.
-- Kullanıcı isteğine göre yalnızca logo bırakıldı; ek çerçeve, arka plan ve kabuk kaldırıldı.
-
-CLSMC V20.5.1 — Giriş Logosu Daire Düzeltmesi
-- Giriş ekranındaki CLSMC logosu dairesel çerçeveye tam oturacak şekilde düzeltildi.
-- Logo artık beyaz daire içinde taşmadan ve boşluk bırakmadan görünür.
-- Değişiklik kullanıcı giriş ekranına uygulanmıştır; diğer paneller korunmuştur.
-
-GÜNCELLEME NOTLARI — CLSMC Rapor Sistemi
-
-📌 Sürüm Güncellemesi
-
-• Rapor istatistik sistemi eklendi.
-• Kullanıcı “BBCode'u Kopyala” butonuna bastığında rapor otomatik olarak veritabanına kaydediliyor.
-• Ayrı bir “Raporu Kaydet” butonuna ihtiyaç kalmadı.
-• Aynı rapor türü + aynı rapor numarası tekrar kopyalanırsa ikinci kez sayılmıyor; mevcut kayıt güncelleniyor.
-• İstatistikler ekranında toplam rapor sayısı görüntülenebiliyor.
-• Rapor türlerine göre dağılım görüntülenebiliyor.
-• Hangi doktorun kaç rapor yazdığı grafik şeklinde takip edilebiliyor.
-• Son kaydedilen/güncellenen raporlar listelenebiliyor.
-• Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporları istatistik sistemine dahil edildi.
-• Otopsi ve Ölüm (Ex) raporlarına ekran görüntüsü bağlantısı bölümü eklendi.
-• Arayüzün sağ alt köşesine “Developer: Veyrath” ibaresi eklendi.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — HESAP AYARLARI
-
-• Yeni “Ayarlar” sekmesi eklendi.
-• Kullanıcılar artık hesap şifrelerini sistem içerisinden değiştirebilir.
-• Şifre değiştirme ekranında Eski Şifre, Yeni Şifre ve Yeni Şifre Tekrarı alanları bulunuyor.
-• Eski şifre doğru değilse şifre değişikliği yapılmıyor.
-• Yeni şifre ile tekrar alanı eşleşmezse işlem reddediliyor.
-• Yeni şifre en az 6 karakter olmalı.
-• Yeni şifre eski şifre ile aynı olamaz.
-• Şifre başarıyla değiştirildiğinde yeni parola güvenli şekilde hashlenerek veritabanında güncelleniyor.
-• Başarılı ve başarısız şifre değiştirme işlemleri sistem loglarına kaydediliyor.
-• Ayarlar sayfasına “Developer: Veyrath” ibaresi eklendi.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — YÖNETİCİ PANELİ
-
-• Normal kullanıcılardan tamamen ayrı, kısıtlı bir Admin Paneli oluşturuldu.
-• Admin Paneli normal kullanıcı arayüzünde veya menülerde görünmüyor.
-• Yönetici, kayıtlı kullanıcı hesaplarını kullanıcı adı ve kayıt tarihiyle görüntüleyebiliyor.
-• Kullanıcı parolaları ve parola hashleri Admin Panelinde görüntülenmiyor.
-• Rapor yazan doktorlar, rütbeleri ve toplam rapor sayıları görüntülenebiliyor.
-• Veritabanındaki tüm rapor kayıtları ayrıntılı olarak incelenebiliyor.
-• Rapor türü, rapor numarası, sorumlu doktor, rütbe, rapor tarihi ve tam BBCode içeriği yönetici tarafından düzenlenebiliyor.
-• Raporun hangi kullanıcı hesabı tarafından oluşturulduğu görüntülenebiliyor.
-• Son sistem işlem logları Admin Panelinden takip edilebiliyor.
-• Admin girişleri, başarısız girişler ve rapor düzenlemeleri sistem loglarına kaydediliyor.
-• Admin sayfalarına “Developer: Veyrath” ibaresi eklendi.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — KULLANICI HESABI YÖNETİMİ
-
-• Admin Paneline kullanıcı hesabı düzenleme özelliği eklendi.
-• Yönetici kayıtlı kullanıcıların giriş adını değiştirebilir.
-• Kullanıcı şifresini unutursa yönetici yeni bir şifre belirleyebilir.
-• Mevcut kullanıcı şifreleri hiçbir zaman görüntülenmez.
-• Şifre değiştirmek istenmiyorsa yeni şifre alanları boş bırakılabilir.
-• Yeni şifre en az 6 karakter olmalıdır ve iki kez aynı şekilde girilmelidir.
-• Yeni parola güvenli şekilde hashlenerek veritabanında güncellenir.
-• Kullanıcı adı değiştirildiğinde daha önce oluşturduğu raporlardaki “Kaydeden Kullanıcı” bilgisi de yeni kullanıcı adıyla güncellenir.
-• Admin tarafından yapılan kullanıcı adı ve şifre sıfırlama işlemleri sistem loglarına kaydedilir.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — GİRİŞ EKRANI LOGOSU
-
-• Giriş ekranına Central Los Santos Medical Center logosu eklendi.
-• Logo giriş kartının üst bölümüne uygun boyutta ve dengeli şekilde yerleştirildi.
-• Giriş ekranının kurumsal görünümü güçlendirildi.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — OTOMATİK HEKİM VE RÜTBE SİSTEMİ
-
-• Kullanıcı rütbeleri artık yalnızca Admin Panelinden belirleniyor.
-• Admin, her kullanıcı hesabına istediği rütbeyi serbest şekilde yazabiliyor.
-• Doctor, Attending Physician ve Psychiatrist seçenekleri hızlı öneri olarak sunuluyor; admin farklı bir rütbe de tanımlayabiliyor.
-• Rapor formlarındaki “Sorumlu Hekim” ve “Rütbe Seç” alanları kaldırıldı.
-• Kullanıcı rapor oluşturduğunda doktor adı otomatik olarak kendi hesap adından alınıyor.
-• Rütbe otomatik olarak admin tarafından hesaba atanmış rütbeden alınıyor.
-• Kullanıcı tarayıcı üzerinden kendi doktor adını veya rütbesini değiştirerek rapor kaydedemiyor; sunucu hesabın gerçek bilgilerini kullanıyor.
-• Hesaba henüz rütbe atanmadıysa rapor veritabanına kaydedilemiyor ve kullanıcıya uyarı gösteriliyor.
-• Admin kullanıcı listesinden her hesabın atanmış rütbesini görebiliyor.
-• Kullanıcı adı admin tarafından değiştirilirse rapor panelinde yeni ad otomatik olarak kullanılmaya başlanıyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — RÜTBE SEÇİM MENÜSÜ
-
-• Admin Panelindeki rütbe alanı yazı yazılan alandan seçim menüsüne dönüştürüldü.
-• Yönetici artık kullanıcı rütbesini açılır listeden tıklayarak seçiyor.
-• Geçersiz veya listede olmayan rütbelerin kaydedilmesi sunucu tarafında engelleniyor.
-• Kullanıcı tarafında rütbe seçme alanı bulunmuyor; atanmış rütbe raporlara otomatik işlenmeye devam ediyor.
-• Kullanılabilir rütbeler:
-  - Doctor
-  - Attending Physician
-  - Psychiatrist
-  - Chief Physician
-  - Surgeon
-  - Medical Director
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — RÜTBE LİSTESİ DÜZENLEMESİ
-
-• Admin Panelindeki rütbe listesi sadeleştirildi.
-• Artık yalnızca aşağıdaki üç rütbe kullanılabilir:
-  - Doctor
-  - Attending Physician
-  - Psychiatrist
-• Chief Physician, Surgeon ve Medical Director seçenekleri kaldırıldı.
-• Sunucu tarafındaki rütbe doğrulaması da yalnızca bu üç seçeneği kabul edecek şekilde güncellendi.
-• Kullanıcılar kendi rütbelerini seçemez; rütbe ataması yalnızca Admin Panelinden yapılır.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — ÜYELİK YÖNETİMİ
-
-• Admin Paneline “Yeni Üyelik Oluştur” özelliği eklendi.
-• Yönetici kullanıcı adı, şifre ve rütbe belirleyerek doğrudan yeni hesap oluşturabilir.
-• Yeni üyelik oluştururken rütbe yalnızca Doctor, Attending Physician veya Psychiatrist olarak seçilebilir.
-• Admin Panelindeki kayıtlı kullanıcıların yanına “Üyeliği Sil” seçeneği eklendi.
-• Üyelik silindiğinde yalnızca giriş hesabı kaldırılır.
-• Silinen kullanıcının geçmiş raporları, doktor bilgileri ve istatistik kayıtları korunur.
-• Silinen kullanıcı adı daha sonra yeni bir üyelik için tekrar kullanılabilir.
-• Yeni üyelik parolaları düz metin olarak saklanmaz; güvenli şekilde hashlenerek veritabanına yazılır.
-• Üyelik oluşturma, düzenleme ve silme işlemleri sistem loglarına kaydedilir.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — SİLİNEN ÜYELİKLERİ GERİ GETİRME
-
-• Admin Paneline “Silinen Üyelikler” bölümü eklendi.
-• “Üyeliği Sil” işlemi artık hesabı geri getirilebilir bir arşive taşıyor.
-• Silinen üyeliğin kullanıcı adı, rütbesi ve güvenli parola hash'i arşivde korunuyor.
-• Kullanıcıların gerçek şifreleri hiçbir ekranda görüntülenmiyor.
-• “Üyeliği Geri Getir” butonuyla silinen hesap eski şifresi ve rütbesiyle yeniden aktif hale getirilebiliyor.
-• Üyelik geri getirildiğinde kullanıcının geçmiş raporları tekrar aktif hesabına bağlanıyor.
-• Aynı kullanıcı adı başka bir aktif hesap tarafından kullanılıyorsa geri getirme işlemi güvenlik nedeniyle engelleniyor.
-• Üyelik silme ve geri getirme işlemleri sistem loglarına kaydediliyor.
-• Geçmiş rapor ve doktor istatistikleri silme/geri getirme işlemlerinden etkilenmiyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — ASKIYA ALINMIŞ HESAP UYARISI
-
-• Silinen Üyelikler arşivindeki hesaplar için giriş kontrolü eklendi.
-• Arşivde bulunan bir kullanıcı giriş yapmaya çalıştığında sisteme erişim verilmiyor.
-• Giriş ekranında “Hesabınız Askıya Alınmıştır, Yöneticiniz ile İletişime geçin.” uyarısı gösteriliyor.
-• Askıya alınmış hesaplarda şifrenin doğru veya yanlış olduğuna dair bilgi gösterilmiyor.
-• Askıya alınmış hesap giriş denemeleri LOGIN_SUSPENDED olayıyla sistem loglarına kaydediliyor.
-• Yönetici üyeliği geri getirdiğinde kullanıcı eski hesabıyla tekrar normal şekilde giriş yapabiliyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — SEÇMELİ RAPOR DÜZENLEME EKRANI
-
-• Admin Panelindeki rapor düzenleme ekranı tamamen yenilendi.
-• Rapor düzenleme ekranı artık kullanıcı rapor panelindeki form yapısını kullanıyor.
-• Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporları kartlara tıklanarak seçilebiliyor.
-• Metin yazılması gereken alanlar giriş kutusu olarak, sabit seçenekli alanlar açılır seçim menüsü olarak gösteriliyor.
-• Raporlayan hekim aktif kullanıcı hesaplarından seçilebiliyor.
-• Hekim seçildiğinde rütbesi otomatik olarak kullanıcı hesabından alınıyor.
-• Adminin form üzerinde yaptığı değişiklikler BBCode önizlemesine anlık yansıyor.
-• “Değişiklikleri Kaydet” ile hem BBCode hem de seçmeli form verileri veritabanına kaydediliyor.
-• Kullanıcı panelinden yeni oluşturulan raporların form alanları artık ayrıca JSON olarak saklanıyor.
-• Eski raporlar için mevcut BBCode “Eski BBCode Referansı” bölümünde korunuyor.
-• Eski kayıtlarda rapor numarası ve tarih otomatik olarak seçmeli forma aktarılıyor.
-• Geliştirici ibaresi korunmuştur.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YENİ GÜNCELLEME — CİNSİYET VE TELEFON BİLGİLERİ
-
-• Tüm rapor türlerine seçmeli “Cinsiyet” alanı eklendi.
-• Cinsiyet seçenekleri:
-  - Erkek
-  - Kadın
-  - Diğer
-• Vaka Raporuna “Telefon Numarası” alanı eklendi.
-• Adli Vaka Raporuna “Telefon Numarası” alanı eklendi.
-• Telefon numarası boş bırakılırsa BBCode çıktısında otomatik olarak “123-456” yazılıyor.
-• Telefon alanında “123-456” örnek numarası placeholder olarak da gösteriliyor.
-• Otopsi ve Ölüm (Ex) raporlarına telefon numarası alanı eklenmedi.
-• Otopsi ve Ölüm (Ex) raporlarında yalnızca cinsiyet seçimi bulunuyor.
-• Yeni alanlar Admin Panelindeki seçmeli rapor düzenleme ekranına da eklendi.
-• Cinsiyet ve telefon bilgileri raporun form verileriyle birlikte veritabanında saklanıyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V15 — HASTA ADRES BİLGİSİ
-CLSMC Rapor Sistemi V15 — Patient Address Update
-
-• Vaka Raporuna “Adres Bilgisi” alanı eklendi.
-• Adli Vaka Raporuna “Adres Bilgisi” alanı eklendi.
-• Adres bilgisi raporun BBCode çıktısına otomatik olarak ekleniyor.
-• Adres alanı kullanıcı rapor panelinde doldurulabiliyor.
-• Adres alanı Admin Panelindeki seçmeli rapor düzenleme ekranına da eklendi.
-• Adres bilgisi mevcut form_data yapısıyla veritabanında saklanıyor.
-• Otopsi Raporuna adres alanı eklenmedi.
-• Ölüm (Ex) Raporuna adres alanı eklenmedi.
-• Cinsiyet ve telefon özellikleri önceki sürümdeki şekilde korunuyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V16 — BAŞVURU ŞEKLİ GÜNCELLEMESİ
-CLSMC Rapor Sistemi V16 — Admission Method Update
-
-• Vaka Raporundaki “Başvuru Şekli” seçenekleri güncellendi.
-• “Ayaktan” seçeneği kaldırıldı.
-• “Sevk” seçeneği kaldırıldı.
-• Yeni başvuru seçenekleri:
-  - Acil Giriş
-  - Randevu
-  - Ambulans
-• Kullanıcı rapor panelindeki seçim menüsü güncellendi.
-• Admin Panelindeki seçmeli rapor düzenleme ekranı aynı seçeneklerle güncellendi.
-• BBCode sistemi seçilen yeni başvuru şeklini otomatik olarak kullanmaya devam ediyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V17 — DOKTOR RAPOR TÜRÜ İSTATİSTİKLERİ
-CLSMC Rapor Sistemi V17 — Doctor Report Breakdown
-
-• Admin Panelindeki “Rapor Yazan Doktorlar” istatistiği geliştirildi.
-• Her doktor için Vaka Raporu sayısı ayrı gösteriliyor.
-• Her doktor için Adli Vaka Raporu sayısı ayrı gösteriliyor.
-• Her doktor için Otopsi Raporu sayısı ayrı gösteriliyor.
-• Her doktor için Ölüm (Ex) Raporu sayısı ayrı gösteriliyor.
-• Doktorun toplam rapor sayısı gösterilmeye devam ediyor.
-• Doktorun son rütbesi ve son rapor numarası gösterilmeye devam ediyor.
-• İstatistikler veritabanındaki mevcut rapor kayıtlarından otomatik hesaplanıyor.
-• Silinmiş/askıya alınmış bir hesabın geçmiş raporları korunduğu için bu raporlar doktor istatistiklerinde görünmeye devam ediyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V18 — DETAYLI DOKTOR İSTATİSTİK MERKEZİ
-CLSMC Rapor Sistemi V18 — Doctor Statistics Center
-
-• V17’deki geniş doktor rapor türü tablosu ana Admin Panelinden kaldırıldı.
-• Admin Paneline ayrı “İstatistikler” bölümü eklendi.
-• İstatistikler ekranında doktor/kullanıcı seçme menüsü eklendi.
-• Örneğin Darius Blackwell seçildiğinde doktora ait tüm raporlar görüntüleniyor.
-• Üst bölümde Toplam, Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) sayıları ayrı kartlarda gösteriliyor.
-• Doktorun bütün raporları dört ayrı kategori altında listeleniyor:
-  - Vaka Raporları
-  - Adli Vaka Raporları
-  - Otopsi Raporları
-  - Ölüm (Ex) Raporları
-• Her rapor satırında rapor numarası, raporlayan hekim, rütbe, kaydeden hesap, rapor tarihi ve son güncelleme gösteriliyor.
-• Her rapordan doğrudan Admin “Raporu Aç / Düzenle” ekranına geçilebiliyor.
-• Ana Admin Panelindeki doktor bölümü daha sade bir özet görünümüne dönüştürüldü.
-• İstatistikler rapordaki “Raporlayan Hekim” bilgisine göre hesaplanıyor; “Kaydeden Hesap” bilgisi ayrıca gösteriliyor.
-• Silinen/askıya alınan üyeliklerin korunmuş geçmiş raporları istatistiklerde görünmeye devam ediyor.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V19 — KULLANICI RAPOR MERKEZİ
-CLSMC Rapor Sistemi V19 — User Report Center
-
-• Admin Paneline ayrı “Kullanıcı İstatistikleri” bölümü eklendi.
-• Kullanıcı isimleri ayrı bir listede gösteriliyor.
-• Kullanıcı adına tıklandığında o hesabın yazdığı bütün raporlar açılıyor.
-• İstatistikler “Kaydeden Hesap” bilgisine göre hesaplanıyor.
-• Seçilen kullanıcı için Toplam, Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) sayıları gösteriliyor.
-• Raporlar dört kategori altında ayrı ayrı listeleniyor.
-• Her rapor satırına “Görüntüle” butonu eklendi.
-• “Görüntüle” ile raporun detay sayfası açılıyor.
-• Detay sayfasında raporlayan hekim, rütbe, kaydeden hesap, tarihler, form verileri ve BBCode görüntüleniyor.
-• Her rapor satırına “Sil” butonu eklendi.
-• Silme işleminden önce geri alınamaz işlem uyarısı gösteriliyor.
-• Silinen rapor veritabanından kaldırılıyor ve işlem ADMIN_REPORT_DELETED olarak loglanıyor.
-• Silinen/askıya alınmış üyelikler geçmiş raporlarıyla kullanıcı listesinde görüntülenebiliyor.
-• V18’deki doktor bazlı istatistik mantığı kullanıcı hesabı bazlı rapor merkezine dönüştürüldü.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V19.1 — KARARLILIK VE VERİ BÜTÜNLÜĞÜ DÜZELTMELERİ
-CLSMC Rapor Sistemi V19.1 — Stability & Data Integrity Fix
-
-• Mevcut rapor başka bir kullanıcı tarafından aynı rapor numarasıyla güncellendiğinde “Kaydeden Hesap” bilgisinin el değiştirmesi engellendi.
-• Kaydeden Hesap artık raporu ilk oluşturan kullanıcı olarak korunuyor.
-• Kullanıcı İstatistikleri bu nedenle rapor sahipliğini daha güvenilir şekilde koruyor.
-• Silinen/askıya alınmış bir kullanıcı adının normal kayıt ekranından yeniden kullanılabilmesi engellendi.
-• Silinen/askıya alınmış bir kullanıcı adının Admin tarafından yeni üyelik olarak tekrar oluşturulması engellendi.
-• Aktif bir hesabın kullanıcı adının arşivdeki başka bir kullanıcı adına değiştirilmesi engellendi.
-• Askıya alınmış/silinmiş bir hesap açık oturumla İstatistikler veya Ayarlar sayfasında kalamıyor; oturum kapatılıp giriş ekranına yönlendiriliyor.
-• Admin kullanıcı adını değiştirdiğinde İstatistikler ve Ayarlar sayfalarında oturumdaki kullanıcı adı güncel kalıyor.
-• Geçmiş kayıt kullanıcılarının rütbesi, raporlayan hekimin rütbesinden yanlışlıkla türetilmiyor.
-• V18’den kalan ve V19’da kullanılmayan admin_statistics.html şablonu temizlendi.
-• Python sözdizimi, Jinja şablonları, url_for endpoint bağlantıları ve kritik JavaScript blokları tekrar tarandı.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V19.2 — GİRİŞ EKRANI METİN DÜZENLEMESİ
-CLSMC Rapor Sistemi V19.2 — Login Label Update
-
-• Giriş ekranındaki “K.adı” etiketi “Kullanıcı Adı” olarak değiştirildi.
-• Giriş ekranındaki örnek hesap bilgisinde “K.adı” yerine “Kullanıcı Adı” yazılıyor.
-• Kayıt ekranındaki alanlara dokunulmadı.
-• Sistem işleyişinde veya veritabanında herhangi bir değişiklik yapılmadı.
-
-— Developer: Veyrath
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V19.3 — KULLANICI KAYIT SİSTEMİ KAPATILDI
-CLSMC Rapor Sistemi V19.3 — Admin-Only Account Creation
-
-• Kullanıcı giriş ekranındaki “Kayıt Ol” butonu kaldırıldı.
-• Normal kullanıcıların kendi hesabını oluşturması tamamen kapatıldı.
-• `/register` adresi artık hesap oluşturmaz ve kullanıcıyı giriş ekranına yönlendirir.
-• Yeni kullanıcı hesapları yalnızca Admin Paneli → “Yeni Üyelik Oluştur” üzerinden oluşturulabilir.
-• Eski kayıt ekranı şablonu sistem paketinden kaldırıldı.
-• Kayıt sonrası otomatik giriş doldurma kodu kaldırıldı.
-• Kullanıcı tarafında yalnızca giriş ekranı bulunuyor.
-• Mevcut kullanıcı hesapları ve geçmiş raporlar etkilenmedi.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V19.4 — NEON POSTGRESQL GEÇİŞİ
-CLSMC Rapor Sistemi V19.4 — Neon PostgreSQL Ready
-
-• Render'ın dahili PostgreSQL bağı kaldırıldı.
-• Sistem harici Neon PostgreSQL DATABASE_URL kullanacak şekilde hazırlandı.
-• render.yaml içinde DATABASE_URL güvenli `sync: false` olarak tanımlandı.
-• Neon bağlantı şifresi hiçbir proje dosyasına yazılmıyor.
-• Render üzerinde DATABASE_URL eksikse geçici SQLite'a sessiz düşmek yerine uygulama açık hata veriyor.
-• PostgreSQL bağlantıları için `pool_pre_ping` etkinleştirildi.
-• Yeni/boş Neon veritabanında tablolar mevcut SQLAlchemy modelleriyle otomatik oluşturuluyor.
-• Neon + Render için yeni kurulum rehberi eklendi.
-• Eski Render PostgreSQL tanımı render.yaml dosyasından kaldırıldı.
-• V19.3 admin-only kullanıcı oluşturma sistemi korunuyor.
-• `.gitignore` ve güvenli `.env.example` eklendi; gerçek Neon şifresinin GitHub’a gitmesi engelleniyor.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V20 — EMS SAHA RAPORU
-CLSMC Rapor Sistemi V20 — EMS Field Operations
-
-• Kullanıcı paneline beşinci bağımsız rapor türü olarak “EMS Saha Raporu” eklendi.
-• EMS için ayrı rapor kartı ve seçmeli saha formu oluşturuldu.
-• Rapor numarası CLSMC-EMS-0000 düzeninde hazırlanıyor.
-• Vaka tarihi, konumu, türü ve ihbar açıklaması alanları eklendi.
-• Hasta adı, bilinç durumu, genel durum, bulgular ve olay yeri değerlendirmesi alanları eklendi.
-• Saha müdahaleleri, ilaçlar, nakil durumu, nakil sırasındaki durum ve teslim bilgileri eklendi.
-• EMS personeli, ekip personelleri, ambulans birimi, dijital imza ve ekran görüntüsü alanları eklendi.
-• Verilen EMS BBCode tasarımı sisteme birebir uyarlanarak canlı önizlemeye bağlandı.
-• BBCode kopyalandığında EMS raporu Neon PostgreSQL veritabanına kaydediliyor.
-• Aynı CLSMC-EMS rapor numarası yeniden kullanılırsa mevcut kayıt güncelleniyor.
-• Admin seçmeli rapor düzenleyicisine EMS formu ve canlı BBCode desteği eklendi.
-• Admin Kullanıcı İstatistikleri bölümüne EMS sayacı ve EMS rapor kategorisi eklendi.
-• Normal istatistikler ve Admin rapor listeleri EMS türünü tanıyor.
-• Admin hesap yönetimine “Paramedic” rütbesi eklendi.
-• Hekim/personel ortak kullanımını desteklemek için bazı arayüz etiketleri “Raporlayan Personel” olarak güncellendi.
-• Mevcut kullanıcılar, raporlar ve Neon bağlantısı için veritabanı taşıması gerekmiyor.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V20.1 — RÜTBE BAZLI RAPOR ERİŞİMİ VE EMS FORM İYİLEŞTİRMELERİ
-CLSMC Rapor Sistemi V20.1 — Role-Based Report Access
-
-• EMS rütbeli hesaplar yalnızca EMS Saha Raporu kartını ve formunu görebilir.
-• Doctor, Attending Physician ve Psychiatrist rütbeleri EMS Saha Raporunu göremez.
-• Yetkilendirme yalnızca arayüzde değil, `/api/reports` backend kayıt noktasında da uygulanır.
-• Yetkisiz rapor kaydetme girişimleri 403 ile engellenir ve REPORT_ACCESS_DENIED olarak loglanır.
-• Kullanıcı İstatistikleri ekranı kullanıcının rütbesine göre yalnızca erişebildiği rapor türlerini gösterir.
-• Admin hesap oluşturma/düzenleme ekranlarına Senior Paramedic ve Emergency Medical Technician (EMT) rütbeleri eklendi.
-• EMS Rapor Numarası veritabanındaki son EMS kaydına göre CLSMC-EMS-0001 biçiminde hazır gelir.
-• EMS rapor numarası kullanıcı formunda salt okunur yapıldı; form temizlendiğinde otomatik geri yüklenir.
-• EMS raporu kaydedildikten sonra bir sonraki hazır rapor numarası backend tarafından hesaplanır ve yeni form için kullanılır.
-• “Nakil Sırasındaki Durumu” seçenekleri Stabil / Gözetim Gerektiriyor / Hayati Tehlikesi Var olarak netleştirildi.
-• Ambulans Birimi alanındaki sabit RA-00 / AMB-00 değeri kaldırıldı; “Örn. RA-1” örnek metni eklendi.
-• EMS BBCode varsayılan Ambulans Birimi örneği RA-1 olarak güncellendi.
-• V20 panelindeki yinelenen API fetch satırı temizlendi.
-• Vaka örnek verisindeki eski “Ayaktan” başvuru seçeneği “Acil Giriş” olarak düzeltildi.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V20.2 — CLSMC LOGO RENKLERİ ARAYÜZ TEMASI
-CLSMC Rapor Sistemi V20.2 — Corporate Logo Color Theme
-
-• Kullanıcı, EMS ve Admin arayüzleri CLSMC logosunun koyu yeşil, limon sarısı ve krem renkleriyle yenilendi.
-• Mavi/mor ağırlıklı eski arayüz renkleri kurumsal yeşil tema ile değiştirildi.
-• Giriş ekranı, kullanıcı paneli, ayarlar, istatistikler ve tüm Admin sayfaları aynı tasarım diline geçirildi.
-• Üst menülerde harf ikonları yerine gerçek CLSMC logosu kullanılmaya başlandı.
-• Aktif rapor kartları limon sarısı vurgu ve yeşil yüzeylerle daha belirgin hale getirildi.
-• Butonlar, form alanları, tablolar, rozetler, BBCode kutuları ve bilgi panelleri yeni renk paletine uyarlandı.
-• Mobil görünüm, mevcut responsive yapı ve bütün işlevler korunuyor.
-• Raporların oluşturduğu BBCode içerik renklerine dokunulmadı; değişiklik yalnızca web arayüzü tasarımını kapsıyor.
-• Neon PostgreSQL verileri, kullanıcı hesapları, raporlar ve yetkilendirme kuralları etkilenmedi.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V20.3 — KLİNİK MEDİKAL ARAYÜZ TEMASI
-CLSMC Rapor Sistemi V20.3 — Clinical Medical Interface
-
-• CLSMC logosu bütün ekranlarda korunmaya devam ediyor.
-• Logo renklerinden alınan yoğun yeşil/sarı arayüz yerine klinik lacivert, medikal turkuaz, steril beyaz ve açık mavi ağırlıklı yeni renk sistemi getirildi.
-• Doctor, Attending Physician, Psychiatrist, Paramedic, Senior Paramedic ve EMT kullanıcı panelleri aynı medikal tasarım diline uyarlandı.
-• Admin giriş ekranı, yönetim merkezi, üyelik işlemleri, kullanıcı istatistikleri, rapor görüntüleme ve rapor düzenleme sayfaları aynı tema kapsamına alındı.
-• Kullanıcı giriş ekranı, rapor paneli, Ayarlar ve İstatistikler ekranları ortak yüzey, form, buton ve durum renklerini kullanıyor.
-• Aktif rapor kartları medikal turkuaz çerçeveyle; ana işlem butonları turkuaz–mavi geçişle belirginleştirildi.
-• Başarı, uyarı ve hata mesajlarında klinik arayüze uygun ayrı durum renkleri korundu.
-• Form alanları, tablolar, rozetler, kullanıcı listeleri, BBCode alanları ve admin kayıt tabloları yeni palete geçirildi.
-• Masaüstü ve mobil responsive yapı korunuyor.
-• Rütbe bazlı EMS erişimi, otomatik EMS rapor numarası, Neon PostgreSQL verileri ve rapor BBCode içerikleri etkilenmedi.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-V20.4 — STERİL SAĞLIK SEKTÖRÜ ARAYÜZÜ
-CLSMC Rapor Sistemi V20.4 — Healthcare UI Theme
-
-• CLSMC logosu özgün renkleriyle bütün ekranlarda korunuyor.
-• Arayüz renkleri logo paletinden bağımsız hale getirildi.
-• Hastane ve sağlık sektörü arayüzlerinde yaygın kullanılan steril beyaz, medikal mavi, turkuaz ve açık camgöbeği tonlarından oluşan yeni palet uygulandı.
-• Koyu arka plan yerine daha ferah ve okunaklı açık klinik yüzeyler getirildi.
-• Üst menüler yüksek kontrastlı medikal mavi olarak tasarlandı; içerik kartları beyaz ve açık mavi yüzeylere geçirildi.
-• Doctor, Attending Physician, Psychiatrist, Paramedic, Senior Paramedic ve EMT kullanıcı panelleri aynı tasarım sistemini kullanıyor.
-• Admin giriş ekranı, yönetim merkezi, üyelik oluşturma/düzenleme, kullanıcı istatistikleri, rapor görüntüleme ve rapor düzenleme ekranları aynı temaya uyarlandı.
-• Form alanları, butonlar, aktif rapor kartları, tablolar, rozetler, mesaj kutuları ve BBCode alanları ortak klinik renk sistemine geçirildi.
-• Başarı, uyarı ve hata durumları erişilebilir yeşil, amber ve kırmızı tonlarıyla ayrıştırıldı.
-• Masaüstü ve mobil responsive yapı korunuyor.
-• EMS rütbe erişimleri, otomatik rapor numarası, Neon PostgreSQL verileri ve BBCode içerikleri etkilenmedi.
-
-— Developer: Veyrath
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CLSMC V20.5 — KARANLIK / AYDINLIK ARAYÜZ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-• Sisteme iki ayrı arayüz seçeneği eklendi.
-• Karanlık Mod, CLSMC sisteminin ilk kullanılan lacivert ve mavi arayüzünü geri getirir.
-• Aydınlık Mod, V20.4 ile hazırlanan steril beyaz, medikal mavi ve turkuaz sağlık temasını kullanır.
-• Varsayılan görünüm Karanlık Mod olarak ayarlandı.
-• Kullanıcının seçimi tarayıcıda saklanır; sayfa yenilendiğinde ve farklı CLSMC ekranlarına geçildiğinde korunur.
-• Tema düğmesi üst menüsü bulunan sayfalarda menüye, giriş sayfalarında ise sağ üst köşeye yerleştirilir.
-• Doktor, Paramedic/EMS ve Admin panellerinin tamamı aynı tema sistemini kullanır.
-• Giriş, Ayarlar, İstatistikler, kullanıcı yönetimi, rapor görüntüleme ve rapor düzenleme ekranları da iki temayı destekler.
-• CLSMC logosu her iki temada da özgün renkleriyle korunur.
-• Tema seçimi yalnızca cihazın/tarayıcının görünüm tercihini değiştirir; kullanıcı hesapları, Neon verileri, raporlar ve BBCode çıktıları etkilenmez.
-
-Yeni dosyalar:
-• static/clsmc_theme_toggle.css
-• static/clsmc_theme_toggle.js
-
-Güncellenen dosyalar:
-• templates klasöründeki 11 ekran şablonunun tamamı
-
+CLSMC RAPOR SİSTEMİ V19.4 — NEON KURULUM REHBERİ
 Developer: Veyrath
+==================================================
+
+BU PAKET HAZIRDIR. SADECE NEON DATABASE_URL DEĞERİNİ SEN GİRECEKSİN.
+
+1) NEON
+-------
+Neon hesabında projenin içine gir.
+Connect bölümünü aç.
+Web uygulaması için verilen PostgreSQL bağlantı adresini kopyala.
+Pooled connection seçeneği sunuluyorsa onu kullanabilirsin.
+
+Örnek biçim:
+postgresql://KULLANICI:SIFRE@SUNUCU.neon.tech/VERITABANI?sslmode=require
+
+GERÇEK ADRESİNİ BU DOSYAYA, GITHUB'A VEYA SOHBETE YAZMA.
+`.env.example` yalnızca örnektir; gerçek şifre içermez. `.gitignore` gerçek `.env` dosyalarını GitHub dışında tutar.
+
+2) GITHUB
+---------
+Bu paketin ZIP'ini bilgisayarında çıkart.
+GitHub repository'ni aç:
+Veyrath963/CLSMC-Rapor-Veritabani
+
+Add file > Upload files
+
+ZIP'in kendisini değil, ZIP'ten çıkan bütün dosyaları ve klasörleri repository köküne sürükle.
+Commit changes ile kaydet.
+
+3) RENDER — MEVCUT SERVİSİN VARSA
+----------------------------------
+Render Dashboard'a gir.
+clsmc-rapor-sistemi servisini aç.
+Environment bölümüne gir.
+
+DATABASE_URL anahtarını bul.
+Eski Render PostgreSQL adresi varsa Neon'dan kopyaladığın bağlantı adresiyle değiştir.
+Yoksa yeni Environment Variable oluştur:
+
+Key: DATABASE_URL
+Value: Neon'dan kopyaladığın bağlantı adresi
+
+Kaydet.
+Ardından Manual Deploy > Deploy latest commit yap veya Auto-Deploy'in çalışmasını bekle.
+
+ÖNEMLİ:
+Mevcut Blueprint güncellemesinde render.yaml içindeki sync:false Render'ın senden otomatik olarak yeni değeri istemesini garanti etmez. Mevcut serviste DATABASE_URL'yi Dashboard'dan elle ayarla.
+
+4) RENDER — İLK KURULUMSA
+---------------------------
+Render > New > Blueprint
+GitHub repository'ni seç.
+render.yaml algılanacak.
+DATABASE_URL için sorulduğunda Neon bağlantı adresini gir.
+Deploy Blueprint yap.
+
+5) İLK AÇILIŞ
+-------------
+Yeni Neon veritabanı boşsa uygulama tabloları otomatik oluşturur.
+Sonra:
+
+SITE_ADRESIN/admin/login
+
+adresinden admin paneline gir.
+Yeni kullanıcıları Admin Paneli > Yeni Üyelik Oluştur üzerinden aç.
+
+6) ESKİ VERİLER VARSA
+---------------------
+Eski Render PostgreSQL'de önemli kullanıcı/rapor verileri varsa DATABASE_URL'yi değiştirmeden önce verileri Neon'a taşı.
+Bağlantı adresini değiştirmek eski verileri otomatik kopyalamaz.
+
+En güvenli sıra:
+1. Eski DB'nin yedeğini al.
+2. Yedeği Neon'a aktar.
+3. Neon'da tablo ve kayıtları kontrol et.
+4. Render DATABASE_URL'yi Neon'a çevir.
+5. Siteyi test et.
+6. Her şey doğruysa eski DB'yi daha sonra kapat.
+
+7) TEST
+------
+Deploy Live olduktan sonra:
+- Ana giriş ekranını aç.
+- /admin/login aç.
+- Admin panelinden test kullanıcı oluştur.
+- Test kullanıcıyla giriş yap.
+- Bir test raporu oluştur/kopyala.
+- Admin > Kullanıcı İstatistikleri bölümünde raporun göründüğünü kontrol et.
+
+8) GÜVENLİK
+------------
+DATABASE_URL içinde veritabanı parolası vardır.
+GitHub'a commit etme.
+Ekran görüntüsünde paylaşma.
+Sohbete gönderme.
+Render Environment içinde Secret olarak tut.
+
+==================================================
+CLSMC Rapor Sistemi V19.4 — Neon PostgreSQL Ready
+Developer: Veyrath
+
+V20 ile EMS Saha Raporu ve Paramedic rütbesi sisteme eklenmiştir. Bu güncelleme yeni Neon veritabanı veya DATABASE_URL değişikliği gerektirmez.
+
+V20.1 RÜTBE BAZLI ERİŞİM
+
+Bu sürüm yalnızca uygulama yetkilendirmesini ve EMS formunu günceller. Neon DATABASE_URL veya tablo göçü gerektirmez.
