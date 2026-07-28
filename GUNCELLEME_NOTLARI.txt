@@ -1,3 +1,20 @@
+CLSMC V20.5.3 — Admin Paneline Paramedic ve EMT Rütbeleri
+- Admin panelindeki Yeni Üyelik Oluştur ekranına Paramedic ve EMT rütbeleri eklendi.
+- Üyelik Düzenle ekranında Paramedic ve EMT seçilebilir hale getirildi.
+- Paramedic ve EMT kullanıcıları yalnızca EMS/Paramedic arayüzüne erişebilir.
+- Doctor, Attending Physician ve Psychiatrist kullanıcıları EMS arayüzüne erişemez.
+- Eski “Emergency Medical Technician (EMT)” kayıtları geriye dönük olarak desteklenir.
+
+CLSMC V20.5.2 — Giriş Logosunda Beyaz Çember Kaldırıldı
+- Giriş ekranındaki logo etrafındaki beyaz çember tamamen kaldırıldı.
+- Logo artık giriş alanında doğrudan kendi haliyle gösterilir.
+- Kullanıcı isteğine göre yalnızca logo bırakıldı; ek çerçeve, arka plan ve kabuk kaldırıldı.
+
+CLSMC V20.5.1 — Giriş Logosu Daire Düzeltmesi
+- Giriş ekranındaki CLSMC logosu dairesel çerçeveye tam oturacak şekilde düzeltildi.
+- Logo artık beyaz daire içinde taşmadan ve boşluk bırakmadan görünür.
+- Değişiklik kullanıcı giriş ekranına uygulanmıştır; diğer paneller korunmuştur.
+
 GÜNCELLEME NOTLARI — CLSMC Rapor Sistemi
 
 📌 Sürüm Güncellemesi

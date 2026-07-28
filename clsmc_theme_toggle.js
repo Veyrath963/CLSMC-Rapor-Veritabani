@@ -1,0 +1,90 @@
+/* CLSMC V20.5 — Karanlık / Aydınlık Tema Denetimi */
+html{transition:background-color .18s ease}
+body{transition:background-color .18s ease,color .18s ease}
+
+/* Logo her iki temada da özgün haliyle kalır. */
+.logo,.mini-logo,.topbar-logo-shell{
+  overflow:hidden !important;
+  background:#ffffff !important;
+  border:1px solid rgba(148,181,198,.72) !important;
+  box-shadow:0 0 0 3px rgba(37,139,171,.08),0 9px 22px rgba(0,0,0,.15) !important;
+  flex:0 0 auto;
+}
+.logo img,.mini-logo img,.topbar-logo-shell img{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:inherit !important;
+}
+.topbar-logo-shell{width:40px;height:40px;border-radius:12px}
+
+.clsmc-theme-toggle{
+  appearance:none;
+  border:1px solid rgba(164,191,213,.48);
+  border-radius:11px;
+  min-height:38px;
+  padding:8px 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.01em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.clsmc-theme-toggle:hover{transform:translateY(-1px)}
+.clsmc-theme-toggle:active{transform:translateY(0)}
+.clsmc-theme-toggle:focus-visible{outline:3px solid rgba(47,145,197,.30);outline-offset:2px}
+.clsmc-theme-toggle .theme-icon{font-size:15px;line-height:1}
+
+html[data-theme="dark"] .clsmc-theme-toggle{
+  background:#202b49;
+  color:#eef3ff;
+  border-color:#405075;
+  box-shadow:0 7px 18px rgba(0,0,0,.20);
+}
+html[data-theme="dark"] .clsmc-theme-toggle:hover{
+  background:#293657;
+  border-color:#6074a0;
+}
+html[data-theme="light"] .clsmc-theme-toggle{
+  background:#ffffff;
+  color:#17465b;
+  border-color:#aed0da;
+  box-shadow:0 7px 18px rgba(22,75,94,.10);
+}
+html[data-theme="light"] .clsmc-theme-toggle:hover{
+  background:#eef8fa;
+  border-color:#79b5c5;
+}
+.topbar .clsmc-theme-toggle{
+  background:rgba(255,255,255,.11) !important;
+  color:#ffffff !important;
+  border-color:rgba(255,255,255,.30) !important;
+  box-shadow:none !important;
+}
+.topbar .clsmc-theme-toggle:hover{
+  background:rgba(255,255,255,.19) !important;
+  border-color:rgba(255,255,255,.50) !important;
+}
+.clsmc-theme-toggle.is-floating{
+  position:fixed;
+  top:14px;
+  right:14px;
+  z-index:9999;
+  backdrop-filter:blur(12px);
+}
+
+@media(max-width:650px){
+  .clsmc-theme-toggle{padding:8px 10px}
+  .clsmc-theme-toggle .theme-label{display:none}
+  .clsmc-theme-toggle.is-floating .theme-label{display:inline}
+}
+@media(prefers-reduced-motion:reduce){
+  html,body,.clsmc-theme-toggle{transition:none !important}
+}

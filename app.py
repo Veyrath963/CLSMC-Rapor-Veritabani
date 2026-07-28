@@ -319,6 +319,8 @@ MEDICAL_USER_RANKS = {
 EMS_USER_RANKS = {
     "Paramedic",
     "Senior Paramedic",
+    "EMT",
+    # Eski hesaplarla geriye dönük uyumluluk için korunur.
     "Emergency Medical Technician (EMT)",
 }
 
