@@ -1,0 +1,5 @@
+CLSMC V20.7.1 — app.py acil düzeltmesi
+
+Bu pakette yalnızca doğrulanmış app.py bulunur.
+GitHub repository kök dizinindeki mevcut app.py dosyasının üzerine yükleyin.
+DATABASE_URL değerini bu dosyaya yazmayın; Render Environment bölümünde kalmalıdır.
