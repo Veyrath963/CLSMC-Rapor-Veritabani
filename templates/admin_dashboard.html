@@ -184,22 +184,192 @@ input:focus,select:focus,textarea:focus{
 }
 </style>
 
+
+<style id="clsmc-admin-two-row-v2353">
+/* Admin üst menüsü: marka ve yardımcı işlemler üstte, yönetim butonları altta. */
+.topbar.admin-topbar-v2353{
+  display:block !important;
+  width:100% !important;
+  min-height:0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  background:color-mix(in srgb,var(--bg) 82%,transparent) !important;
+}
+
+.admin-topbar-main{
+  width:min(1440px,calc(100% - 40px));
+  min-height:76px;
+  margin:0 auto;
+  padding:12px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.admin-topbar-main .brand{
+  flex:1 1 auto !important;
+  max-width:none !important;
+  min-width:0 !important;
+}
+
+.admin-topbar-main .brand h1,
+.admin-topbar-main .brand small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.admin-topbar-utilities{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  min-width:0;
+}
+
+.admin-topbar-utilities form{
+  margin:0;
+}
+
+.admin-topbar-utilities .clsmc-theme-toggle,
+.admin-topbar-utilities .btn{
+  min-height:42px !important;
+  white-space:nowrap;
+}
+
+.admin-topbar-nav{
+  width:100%;
+  padding:10px max(20px,calc((100vw - 1440px)/2)) 12px;
+  display:grid;
+  grid-template-columns:
+    minmax(185px,1.15fr)
+    repeat(3,minmax(145px,1fr))
+    minmax(145px,1fr);
+  gap:10px;
+  border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);
+  background:color-mix(in srgb,var(--panel-3) 82%,transparent);
+}
+
+.admin-topbar-nav .btn{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:44px !important;
+  padding:10px 12px !important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap !important;
+}
+
+.admin-topbar-nav .v23-notification-count{
+  flex:0 0 auto;
+}
+
+/* Eski tek satır üst menü kuralları bu başlıkta uygulanmasın. */
+.topbar.admin-topbar-v2353 > :last-child{
+  max-width:none !important;
+  overflow:visible !important;
+}
+
+@media(max-width:1050px){
+  .admin-topbar-nav{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media(max-width:760px){
+  .admin-topbar-main{
+    width:calc(100% - 28px);
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .admin-topbar-main .brand{
+    width:100%;
+  }
+
+  .admin-topbar-utilities{
+    width:100%;
+    justify-content:flex-start;
+    overflow-x:auto;
+    padding-bottom:2px;
+    scrollbar-width:none;
+  }
+
+  .admin-topbar-utilities::-webkit-scrollbar{
+    display:none;
+  }
+
+  .admin-topbar-nav{
+    padding:10px 14px 12px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:500px){
+  .admin-topbar-main{
+    width:calc(100% - 20px);
+  }
+
+  .admin-topbar-main .brand small{
+    white-space:normal;
+  }
+
+  .admin-topbar-nav{
+    padding:9px 10px 11px;
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div><h1>CLSMC Yönetim Merkezi</h1><small>{{ system_name }} · Yönetici: {{ admin_username }}</small></div>
+<header class="topbar admin-topbar-v2353">
+  <div class="admin-topbar-main">
+    <div class="brand">
+      <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
+      <div>
+        <h1>CLSMC Yönetim Merkezi</h1>
+        <small>{{ system_name }} · Yönetici: {{ admin_username }}</small>
+      </div>
+    </div>
+
+    <div class="admin-topbar-utilities">
+      <span class="v22-status"><span class="v22-status-dot"></span>Sistem çevrimiçi</span>
+      <button type="button" class="clsmc-theme-toggle admin-theme-toggle"
+              data-clsmc-theme-toggle>
+        <span class="theme-icon" aria-hidden="true"></span>
+        <span class="theme-label"></span>
+      </button>
+      <form method="post" action="{{ url_for('admin_logout') }}">
+        <button class="btn admin-logout-button" type="submit">Çıkış</button>
+      </form>
+    </div>
   </div>
-  <div class="v22-top-actions">
-    <span class="v22-status"><span class="v22-status-dot"></span>Sistem çevrimiçi</span>
-    <a class="btn" href="{{ url_for('admin_hospital_management') }}">⚕ <span class="v22-hide-mobile">Hastane Yöneticisi</span>{% if pending_leave_count %}<span class="v23-notification-count">{{ pending_leave_count }}</span>{% endif %}</a>
-    <a class="btn" href="{{ url_for('admin_archive') }}">🗄️ <span class="v22-hide-mobile">Veri Arşivi</span></a>
-    <a class="btn" href="{{ url_for('admin_user_statistics') }}">◫ <span class="v22-hide-mobile">İstatistikler</span></a>
-    <a class="btn" href="{{ url_for('admin_accounts') }}">🛡 <span class="v22-hide-mobile">Admin Hesapları</span></a>
-    <a class="btn btn-primary" href="{{ url_for('admin_create_user') }}">＋ <span class="v22-hide-mobile">Yeni Üyelik</span></a>
-    <form method="post" action="{{ url_for('admin_logout') }}" style="margin:0"><button class="btn" type="submit">Çıkış</button></form>
-  </div>
+
+  <nav class="admin-topbar-nav" aria-label="Yönetim kısayolları">
+    <a class="btn" href="{{ url_for('admin_hospital_management') }}">
+      <span aria-hidden="true">⚕</span>
+      <span>Hastane Yöneticisi</span>
+      {% if pending_leave_count %}
+        <span class="v23-notification-count">{{ pending_leave_count }}</span>
+      {% endif %}
+    </a>
+    <a class="btn" href="{{ url_for('admin_archive') }}">
+      <span aria-hidden="true">🗄️</span><span>Veri Arşivi</span>
+    </a>
+    <a class="btn" href="{{ url_for('admin_user_statistics') }}">
+      <span aria-hidden="true">◫</span><span>İstatistikler</span>
+    </a>
+    <a class="btn" href="{{ url_for('admin_accounts') }}">
+      <span aria-hidden="true">🛡</span><span>Admin Hesapları</span>
+    </a>
+    <a class="btn btn-primary" href="{{ url_for('admin_create_user') }}">
+      <span aria-hidden="true">＋</span><span>Yeni Üyelik</span>
+    </a>
+  </nav>
 </header>
 
 <main class="shell v22-dashboard-shell">
