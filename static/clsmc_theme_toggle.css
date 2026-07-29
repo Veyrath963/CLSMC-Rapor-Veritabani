@@ -3,14 +3,14 @@ html{transition:background-color .18s ease}
 body{transition:background-color .18s ease,color .18s ease}
 
 /* Logo her iki temada da özgün haliyle kalır. */
-.logo,.mini-logo,.topbar-logo-shell,.login-logo{
+.logo,.mini-logo,.topbar-logo-shell{
   overflow:hidden !important;
   background:#ffffff !important;
   border:1px solid rgba(148,181,198,.72) !important;
   box-shadow:0 0 0 3px rgba(37,139,171,.08),0 9px 22px rgba(0,0,0,.15) !important;
   flex:0 0 auto;
 }
-.logo img,.mini-logo img,.topbar-logo-shell img,.login-logo img{
+.logo img,.mini-logo img,.topbar-logo-shell img{
   display:block !important;
   width:100% !important;
   height:100% !important;
@@ -88,3 +88,5 @@ html[data-theme="light"] .clsmc-theme-toggle:hover{
 @media(prefers-reduced-motion:reduce){
   html,body,.clsmc-theme-toggle{transition:none !important}
 }
+
+.clsmc-theme-toggle{border-radius:999px !important;min-height:40px !important;padding:8px 14px !important;font-weight:800 !important}.topbar .clsmc-theme-toggle{margin-left:4px}
