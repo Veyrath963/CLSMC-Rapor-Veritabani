@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CLSMC — Giriş</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Giriş</title>
 <style>
 :root{
   --bg:#0b1020; --panel:#121a2f; --line:#2a3657; --text:#eef3ff;
@@ -82,6 +82,40 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
   }
 }
 
+
+.platform-notice{
+  margin:0 0 20px;
+  padding:14px 15px;
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line));
+  background:color-mix(in srgb,var(--accent) 11%,var(--panel));
+  color:var(--text);
+  font-size:13px;
+  line-height:1.6;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.platform-notice-icon{
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
+}
+.platform-notice strong{
+  display:block;
+  margin-bottom:2px;
+  color:var(--text);
+  font-size:13px;
+}
+
 </style>
 <script>
 (function(){
@@ -94,6 +128,8 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
@@ -108,8 +144,17 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
 
     <div class="brand" style="justify-content:center;text-align:center;">
       <div>
-        <h1>CLSMC Rapor Sistemi</h1>
+        <h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1>
         <p>Central Los Santos Medical Center</p>
+      </div>
+    </div>
+
+
+    <div class="platform-notice" role="note" aria-label="Platform bilgilendirmesi">
+      <div class="platform-notice-icon" aria-hidden="true">i</div>
+      <div>
+        <strong>Platform Bilgilendirmesi</strong>
+        Bu site, Losland Roleplay platformunun Medical Departmanı adına hazırlanmıştır.
       </div>
     </div>
 

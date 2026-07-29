@@ -205,23 +205,27 @@ body .app{display:block!important}
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <section class="app">
 
   <header class="topbar">
     <div class="left">
       <div class="mini-logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
       <div>
-        <h2>CLSMC Rapor BBCode Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
+        <h2>CLSMC Merkezi Takip ve Raporlama Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
         <small>Rapor Paneli</small>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
+      <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
+      <a class="btn btn-secondary" href="#notifications">🔔 Bildirimler {% if unread_notification_count %}<span class="v23-notification-count">{{ unread_notification_count }}</span>{% endif %}</a>
       <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
       <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
       <form method="post" action="{{ url_for('logout') }}" style="margin:0">
@@ -231,14 +235,63 @@ body .app{display:block!important}
   </header>
 
   <main class="shell">
-    <section class="hero">
+    <section class="v23-user-home">
+      <article class="hero v23-welcome">
+        <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, taslaklarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
+        <div class="v23-user-actions"><a class="btn btn-primary" href="#report-creator">＋ Yeni Rapor</a><a class="btn btn-secondary" href="#report-creator" onclick="setTimeout(loadDraft,50)">▣ Taslağı Devam Ettir</a><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a><a class="btn btn-secondary" href="#leave-center">İzin Talebi</a></div>
+      </article>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="padding:13px 15px">{{ message }}</div>{% endfor %}{% endwith %}
+
+      <section class="v23-metrics">
+        <div class="v23-metric"><span>Toplam Raporum</span><strong>{{ personal_stats.total }}</strong></div>
+        <div class="v23-metric"><span>Bu Hafta</span><strong>{{ personal_stats.week }}</strong></div>
+        <div class="v23-metric"><span>Bu Ay</span><strong>{{ personal_stats.month }}</strong></div>
+        <div class="v23-metric"><span>Favoriler</span><strong>{{ personal_stats.favorites }}</strong></div>
+        <div class="v23-metric"><span>Kayıtlı Taslak</span><strong>{{ drafts|length }}</strong></div>
+        <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
+      </section>
+
+      <section class="v23-grid">
+        <article class="v23-box v23-span-7">
+          <div class="v23-box-head"><div><h3>Son Raporlarım</h3><div class="sub">Raporlar ayrıca yönetici veya rütbeli onayı beklemeden doğrudan kaydedilir.</div></div><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">Tümünü Aç</a></div>
+          {% if recent_reports %}<div class="table-wrap"><table><thead><tr><th>Rapor No</th><th>Tür</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead><tbody>{% for report in recent_reports %}<tr><td><strong>{{ report.report_number }}</strong>{% if report.is_favorite %} ★{% endif %}</td><td>{{ report_type_labels.get(report.report_type,report.report_type) }}</td><td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,'Tamamlandı') }}</span></td><td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td><td><a class="edit" href="{{ url_for('user_report_view',report_id=report.id) }}">Görüntüle</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">Henüz rapor kaydınız bulunmuyor.</div>{% endif %}
+        </article>
+
+        <article class="v23-box v23-span-5" id="notifications">
+          <div class="v23-box-head"><div><h3>Bildirim Merkezi</h3><div class="sub">İzin, rapor ve yönetici bildirimleri</div></div>{% if unread_notification_count %}<form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="btn btn-secondary" type="submit">Tümünü Okundu Yap</button></form>{% endif %}</div>
+          <div class="v23-list">{% for item in notifications %}<div class="v23-item {% if not item.is_read %}unread{% endif %}"><strong>{{ item.title }}</strong><p>{{ item.message }}</p><div class="v23-item-meta"><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>{% if not item.is_read %}<form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>{% endif %}</div></div>{% else %}<div class="empty">Yeni bildiriminiz yok.</div>{% endfor %}</div>
+        </article>
+
+        {% if drafts %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Kayıtlı Taslaklarım</h3><div class="sub">Taslaklar sunucuda ve tarayıcıda saklanır; rapor kaydedildiğinde ilgili taslak temizlenir.</div></div></div><div class="v23-list">{% for draft in drafts %}<div class="v23-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>{{ report_type_labels.get(draft.report_type,draft.report_type) }}</strong><p>Son otomatik kayıt: {{ draft.updated_at.strftime('%d.%m.%Y %H:%M') if draft.updated_at else '—' }}</p></div><div style="display:flex;gap:8px"><a class="btn btn-secondary" href="#report-creator" onclick="loadServerDraft('{{ draft.report_type }}')">Devam Et</a><button class="btn btn-danger" type="button" onclick="deleteDraftType('{{ draft.report_type }}')">Sil</button></div></div></div>{% endfor %}</div></article>{% endif %}
+
+        {% if announcements %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>{{ item.created_by_admin }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
+
+        <article class="v23-box v23-span-6" id="leave-center">
+          <div class="v23-box-head"><div><h3>İzin Talebi</h3><div class="sub">Talep Hastane Yöneticisi paneline düşer; sonuçlandığında bildirim alırsınız.</div></div></div>
+          <form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form">
+            <div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
+            <div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div>
+            <div class="field"><label>Bitiş Tarihi</label><input type="date" name="end_date" required></div>
+            <div class="field wide"><label>Açıklama</label><textarea name="reason" placeholder="İzin talebinizin nedenini ve gerekli bilgileri yazın." required></textarea></div>
+            <div class="wide"><button class="btn btn-primary" type="submit">İzin Talebini Gönder</button></div>
+          </form>
+        </article>
+
+        <article class="v23-box v23-span-6"><div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleriniz ve yönetici kararları</div></div></div><div class="v23-list">{% for item in leave_requests %}<div class="v23-item"><div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div><p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>{% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}{% if item.status=='pending' %}<form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>{% endif %}</div>{% else %}<div class="empty">Henüz izin talebiniz yok.</div>{% endfor %}</div></article>
+
+        <article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Merkezi Sistem Modülleri</h3><div class="sub">İzin modülü aktiftir; diğer modüller gelecekte aynı merkezden genişletilebilir.</div></div></div><div class="v23-module-grid"><div class="v23-module active"><span class="tag">Aktif</span><strong>İzin ve Devamsızlık</strong><small>İzin gönderme, yönetici kararı ve kullanıcı bildirimi.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Vardiya Takibi</strong><small>Personel vardiya başlangıç ve bitiş planları.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Görev Takibi</strong><small>Personel görevleri ve tamamlanma durumu.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Hasta Teslimi</strong><small>Birimler arası hasta teslim kayıtları.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Ambulans Birimleri</strong><small>Araç, ekip ve birim durum takibi.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Medikal Stok</strong><small>İlaç ve sarf malzemesi takibi.</small></div><div class="v23-module"><span class="tag">Altyapı hazır</span><strong>Eğitim ve Sertifika</strong><small>Personel yeterlilik ve eğitim kayıtları.</small></div><div class="v23-module"><span class="tag">Aktif</span><strong>Duyuru Merkezi</strong><small>Hedefli hastane duyuruları ve bildirimler.</small></div></div></article>
+      </section>
+    </section>
+
+    <section class="hero" id="report-creator">
       <h1>Rapor oluştur</h1>
       <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
         <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
         <strong>{{ username }} — {{ user_rank or "Rütbe Atanmadı" }}</strong>
         {% if not user_rank %}
-          <div class="footer-note" style="margin-top:6px">Rapor kaydetmek için yöneticinin hesabınıza rütbe ataması gerekir.</div>
+          <div class="footer-note" style="margin-top:6px">Görev rolünüz hesap erişimini belirler; raporlar ayrıca rütbeli veya yönetici onayı beklemeden kaydedilir.</div>
         {% endif %}
       </div>
     </section>
@@ -339,6 +392,9 @@ let currentType = INITIAL_REPORT_TYPE;
 
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
 const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
+const SERVER_DRAFTS = {{ draft_payloads|tojson }};
+let hasUnsavedChanges = false;
+let autoSaveTimer = null;
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -356,7 +412,7 @@ function doctorIdentityHtml(label){
     <div class="doctor-identity ${missingRank ? 'warning' : ''}">
       <span class="doctor-label">${escapeHtml(label)} — Otomatik Hesap Bilgisi</span>
       <strong>${escapeHtml(CURRENT_DOCTOR_NAME)} — ${escapeHtml(rank)}</strong>
-      ${missingRank ? '<div class="footer-note" style="margin-top:6px">Yönetici hesabınıza rütbe atayana kadar rapor kaydedilemez.</div>' : ''}
+      ${missingRank ? '<div class="footer-note" style="margin-top:6px">Görev rolünüz rapor türü erişimini belirler; ayrıca onay beklenmez.</div>' : ''}
     </div>
   `;
 }
@@ -853,7 +909,8 @@ const reportConfig = {
       <div class="grid2">
         <div class="field">
           <label>Rapor Numarası</label>
-          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" placeholder="Örn. CLSMC-EMS-0001" oninput="renderBBCode()">
+          <input data-field="ems_rapor_no" value="${escapeHtml(EMS_DEFAULT_REPORT_NUMBER)}" placeholder="Örn. CLSMC-EMS-0001" oninput="renderBBCode()" required>
+          <div class="footer-note" style="margin-top:7px">Sistem sıradaki numarayı önerir; bu alanı elle değiştirebilirsiniz.</div>
         </div>
         <div class="field">
           <label>Vaka Tarihi ve Saati</label>
@@ -1574,9 +1631,6 @@ async function saveReportAutomatically(bbcode){
   if(!meta.doctor_name){
     throw new Error('Hesap kullanıcı adı bulunamadı.');
   }
-  if(!meta.doctor_rank){
-    throw new Error('Hesabınıza henüz rütbe atanmadı. Yönetici rütbe atadıktan sonra raporu kopyalayabilirsiniz.');
-  }
 
   const response = await fetch('/api/reports', {
     method: 'POST',
@@ -1624,14 +1678,17 @@ async function copyBBCode(){
       EMS_DEFAULT_REPORT_NUMBER = saveResult.next_report_number;
     }
 
+    hasUnsavedChanges = false;
+    showCopyToast();
     setStatus(
       saveResult.created
         ? 'BBCode kopyalandı • İstatistiğe kaydedildi'
         : 'BBCode kopyalandı • Kayıt güncellendi'
     );
   }catch(error){
-    setStatus('Kayıt başarısız');
-    alert(error.message || 'Rapor kaydedilemedi ve BBCode kopyalanmadı.');
+    console.error('Rapor kaydetme hatası:', error);
+    setStatus('Veri kaydedilmedi');
+    window.alert('Veri kaydedilmedi.');
   }
 }
 
@@ -1641,18 +1698,71 @@ function setStatus(text){
   setTimeout(()=>el.textContent='Hazır', 1800);
 }
 
-function saveDraft(){
+function showCopyToast(){
+  const toast = document.getElementById('copyToast');
+  if(!toast) return;
+  toast.classList.add('show');
+  clearTimeout(window.__copyToastTimer);
+  window.__copyToastTimer = setTimeout(()=>toast.classList.remove('show'), 2100);
+}
+
+function collectDraftValues(){
   const values = {};
   document.querySelectorAll('[data-field]').forEach(el => values[el.dataset.field] = el.value);
+  return values;
+}
+
+async function saveDraft(silent=false){
+  const values = collectDraftValues();
   localStorage.setItem('raporDemoDraft', JSON.stringify({type:currentType, values}));
-  setStatus('Taslak tarayıcıya kaydedildi');
+  try{
+    const response = await fetch(`/api/drafts/${currentType}`, {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({form_data:values})});
+    const result = await response.json().catch(()=>({}));
+    if(!response.ok || !result.ok) throw new Error(result.message || 'Taslak kaydedilemedi');
+    hasUnsavedChanges = false;
+    if(!silent) setStatus('Taslak kaydedildi'); else setStatus('Otomatik taslak kaydedildi');
+  }catch(error){
+    if(!silent) setStatus('Taslak yalnızca tarayıcıya kaydedildi');
+  }
+}
+
+function scheduleAutoSave(){
+  hasUnsavedChanges = true;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(()=>saveDraft(true), 12000);
+}
+
+function loadServerDraft(type){
+  const values = (SERVER_DRAFTS || {})[type];
+  if(!values) return;
+  localStorage.setItem('raporDemoDraft', JSON.stringify({type:type, values:values}));
+  loadDraft();
+  setStatus('Taslak açıldı');
+}
+
+async function deleteDraftType(type){
+  if(!window.confirm('Bu taslak silinsin mi?')) return;
+  try{
+    const response = await fetch(`/api/drafts/${type}`, {method:'DELETE',credentials:'same-origin'});
+    if(!response.ok) throw new Error('Taslak silinemedi');
+    const local = localStorage.getItem('raporDemoDraft');
+    if(local){
+      try{ const data=JSON.parse(local); if(data.type===type) localStorage.removeItem('raporDemoDraft'); }catch(error){}
+    }
+    window.location.reload();
+  }catch(error){ window.alert('Taslak silinemedi.'); }
 }
 
 function loadDraft(){
   const raw = localStorage.getItem('raporDemoDraft');
-  if(!raw) return;
+  let data = null;
+  try{ data = raw ? JSON.parse(raw) : null; }catch(error){}
+  if(!data){
+    const firstServerType = Object.keys(SERVER_DRAFTS || {})[0];
+    if(firstServerType) data = {type:firstServerType, values:SERVER_DRAFTS[firstServerType]};
+  }
+  if(!data) return;
   try{
-    const data = JSON.parse(raw);
     if(data.type && reportConfig[data.type] && ALLOWED_REPORT_TYPES.includes(data.type)){
       const card = document.querySelector(`.card[data-type="${data.type}"]`);
       setReportType(data.type, card);
@@ -1793,15 +1903,23 @@ function downloadTxt(){
 
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('raporDemoDraft');
-  if(saved){
+  if(saved || Object.keys(SERVER_DRAFTS || {}).length){
     loadDraft();
   }
   const activeCard = document.querySelector(`.card[data-type="${currentType}"]`);
   if(activeCard) setReportType(currentType, activeCard);
   renderBBCode();
+  document.getElementById('dynamicFields').addEventListener('input', scheduleAutoSave);
+  document.getElementById('dynamicFields').addEventListener('change', scheduleAutoSave);
+});
+window.addEventListener('beforeunload', function(event){
+  if(!hasUnsavedChanges) return;
+  event.preventDefault();
+  event.returnValue = '';
 });
 
 </script>
+<div id="copyToast" class="v23-toast" role="status" aria-live="polite">✓ BBCode kopyalandı</div>
 
 <div class="developer-credit">Developer: Veyrath</div>
 

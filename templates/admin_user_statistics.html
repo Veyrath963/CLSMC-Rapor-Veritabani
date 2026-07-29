@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Kullanıcı İstatistikleri</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Kullanıcı İstatistikleri</title>
 <style>
 :root{
   --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
@@ -85,16 +85,18 @@ tr:last-child td{border-bottom:0}
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div><h1>CLSMC Kullanıcı İstatistikleri</h1><small>Yönetici: {{ admin_username }}</small></div>
+    <div><h1>CLSMC Kullanıcı Takip ve İstatistikleri</h1><small>Yönetici: {{ admin_username }}</small></div>
   </div>
   <div class="actions">
     <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>

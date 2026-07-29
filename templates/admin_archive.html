@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Veri Arşivi</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Veri Arşivi</title>
 <style>
 :root{--bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--good:#38d39f;--shadow:0 14px 42px rgba(0,0,0,.26)}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)}
@@ -20,12 +20,14 @@ a{text-decoration:none;color:inherit}button,input,select{font:inherit}.topbar{po
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <header class="topbar">
-  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Veri Arşivi</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Merkezi Veri Arşivi</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
   <div class="actions"><a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a><a class="btn" href="{{ url_for('admin_user_statistics') }}">Kullanıcı İstatistikleri</a></div>
 </header>
 <main class="shell">

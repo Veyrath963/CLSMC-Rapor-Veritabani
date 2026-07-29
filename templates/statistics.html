@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — İstatistikler</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — İstatistikler</title>
 <style>
 :root{
   --bg:#0b1020;--panel:#121a2f;--line:#2a3657;--text:#eef3ff;
@@ -27,7 +27,7 @@ a{text-decoration:none;color:inherit}
 .btn{padding:10px 14px;border-radius:12px;background:#202b49;border:1px solid #344264;font-weight:700}
 .shell{max-width:1200px;margin:0 auto;padding:28px 22px 50px}
 .hero h2{margin:0 0 7px;font-size:28px}.hero p{margin:0;color:var(--muted)}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:24px 0}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:24px 0}
 .metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
 .metric{padding:20px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:30px;margin-top:7px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:20px}.full{grid-column:1/-1}
@@ -74,16 +74,18 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-    <div><h1>CLSMC Rapor İstatistikleri</h1><small>{{ username }}</small></div>
+    <div><h1>CLSMC Merkezi Rapor İstatistikleri</h1><small>{{ username }}</small></div>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
     <a class="btn" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
@@ -98,9 +100,10 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
   </section>
 
   <section class="metrics">
-    <div class="metric"><span>Toplam rapor</span><strong>{{ total_reports }}</strong></div>
-    <div class="metric"><span>Rapor yazan doktor</span><strong>{{ doctor_counts|length }}</strong></div>
-    <div class="metric"><span>Kullanılan rapor türü</span><strong>{{ type_counts|length }}</strong></div>
+    <div class="metric"><span>Toplam Raporum</span><strong>{{ total_reports }}</strong></div>
+    <div class="metric"><span>Bu Hafta</span><strong>{{ week_reports }}</strong></div>
+    <div class="metric"><span>Bu Ay</span><strong>{{ month_reports }}</strong></div>
+    <div class="metric"><span>Favoriler</span><strong>{{ favorite_reports }}</strong></div>
   </section>
 
   <section class="grid">
@@ -122,7 +125,7 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
 
     <article class="panel">
       <h3>Raporlayan personel dağılımı</h3>
-      <div class="sub">Hangi doktor kaç rapor yazdı?</div>
+      <div class="sub">Kişisel rapor üretim toplamınız</div>
       {% if doctor_counts %}
         {% for item in doctor_counts %}
         <div class="bar-row">
@@ -144,7 +147,7 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
         <table>
           <thead>
             <tr>
-              <th>Rapor No</th><th>Tür</th><th>Raporlayan Personel</th><th>Rütbe</th><th>Kaydeden</th><th>Tarih</th>
+              <th>Rapor No</th><th>Tür</th><th>Durum</th><th>Raporlayan Personel</th><th>Rütbe</th><th>Tarih</th>
             </tr>
           </thead>
           <tbody>
@@ -152,9 +155,9 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
             <tr>
               <td><span class="badge">{{ report.report_number }}</span></td>
               <td>{{ report_type_labels.get(report.report_type, report.report_type) }}</td>
+              <td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,"Tamamlandı") }}</span></td>
               <td>{{ report.doctor_name }}</td>
               <td>{{ report.doctor_rank or "—" }}</td>
-              <td>{{ report.created_by_username }}</td>
               <td>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</td>
             </tr>
           {% endfor %}

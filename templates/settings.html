@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Ayarlar</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Ayarlar</title>
 <style>
 :root{
   --bg:#0b1020;
@@ -146,17 +146,19 @@ input:focus{
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
     <div>
-      <h1>CLSMC Ayarlar</h1>
+      <h1>CLSMC Hesap ve Sistem Ayarları</h1>
       <small>{{ username }}</small>
     </div>
   </div>
@@ -177,6 +179,12 @@ input:focus{
       <div class="flash {{ category }}">{{ message }}</div>
     {% endfor %}
   {% endwith %}
+
+
+  <section class="panel">
+    <h3>Hesap Profili</h3><div class="subtitle">Görev ve oturum bilgileri yalnızca görüntülenir; rütbe değişikliği yönetici tarafından yapılır.</div>
+    <div class="v23-grid"><div class="v23-item v23-span-6"><strong>Kullanıcı Adı</strong><p>{{ username }}</p></div><div class="v23-item v23-span-6"><strong>Rütbe / Görev Rolü</strong><p>{{ user_rank or 'Atanmadı' }}</p></div><div class="v23-item v23-span-6"><strong>Hesap Oluşturulma</strong><p>{{ user_created_at.strftime('%d.%m.%Y %H:%M') if user_created_at else '—' }}</p></div><div class="v23-item v23-span-6"><strong>Son Giriş</strong><p>{{ last_login_at.strftime('%d.%m.%Y %H:%M') if last_login_at else '—' }}</p></div></div>
+  </section>
 
   <section class="panel">
     <h3>Şifreyi Değiştir</h3>

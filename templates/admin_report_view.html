@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC — Rapor Görüntüle</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Rapor Görüntüle</title>
 <style>
 :root{--bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--danger:#ff6b7a}
 *{box-sizing:border-box}
@@ -30,14 +30,16 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
+<body>
 <header class="topbar">
-  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Merkezi Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
   <div class="actions">
     <a class="btn" href="{{ url_for('admin_user_statistics', user=report.created_by_username) }}">← Kullanıcı İstatistikleri</a>
     <a class="btn primary" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Düzenle</a>
@@ -61,6 +63,19 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
     <div class="card"><span>Rapor Tarihi</span><strong>{{ report.report_date or "—" }}</strong></div>
     <div class="card"><span>Oluşturulma</span><strong>{{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</strong></div>
     <div class="card"><span>Son Güncelleme</span><strong>{{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</strong></div>
+    <div class="card"><span>Rapor Durumu</span><strong>{{ report_status_labels.get(report.workflow_status,"Tamamlandı") }}</strong></div>
+  </section>
+
+
+  <section class="panel">
+    <h3>Rapor Durumu ve Kullanıcı Bildirimi</h3>
+    <div class="body">
+      <form method="post" action="{{ url_for('admin_update_report_workflow',report_id=report.id) }}" class="v23-announcement-form">
+        <div class="field"><label>Durum</label><select name="workflow_status">{% for key,label in report_status_labels.items() %}<option value="{{ key }}" {% if report.workflow_status==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="field wide"><label>Yönetici Notu</label><textarea name="admin_note" placeholder="Kullanıcı panelinde gösterilecek açıklama">{{ report.admin_note or '' }}</textarea></div>
+        <div class="wide"><button class="btn primary" type="submit">Durumu Güncelle ve Bildirim Gönder</button></div>
+      </form>
+    </div>
   </section>
 
   {% if form_data %}
