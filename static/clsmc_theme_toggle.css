@@ -1,233 +1,244 @@
+/* CLSMC V20.5 — Karanlık / Aydınlık Tema Denetimi */
+html{transition:background-color .18s ease}
+body{transition:background-color .18s ease,color .18s ease}
 
-/* CLSMC V21.0 — Modern Light Theme Companion */
-html[data-theme='light'] body{background:radial-gradient(circle at 0% 0%, rgba(15,138,176,.12), transparent 24%),radial-gradient(circle at 100% 6%, rgba(16,182,159,.10), transparent 24%),linear-gradient(160deg,#f9fdfe 0%,#eef7f9 56%,#e7f1f4 100%) !important;}
-html[data-theme='light'] .topbar{background:rgba(255,255,255,.82) !important;}
-html[data-theme='light'] .hero{background:linear-gradient(135deg,#ffffff,#f4fafb) !important;}
-
-/* CLSMC V20.4 — Steril Sağlık Sektörü Arayüzü
-   Logo özgün renkleriyle korunur. Arayüz; hastane beyazı, medikal mavi,
-   turkuaz, açık camgöbeği ve erişilebilir durum renkleri kullanır. */
-:root{
-  --bg:#edf5f8 !important;
-  --panel:#ffffff !important;
-  --panel2:#f7fbfc !important;
-  --panel3:#eaf4f7 !important;
-  --line:#c7dce3 !important;
-  --line-soft:#dce9ee !important;
-  --text:#173547 !important;
-  --muted:#647f8d !important;
-  --accent:#0b7fa5 !important;
-  --accent2:#12a7a0 !important;
-  --accent-deep:#075c78 !important;
-  --info:#2f91c5 !important;
-  --good:#2f9d74 !important;
-  --warning:#d99a2b !important;
-  --danger:#d85262 !important;
-  --shadow:0 18px 48px rgba(26,69,88,.12) !important;
-  color-scheme:light;
-}
-*{scrollbar-color:#85b8c5 #eaf3f6}
-html{background:var(--bg)}
-body{
-  color:var(--text) !important;
-  background:
-    radial-gradient(circle at 7% -5%,rgba(47,145,197,.14),transparent 27%),
-    radial-gradient(circle at 94% 2%,rgba(18,167,160,.12),transparent 25%),
-    linear-gradient(145deg,#f8fcfd 0%,#edf5f8 55%,#e8f2f5 100%) !important;
-  background-attachment:fixed !important;
-}
-body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.45;
-  background-image:
-    linear-gradient(rgba(11,127,165,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(11,127,165,.025) 1px,transparent 1px);
-  background-size:38px 38px;
-  mask-image:linear-gradient(to bottom,black,transparent 82%);
-}
-::selection{background:rgba(18,167,160,.25);color:#073d4d}
-a{color:inherit}
-h1,h2,h3,h4,strong{color:var(--text)}
-
-/* Logo kendi rengini korur; yalnızca temiz beyaz bir kabuk içinde gösterilir. */
+/* Logo her iki temada da özgün haliyle kalır. */
 .logo,.mini-logo,.topbar-logo-shell{
   overflow:hidden !important;
   background:#ffffff !important;
-  border:1px solid #b9d5dc !important;
-  box-shadow:0 0 0 4px rgba(47,145,197,.08),0 10px 24px rgba(19,70,91,.14) !important;
-  color:var(--accent-deep) !important;
+  border:1px solid rgba(148,181,198,.72) !important;
+  box-shadow:0 0 0 3px rgba(37,139,171,.08),0 9px 22px rgba(0,0,0,.15) !important;
   flex:0 0 auto;
 }
 .logo img,.mini-logo img,.topbar-logo-shell img{
-  display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:inherit !important;
 }
 .topbar-logo-shell{width:40px;height:40px;border-radius:12px}
-.topbar-brand{display:flex;align-items:center;gap:12px;min-width:0}
 
-/* Ortak üst menü: koyu medikal mavi, yüksek kontrast. */
-.topbar{
-  background:linear-gradient(105deg,rgba(7,76,101,.97),rgba(8,93,115,.97)) !important;
-  border-bottom:1px solid rgba(10,106,132,.55) !important;
-  box-shadow:0 10px 30px rgba(12,62,80,.17) !important;
-  backdrop-filter:blur(14px);
+.clsmc-theme-toggle{
+  appearance:none;
+  border:1px solid rgba(164,191,213,.48);
+  border-radius:11px;
+  min-height:38px;
+  padding:8px 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.01em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
-.topbar h1,.topbar h2,.topbar .brand h1,.topbar .brand h2{color:#ffffff !important}
-.topbar small,.topbar .brand p,.topbar .brand small{color:#cbe9ef !important}
-.topbar .btn-secondary,.topbar .btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger){
-  background:rgba(255,255,255,.10) !important;
+.clsmc-theme-toggle:hover{transform:translateY(-1px)}
+.clsmc-theme-toggle:active{transform:translateY(0)}
+.clsmc-theme-toggle:focus-visible{outline:3px solid rgba(47,145,197,.30);outline-offset:2px}
+.clsmc-theme-toggle .theme-icon{font-size:15px;line-height:1}
+
+html[data-theme="dark"] .clsmc-theme-toggle{
+  background:#202b49;
+  color:#eef3ff;
+  border-color:#405075;
+  box-shadow:0 7px 18px rgba(0,0,0,.20);
+}
+html[data-theme="dark"] .clsmc-theme-toggle:hover{
+  background:#293657;
+  border-color:#6074a0;
+}
+html[data-theme="light"] .clsmc-theme-toggle{
+  background:#ffffff;
+  color:#17465b;
+  border-color:#aed0da;
+  box-shadow:0 7px 18px rgba(22,75,94,.10);
+}
+html[data-theme="light"] .clsmc-theme-toggle:hover{
+  background:#eef8fa;
+  border-color:#79b5c5;
+}
+.topbar .clsmc-theme-toggle{
+  background:rgba(255,255,255,.11) !important;
   color:#ffffff !important;
-  border-color:rgba(255,255,255,.28) !important;
+  border-color:rgba(255,255,255,.30) !important;
+  box-shadow:none !important;
 }
-.topbar .btn-secondary:hover,.topbar .btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger):hover{
-  background:rgba(255,255,255,.18) !important;
-  border-color:rgba(255,255,255,.48) !important;
+.topbar .clsmc-theme-toggle:hover{
+  background:rgba(255,255,255,.19) !important;
+  border-color:rgba(255,255,255,.50) !important;
 }
-.brand h1,.hero h1,.hero h2{color:var(--text) !important}
-.brand p,.brand small,.hero p{color:var(--muted) !important}
-
-/* Ana yüzeyler */
-.auth-card,.login-card,.panel,.doctor-box,.profile,.metric{
-  background:rgba(255,255,255,.97) !important;
-  border-color:var(--line) !important;
-  box-shadow:var(--shadow) !important;
-  color:var(--text) !important;
-}
-.card{
-  background:linear-gradient(155deg,#ffffff,#f5fafb) !important;
-  border-color:var(--line) !important;
-  box-shadow:0 9px 25px rgba(26,69,88,.08) !important;
-  color:var(--text) !important;
-}
-.card:hover{
-  border-color:#7eb9c8 !important;
-  box-shadow:0 15px 32px rgba(26,69,88,.13),0 0 0 1px rgba(11,127,165,.06) !important;
-}
-.card.active,.user.active{
-  border-color:var(--accent2) !important;
-  box-shadow:0 0 0 3px rgba(18,167,160,.13),0 16px 34px rgba(26,69,88,.12) !important;
-  background:linear-gradient(155deg,#f1fbfb,#e7f7f7) !important;
-}
-.icon{
-  background:linear-gradient(145deg,rgba(11,127,165,.11),rgba(18,167,160,.12)) !important;
-  border:1px solid rgba(11,127,165,.16) !important;
-  color:var(--accent-deep) !important;
-}
-.panel-head,.category-head{
-  background:linear-gradient(90deg,#f6fbfc,#edf7f8) !important;
-  border-color:var(--line) !important;
-}
-.panel h3,.category-head h3,.card h3{color:var(--text) !important}
-.metric strong{color:var(--accent-deep) !important}
-.metric span,.sub,.subtitle,.empty,.card p{color:var(--muted) !important}
-
-/* Formlar */
-label{color:#385b6b !important}
-input,select,textarea{
-  background:#ffffff !important;
-  border-color:#b9d2da !important;
-  color:var(--text) !important;
-  box-shadow:inset 0 1px 2px rgba(21,74,92,.025);
-}
-input::placeholder,textarea::placeholder{color:#8aa1ab !important}
-input:focus,select:focus,textarea:focus{
-  border-color:var(--accent) !important;
-  box-shadow:0 0 0 3px rgba(11,127,165,.13) !important;
-}
-select option{background:#ffffff;color:var(--text)}
-input[readonly]{background:#eef6f8 !important;color:#466b7b !important}
-
-/* Butonlar */
-.btn-primary,.primary{
-  background:linear-gradient(135deg,#0b7fa5,#12a7a0) !important;
-  color:#ffffff !important;
-  border:1px solid rgba(6,105,131,.65) !important;
-  box-shadow:0 8px 20px rgba(11,127,165,.18) !important;
-}
-.btn-primary:hover,.primary:hover{filter:brightness(1.045)}
-.btn-secondary,.btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger){
-  background:#f1f7f9 !important;
-  color:#245166 !important;
-  border-color:#bdd5dd !important;
-}
-.btn-secondary:hover,.btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger):hover{
-  background:#e6f2f5 !important;border-color:#8fbcc8 !important;
-}
-.btn-good{background:linear-gradient(135deg,#2f9d74,#50b98f) !important;color:#ffffff !important}
-.btn-danger,.danger{
-  background:#fff2f3 !important;
-  color:#b63f4e !important;
-  border-color:#efb7bd !important;
-}
-.danger-link{color:#c94757 !important}
-.edit{color:#087e9c !important}
-
-/* Bilgi kutuları, rozetler ve hesap listeleri */
-.badge,.chip,.status,.count{
-  background:#eaf5f7 !important;
-  border-color:#bad6de !important;
-  color:#285c70 !important;
-}
-.dot{background:var(--good) !important;box-shadow:0 0 8px rgba(47,157,116,.42)}
-.hint,.example,.note,.doctor-identity,details.legacy,.data,.user{
-  background:#f4f9fa !important;
-  border-color:#c5dce3 !important;
-  color:var(--muted) !important;
-}
-.doctor-identity strong,.profile strong{color:var(--text) !important}
-.notice.warning{
-  background:#fff8e9 !important;
-  border-color:#ebce8e !important;
-  color:#805f18 !important;
-}
-.flash.success{background:#ecf8f2 !important;border-color:#9bd5bc !important;color:#226c51 !important}
-.flash.error{background:#fff0f2 !important;border-color:#efb1b9 !important;color:#a63c4a !important}
-
-/* Admin sayfasındaki eski inline koyu yüzeyleri ortak temaya zorla. */
-main a[style*="background:#0d172b"],main a[style*="background: #0d172b"]{
-  background:#f4f9fa !important;border-color:#c1d9e0 !important;color:var(--text) !important;
-}
-main a[style*="background:#0d172b"]:hover,main a[style*="background: #0d172b"]:hover{
-  background:#e8f4f6 !important;border-color:#8dbac6 !important;
-}
-main a[style*="background:#0d172b"] span[style*="#9fc0ff"],
-main a[style*="background: #0d172b"] span[style*="#9fc0ff"]{
-  color:var(--accent) !important;
-}
-main div[style*="background:#152039"],main div[style*="background: #152039"]{
-  background:#eaf5f7 !important;border-color:#b9d5dd !important;color:#315d70 !important;
-}
-
-/* Kod, rapor ve tablolar */
-.bbcode,pre,.legacy-code{
-  background:#082c3a !important;
-  border-color:#1c5a70 !important;
-  color:#e9fbff !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
-}
-.table-wrap{border-color:#c7dce3 !important;background:#ffffff !important}
-table{background:#ffffff !important;color:var(--text) !important}
-th{background:#eaf4f7 !important;color:#245269 !important}
-th,td{border-color:#d5e5ea !important}
-tr:hover td{background:#f1f8fa !important}
-.track{background:#dfecef !important;border-color:#c0d8df !important}
-.fill{background:linear-gradient(90deg,#0b7fa5,#12a7a0) !important}
-.log-info{color:#147b9e !important}.log-warning{color:#a87313 !important}.log-error{color:#c94757 !important}
-
-/* Klinik vurgu */
-.hero h1::after,.hero h2::after{
-  content:"";display:block;width:76px;height:3px;margin-top:10px;border-radius:99px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2),transparent);
-}
-.developer-credit{color:#718d99 !important}
-
-/* Koyu renkleri inline yazılmış bazı yardımcı alanları da aydınlat. */
-[style*="color:#eef3ff"],[style*="color: #eef3ff"],[style*="color:#fff"]{color:inherit}
-[style*="background:#0f162a"],[style*="background: #0f162a"]{
-  background:#f4f9fa !important;border-color:#c5dce3 !important;color:var(--text) !important;
-}
-[style*="background:#090f1d"],[style*="background: #090f1d"]{
-  background:#082c3a !important;color:#e9fbff !important;border-color:#1c5a70 !important;
+.clsmc-theme-toggle.is-floating{
+  position:fixed;
+  top:14px;
+  right:14px;
+  z-index:9999;
+  backdrop-filter:blur(12px);
 }
 
 @media(max-width:650px){
-  .topbar-brand{gap:9px}.topbar-logo-shell{width:36px;height:36px}
+  .clsmc-theme-toggle{padding:8px 10px}
+  .clsmc-theme-toggle .theme-label{display:none}
+  .clsmc-theme-toggle.is-floating .theme-label{display:inline}
+}
+@media(prefers-reduced-motion:reduce){
+  html,body,.clsmc-theme-toggle{transition:none !important}
+}
+
+.clsmc-theme-toggle{border-radius:999px !important;min-height:40px !important;padding:8px 14px !important;font-weight:800 !important}.topbar .clsmc-theme-toggle{margin-left:4px}
+
+/* CLSMC V23.4 KRİTİK YEDEK DÜZEN */
+html{
+  width:100%;
+  min-width:320px;
+  overflow-y:scroll;
+  scrollbar-gutter:stable;
+}
+body{
+  width:100%;
+  min-width:320px;
+  overflow-x:hidden !important;
+}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+
+.shell,.v22-dashboard-shell{
+  width:min(1440px,calc(100% - 40px)) !important;
+  max-width:1440px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+
+.topbar{
+  width:100% !important;
+  min-height:76px !important;
+  padding:12px max(20px,calc((100vw - 1440px)/2)) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  flex-wrap:nowrap !important;
+}
+.topbar>*{min-width:0}
+.topbar .brand,.topbar-brand{
+  flex:1 1 auto;
+  min-width:0 !important;
+  max-width:650px;
+}
+.topbar>:last-child,
+.topbar .actions,
+.topbar .v22-top-actions{
+  flex:0 1 auto;
+  max-width:65%;
+  min-width:0;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none;
+}
+.topbar>:last-child::-webkit-scrollbar,
+.topbar .actions::-webkit-scrollbar,
+.topbar .v22-top-actions::-webkit-scrollbar{display:none}
+.topbar a,.topbar button{flex:0 0 auto;white-space:nowrap}
+
+main,section,article,aside,header,footer,nav,
+.panel,.card,.metric,.v22-grid,.v23-grid,
+.v22-tab-panel,.v23-box,.table-wrap{min-width:0}
+
+.grid,.grid2,.metrics,.v22-grid,.v23-grid,
+.v23-metrics,.v22-metrics,.v23-manager-cards,
+.v23-module-grid,.v23-announcement-form,
+.v23-leave-form,.filter-grid,.data-grid{width:100%}
+
+.grid>*,.grid2>*,.metrics>*,
+.v22-grid>*,.v23-grid>*,.v23-metrics>*,
+.v22-metrics>*,.v23-manager-cards>*,
+.v23-module-grid>*,.v23-announcement-form>*,
+.v23-leave-form>*,.filter-grid>*,.data-grid>*{min-width:0}
+
+.table-wrap{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.table-wrap table{
+  width:100% !important;
+  min-width:860px;
+  margin:0;
+}
+table th{white-space:nowrap}
+table td{overflow-wrap:anywhere}
+
+.developer-credit{
+  position:fixed !important;
+  left:auto !important;
+  right:16px !important;
+  top:auto !important;
+  bottom:14px !important;
+  width:max-content !important;
+  max-width:calc(100vw - 32px) !important;
+  min-width:0 !important;
+  margin:0 !important;
+  z-index:9000 !important;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+.btn:hover,.btn:focus,
+.btn-primary:hover,.btn-primary:focus,
+.btn-secondary:hover,.btn-secondary:focus,
+.primary:hover,.primary:focus,
+.danger:hover,.danger:focus,
+.btn-good:hover,.btn-good:focus,
+.card:hover,.v22-quick-card:hover,
+input:focus,select:focus,textarea:focus{
+  transform:none !important;
+}
+.v22-tab-panel.active{animation:none !important}
+
+@media(max-width:900px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 28px) !important;
+  }
+  .topbar{
+    min-height:auto !important;
+    padding:12px 14px !important;
+    align-items:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+  .topbar .brand,.topbar-brand{
+    width:100%;
+    max-width:100%;
+  }
+  .topbar>:last-child,
+  .topbar .actions,
+  .topbar .v22-top-actions{
+    width:100%;
+    max-width:100%;
+    justify-content:flex-start !important;
+  }
+}
+@media(max-width:650px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 20px) !important;
+  }
+  .v23-announcement-form{grid-template-columns:1fr !important}
+  .developer-credit{
+    right:10px !important;
+    bottom:8px !important;
+    font-size:10px !important;
+  }
 }

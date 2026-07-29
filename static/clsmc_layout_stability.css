@@ -282,3 +282,305 @@ dialog,.v22-confirm-dialog{
     transition-duration:.01ms !important;
   }
 }
+/* CLSMC V23.3 — Tüm Sekme, Menü ve İşlem Düğmelerinde Sabit Ölçü
+   Bu bölüm bütün kullanıcı/admin arayüzlerinde ortak navigasyon standardıdır. */
+
+/* Ortak tıklanabilir öğe ölçüsü: seçili/pasif durumda boyut değişmez. */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-good,
+.primary,
+.danger,
+.v22-tab,
+.v22-link-button,
+.permanent-delete-button,
+.clsmc-theme-toggle,
+.nav > a,
+.nav > button,
+.actions > a,
+.actions > button,
+.v23-user-actions > a,
+.v23-user-actions > button,
+.row-actions a,
+.row-actions button,
+.v22-row-actions a,
+.v22-row-actions button,
+.v23-review-actions button{
+  box-sizing:border-box !important;
+  min-height:44px !important;
+  height:auto !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  vertical-align:middle !important;
+  margin:0 !important;
+  transform:none !important;
+  transition:
+    background-color .14s ease,
+    border-color .14s ease,
+    color .14s ease,
+    box-shadow .14s ease !important;
+}
+
+/* Her durumda aynı kenarlık kalınlığı; seçim sırasında zıplama olmaz. */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-good,
+.primary,
+.danger,
+.v22-tab,
+.clsmc-theme-toggle{
+  border-width:1px !important;
+  border-style:solid !important;
+}
+
+.btn-primary,
+.primary{
+  border-color:transparent !important;
+}
+
+/* Klavye odağı görünür, fakat elemanın boyutu değişmez. */
+.btn:focus-visible,
+.v22-tab:focus-visible,
+.clsmc-theme-toggle:focus-visible,
+.nav a:focus-visible,
+.actions a:focus-visible,
+.v23-user-actions a:focus-visible{
+  outline:3px solid color-mix(in srgb,var(--accent) 40%,transparent) !important;
+  outline-offset:2px !important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 75%,transparent) !important;
+}
+
+/* Devre dışı düğmeler yerini korur. */
+button:disabled,
+.btn:disabled,
+[aria-disabled="true"]{
+  opacity:.52 !important;
+  cursor:not-allowed !important;
+  transform:none !important;
+}
+
+/* Ana admin sekme çubuğu */
+.v22-tabs{
+  width:100% !important;
+  min-height:60px !important;
+  display:flex !important;
+  align-items:stretch !important;
+  gap:8px !important;
+  padding:8px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-gutter:stable !important;
+  overscroll-behavior-inline:contain;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+
+.v22-tab{
+  flex:1 1 180px !important;
+  min-width:150px !important;
+  max-width:270px !important;
+  min-height:44px !important;
+  padding:10px 15px !important;
+  border-color:transparent !important;
+  border-radius:12px !important;
+  scroll-snap-align:start;
+  font-size:12px !important;
+  font-weight:850 !important;
+  text-align:center;
+}
+
+.v22-tab:hover{
+  border-color:var(--line-soft) !important;
+}
+
+.v22-tab.active,
+.v22-tab[aria-selected="true"]{
+  border-color:color-mix(in srgb,var(--accent) 72%,white 28%) !important;
+  color:#fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 8px 18px color-mix(in srgb,var(--accent) 22%,transparent) !important;
+}
+
+.v22-tab-panel{
+  width:100%;
+  min-width:0;
+}
+
+.v22-tab-panel[hidden]{
+  display:none !important;
+}
+
+/* Genel navigasyon ve hızlı işlem satırları */
+.nav,
+.actions,
+.v23-user-actions,
+.row-actions,
+.v22-row-actions,
+.v23-review-actions,
+.v22-confirm-actions{
+  min-width:0 !important;
+  max-width:100% !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.nav,
+.v23-user-actions{
+  display:flex !important;
+  flex-wrap:wrap !important;
+}
+
+.nav > *,
+.v23-user-actions > *{
+  flex:0 1 auto;
+}
+
+.row-actions,
+.v22-row-actions,
+.v23-review-actions{
+  display:flex !important;
+  flex-wrap:wrap !important;
+}
+
+/* Üst menüde yatay taşma sayfayı genişletmez. */
+.topbar .actions,
+.topbar .v22-top-actions,
+.topbar > div:last-child{
+  min-height:44px;
+  scroll-snap-type:x proximity;
+}
+
+.topbar .actions > *,
+.topbar .v22-top-actions > *,
+.topbar > div:last-child > *{
+  scroll-snap-align:start;
+}
+
+/* Hızlı işlem kartları ve modül kartları hover sırasında hareket etmez. */
+.v22-quick-card,
+.v23-nav-card,
+.v23-module,
+.v23-item{
+  transform:none !important;
+}
+
+.v22-quick-card:hover,
+.v23-nav-card:hover,
+.v23-module:hover,
+.v23-item:hover{
+  transform:none !important;
+}
+
+/* Filtre ve başlık işlem alanlarında düğme ölçüsü sabit. */
+.v22-panel-head,
+.v23-box-head,
+.head,
+.v22-table-tools{
+  min-width:0;
+}
+
+.v22-panel-head > *,
+.v23-box-head > *,
+.head > *,
+.v22-table-tools > *{
+  min-width:0;
+}
+
+/* Form içinde düğmeler içerik kadar uzar, sütunu bozmaz. */
+form .actions,
+form .row-actions,
+.inline-form{
+  max-width:100%;
+}
+
+.inline-form{
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  flex-wrap:wrap !important;
+}
+
+.inline-form input{
+  flex:1 1 145px;
+  min-width:130px;
+}
+
+/* Büyük masaüstünde sekmeler tüm satırı dengeli doldurur. */
+@media(min-width:1100px){
+  .v22-tabs{
+    justify-content:flex-start !important;
+  }
+
+  .v22-tab{
+    flex:1 1 0 !important;
+    max-width:none !important;
+  }
+}
+
+/* Tablet ve telefon: sekmeler tek satır yatay kayar, içerik aşağı sıçramaz. */
+@media(max-width:900px){
+  .v22-tabs{
+    position:sticky !important;
+    top:128px !important;
+    flex-wrap:nowrap !important;
+    min-height:58px !important;
+  }
+
+  .v22-tab{
+    flex:0 0 auto !important;
+    min-width:160px !important;
+  }
+
+  .v23-user-actions{
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scrollbar-width:none;
+    scroll-snap-type:x proximity;
+  }
+
+  .v23-user-actions::-webkit-scrollbar{
+    display:none;
+  }
+
+  .v23-user-actions > *{
+    flex:0 0 auto !important;
+    scroll-snap-align:start;
+  }
+}
+
+@media(max-width:650px){
+  .v22-tabs{
+    top:132px !important;
+    margin:12px 0 !important;
+    border-radius:15px !important;
+  }
+
+  .v22-tab{
+    min-width:145px !important;
+    padding:9px 12px !important;
+  }
+
+  .nav,
+  .row-actions,
+  .v22-row-actions,
+  .v23-review-actions{
+    width:100%;
+  }
+
+  .nav > .btn,
+  .row-actions > .btn,
+  .v22-row-actions > .btn,
+  .v23-review-actions > .btn{
+    flex:1 1 130px;
+  }
+}
