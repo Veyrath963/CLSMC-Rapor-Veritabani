@@ -2,120 +2,51 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Giriş</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Kullanıcı Hesabı Düzenle</title>
 <style>
 :root{
-  --bg:#0b1020; --panel:#121a2f; --line:#2a3657; --text:#eef3ff;
-  --muted:#9eabc8; --accent:#5b8cff; --good:#38d39f; --danger:#ff6b7a;
-  --shadow:0 16px 50px rgba(0,0,0,.28);
+  --bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;
+  --muted:#9eabc8;--accent:#5b8cff;--good:#38d39f;--danger:#ff6b7a;
+  --shadow:0 14px 42px rgba(0,0,0,.26)
 }
 *{box-sizing:border-box}
 body{
   margin:0;min-height:100vh;color:var(--text);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  background:
-    radial-gradient(circle at 20% 0%, rgba(91,140,255,.15), transparent 30%),
-    radial-gradient(circle at 85% 10%, rgba(56,211,159,.10), transparent 25%),
-    var(--bg);
+  background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)
 }
-button,input{font:inherit}
-a{text-decoration:none}
-.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
-.auth-card{
-  width:min(470px,100%);background:rgba(18,26,47,.96);border:1px solid var(--line);
-  border-radius:24px;padding:32px;box-shadow:var(--shadow)
+a{text-decoration:none;color:inherit}input,button{font:inherit}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;padding:15px 22px;
+  background:rgba(8,13,25,.93);border-bottom:1px solid var(--line)
 }
-
-.login-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
-.login-logo{
-  width:108px;height:108px;display:block;object-fit:contain;
-  background:transparent;border:0;box-shadow:none;
+.btn{
+  border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:11px;
+  padding:10px 14px;font-weight:750;cursor:pointer
 }
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
-.logo{
-  width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--accent),#785bff);font-size:22px;font-weight:800
+.btn-primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff);color:#fff}
+.shell{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+.hero h1{margin:0 0 6px;font-size:25px}.hero p{margin:0;color:var(--muted)}
+.panel{
+  margin-top:22px;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:22px;box-shadow:var(--shadow)
 }
-.brand h1{font-size:20px;margin:0}
-.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
 .field{margin-bottom:16px}
-label{display:block;font-size:13px;color:#c7d1ea;margin-bottom:7px}
-input{
-  width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);
-  border-radius:12px;padding:12px 13px;outline:none
+label{display:block;color:#c7d1ea;font-size:13px;margin-bottom:7px}
+input,select{
+  width:100%;background:#0d1426;border:1px solid var(--line);color:var(--text);
+  border-radius:11px;padding:11px 12px;outline:none
 }
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
-.btn{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;transition:.18s ease}
-.btn:hover{transform:translateY(-1px)}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#7b61ff);color:white}
-.btn-secondary{background:#202b49;color:#dce6ff;border:1px solid #344264}
-.btn-good{background:var(--good);color:#07140f}
-.full{width:100%}
-.flash{padding:13px 14px;border-radius:12px;margin-bottom:16px;font-weight:750;font-size:14px}
-.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
-.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
-.example{
-  margin-top:16px;padding:12px;border-radius:12px;background:#0f162a;
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.note{
+  margin:16px 0;padding:12px;border-radius:11px;background:#0d1426;
   border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.6
 }
-.note{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.55}
-
-.developer-credit{
-  position:fixed;
-  right:14px;
-  bottom:10px;
-  z-index:1000;
-  color:var(--muted, #7A8891);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.2px;
-  opacity:.78;
-  user-select:none;
-  pointer-events:none;
-}
-@media(max-width:600px){
-  .developer-credit{
-    right:10px;
-    bottom:8px;
-    font-size:10px;
-  }
-}
-
-
-.platform-notice{
-  margin:0 0 20px;
-  padding:14px 15px;
-  display:flex;
-  align-items:flex-start;
-  gap:11px;
-  border-radius:16px;
-  border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line));
-  background:color-mix(in srgb,var(--accent) 11%,var(--panel));
-  color:var(--text);
-  font-size:13px;
-  line-height:1.6;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-}
-.platform-notice-icon{
-  width:30px;
-  height:30px;
-  flex:0 0 30px;
-  display:grid;
-  place-items:center;
-  border-radius:10px;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));
-  color:#fff;
-  font-size:15px;
-  font-weight:900;
-}
-.platform-notice strong{
-  display:block;
-  margin-bottom:2px;
-  color:var(--text);
-  font-size:13px;
-}
-
+.flash{padding:12px 14px;border-radius:11px;margin-top:16px;font-weight:700}
+.flash.success{background:rgba(56,211,159,.13);border:1px solid rgba(56,211,159,.5);color:#8ff0ce}
+.flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
+.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
 </style>
 <script>
 (function(){
@@ -135,56 +66,80 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body class="clsmc-modernized">
-<section class="auth-wrap">
-  <div class="auth-card">
-    <div class="login-logo-wrap">
-      <img class="login-logo" src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="Central Los Santos Medical Center logosu">
+<body>
+<header class="topbar">
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
+    <strong>CLSMC Yönetim Merkezi • Kullanıcı Hesabı</strong><br>
+    <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
+  </div></div>
+  <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <h1>{{ user.username }}</h1>
+    <p>Kullanıcının giriş adını ve raporlarda kullanılacak rütbesini belirle; gerekirse şifresini sıfırla.</p>
+  </section>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form class="panel" method="post" action="{{ url_for('admin_edit_user', user_id=user.id) }}">
+    <div class="field">
+      <label>Kullanıcı Adı</label>
+      <input name="username" value="{{ user.username }}" autocomplete="off" required>
     </div>
 
-    <div class="brand" style="justify-content:center;text-align:center;">
-      <div>
-        <h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1>
-        <p>Central Los Santos Medical Center</p>
-      </div>
+
+    <div class="field">
+      <label>Rütbe</label>
+      <select name="rank" required>
+        <option value="" {% if not user.rank %}selected{% endif %}>Rütbe Seçiniz</option>
+        <option value="Doctor" {% if user.rank == "Doctor" %}selected{% endif %}>Doctor</option>
+        <option value="Attending Physician" {% if user.rank == "Attending Physician" %}selected{% endif %}>Attending Physician</option>
+        <option value="Psychiatrist" {% if user.rank == "Psychiatrist" %}selected{% endif %}>Psychiatrist</option>
+        <option value="Paramedic" {% if user.rank == "Paramedic" %}selected{% endif %}>Paramedic</option>
+        <option value="Senior Paramedic" {% if user.rank == "Senior Paramedic" %}selected{% endif %}>Senior Paramedic</option>
+        <option value="EMT" {% if user.rank in ["EMT", "Emergency Medical Technician (EMT)"] %}selected{% endif %}>EMT</option>
+      </select>
     </div>
 
-
-    <div class="platform-notice" role="note" aria-label="Platform bilgilendirmesi">
-      <div class="platform-notice-icon" aria-hidden="true">i</div>
-      <div>
-        <strong>Platform Bilgilendirmesi</strong>
-        Bu site, Losland Roleplay platformunun Medical Departmanı adına hazırlanmıştır.
-      </div>
+    <div class="field">
+      <label>Yeni Şifre</label>
+      <input
+        name="new_password"
+        type="password"
+        autocomplete="new-password"
+        minlength="6"
+        placeholder="Şifreyi değiştirmeyecekseniz boş bırakın"
+      >
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="post" action="{{ url_for('login') }}">
-      <div class="field">
-        <label>Kullanıcı Adı</label>
-        <input id="loginUsername" name="username" value="{{ prefill_username|default('') }}" autocomplete="username" required>
-      </div>
-      <div class="field">
-        <label>Şifre</label>
-        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
-      </div>
-      <button class="btn btn-primary full" type="submit">Giriş Yap</button>
-    </form>
-
-    <div class="example">
-      Örnek:<br>
-      <b>Kullanıcı Adı:</b> Darius Blackwell<br>
-      <b>Şifre:</b> Darius123
+    <div class="field">
+      <label>Yeni Şifre Tekrarı</label>
+      <input
+        name="new_password_repeat"
+        type="password"
+        autocomplete="new-password"
+        minlength="6"
+        placeholder="Yeni şifreyi tekrar girin"
+      >
     </div>
-  </div>
-</section>
+
+    <div class="note">
+      <strong>Paramedic ve EMT hesapları yalnızca EMS/Paramedic paneline erişir.</strong><br>
+
+      Rütbe yalnızca yönetici tarafından belirlenir. EMS rütbeleri yalnızca EMS Saha Raporuna;
+      tıbbi rütbeler yalnızca Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarına erişir. Şifre alanlarını boş bırakırsanız parola değişmez.
+    </div>
+
+    <button class="btn btn-primary" type="submit">Hesabı Güncelle</button>
+  </form>
+</main>
 
 <div class="developer-credit">Developer: Veyrath</div>
-
 </body>
 </html>

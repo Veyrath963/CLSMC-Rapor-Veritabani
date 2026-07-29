@@ -1,6 +1,89 @@
+(function(){
+  "use strict";
+  var STORAGE_KEY = "clsmc-interface-theme";
+  var LIGHT_ID = "clsmc-light-theme";
 
-/* CLSMC V23.0 — Kullanıcı Merkezi ve Hastane Yönetimi */
-:root{--v23-info:#59a9ff;--v23-success:#43d39e;--v23-warning:#ffc463;--v23-danger:#ff7186}
-.v23-user-home{display:grid;gap:18px;margin-bottom:28px}.v23-welcome{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}.v23-welcome h1{margin:0 0 8px}.v23-kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}.v23-user-actions{display:flex;gap:10px;flex-wrap:wrap}.v23-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}.v23-metric{padding:17px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}.v23-metric span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.07em}.v23-metric strong{display:block;font-size:26px;margin-top:6px}.v23-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}.v23-span-4{grid-column:span 4}.v23-span-5{grid-column:span 5}.v23-span-6{grid-column:span 6}.v23-span-7{grid-column:span 7}.v23-span-8{grid-column:span 8}.v23-span-12{grid-column:1/-1}.v23-box{border:1px solid var(--line);border-radius:20px;background:var(--panel);padding:19px;box-shadow:var(--shadow)}.v23-box-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.v23-box h3{margin:0;font-size:18px}.v23-box .sub{margin:4px 0 0}.v23-list{display:grid;gap:10px}.v23-item{padding:12px 13px;border:1px solid var(--line);border-radius:14px;background:var(--panel-3,#0b1728)}.v23-item.unread{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));box-shadow:inset 4px 0 var(--accent)}.v23-item p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.v23-item-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:11px;margin-top:8px}.v23-announcement{border-color:color-mix(in srgb,var(--accent) 46%,var(--line));background:color-mix(in srgb,var(--accent) 8%,var(--panel))}.v23-module-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.v23-module{padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel-3,#0b1728);min-height:116px}.v23-module strong{display:block;margin:9px 0 4px}.v23-module small{color:var(--muted);line-height:1.45}.v23-module.active{border-color:color-mix(in srgb,var(--good) 50%,var(--line))}.v23-module .tag{display:inline-flex;padding:4px 7px;border-radius:999px;border:1px solid var(--line);font-size:10px;color:var(--muted)}.v23-leave-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.v23-leave-form .wide{grid-column:1/-1}.v23-status{display:inline-flex;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:11px;font-weight:800}.v23-status.approved{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}.v23-status.rejected{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}.v23-status.pending{color:var(--warning);border-color:color-mix(in srgb,var(--warning) 45%,var(--line))}.v23-status.cancelled{color:var(--muted)}.v23-toast{position:fixed;left:50%;bottom:28px;z-index:10000;transform:translate(-50%,30px);opacity:0;pointer-events:none;min-width:220px;padding:13px 18px;border:2px solid #42d89f;border-radius:14px;background:#0e2a22;color:#caffea;font-weight:850;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.35);transition:.22s ease}.v23-toast.show{opacity:1;transform:translate(-50%,0)}html[data-theme='light'] .v23-toast{background:#e9fff6;color:#075c3f;border-color:#22a873}.v23-notification-count{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 6px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;font-weight:900}.v23-draft-state{color:var(--muted);font-size:11px}.v23-manager-hero{display:grid;grid-template-columns:1.5fr .8fr;gap:18px}.v23-manager-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.v23-manager-card{padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}.v23-manager-card span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.v23-manager-card strong{display:block;font-size:29px;margin-top:6px}.v23-review-form{display:grid;gap:8px;min-width:260px}.v23-review-actions{display:flex;gap:8px;flex-wrap:wrap}.v23-announcement-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.v23-announcement-form .wide{grid-column:1/-1}.v23-nav-card{display:flex;gap:13px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--panel-3,#0b1728)}.v23-nav-card .icon{width:40px;height:40px;margin:0;flex:0 0 40px}.v23-nav-card small{display:block;color:var(--muted);margin-top:4px;line-height:1.4}
-@media(max-width:1100px){.v23-metrics{grid-template-columns:repeat(3,1fr)}.v23-span-4,.v23-span-5,.v23-span-6,.v23-span-7,.v23-span-8{grid-column:1/-1}.v23-module-grid{grid-template-columns:repeat(2,1fr)}.v23-manager-hero{grid-template-columns:1fr}.v23-manager-cards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:650px){.v23-metrics,.v23-manager-cards{grid-template-columns:1fr}.v23-module-grid,.v23-leave-form,.v23-announcement-form{grid-template-columns:1fr}.v23-leave-form .wide,.v23-announcement-form .wide{grid-column:auto}.v23-user-actions{width:100%}.v23-user-actions .btn{flex:1}.v23-toast{width:calc(100% - 30px)}}
+  function normalizeTheme(value){
+    return value === "light" ? "light" : "dark";
+  }
+
+  function readTheme(){
+    try{return normalizeTheme(localStorage.getItem(STORAGE_KEY));}
+    catch(error){return normalizeTheme(document.documentElement.dataset.theme);}
+  }
+
+  function saveTheme(theme){
+    try{localStorage.setItem(STORAGE_KEY, theme);}catch(error){}
+  }
+
+  function setLightStylesheet(theme){
+    var sheet = document.getElementById(LIGHT_ID);
+    if(sheet){sheet.media = theme === "light" ? "all" : "not all";}
+  }
+
+  function updateButton(button, theme){
+    var isLight = theme === "light";
+    var icon = button.querySelector(".theme-icon");
+    var label = button.querySelector(".theme-label");
+    if(icon){icon.textContent = isLight ? "☀️" : "🌙";}
+    if(label){label.textContent = isLight ? "Aydınlık Mod" : "Karanlık Mod";}
+    button.setAttribute("aria-label", isLight ? "Karanlık arayüze geç" : "Aydınlık arayüze geç");
+    button.title = isLight ? "Karanlık arayüze geç" : "Aydınlık arayüze geç";
+    button.setAttribute("aria-pressed", String(isLight));
+  }
+
+  function applyTheme(theme, persist){
+    theme = normalizeTheme(theme);
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    setLightStylesheet(theme);
+    document.querySelectorAll("[data-clsmc-theme-toggle]").forEach(function(button){
+      updateButton(button, theme);
+    });
+    if(persist){saveTheme(theme);}
+    window.dispatchEvent(new CustomEvent("clsmc:themechange", {detail:{theme:theme}}));
+  }
+
+  function locateHost(){
+    var topbar = document.querySelector(".topbar");
+    if(!topbar){return null;}
+    var children = Array.prototype.slice.call(topbar.children);
+    if(children.length > 1){return children[children.length - 1];}
+    return topbar;
+  }
+
+  function createButton(){
+    if(document.querySelector("[data-clsmc-theme-toggle]")){return;}
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "clsmc-theme-toggle";
+    button.setAttribute("data-clsmc-theme-toggle", "");
+    button.innerHTML = '<span class="theme-icon" aria-hidden="true"></span><span class="theme-label"></span>';
+    button.addEventListener("click", function(){
+      var next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      applyTheme(next, true);
+    });
+
+    var host = locateHost();
+    if(host){
+      host.appendChild(button);
+    }else{
+      button.classList.add("is-floating");
+      document.body.appendChild(button);
+    }
+    updateButton(button, readTheme());
+  }
+
+  function start(){
+    applyTheme(readTheme(), false);
+    createButton();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", start, {once:true});
+  }else{
+    start();
+  }
+
+  window.CLSMCTheme = {set: function(theme){applyTheme(theme, true);}, get: readTheme};
+})();
