@@ -88,3 +88,5 @@ html[data-theme="light"] .clsmc-theme-toggle:hover{
 @media(prefers-reduced-motion:reduce){
   html,body,.clsmc-theme-toggle{transition:none !important}
 }
+
+.clsmc-theme-toggle{border-radius:999px !important;min-height:40px !important;padding:8px 14px !important;font-weight:800 !important}.topbar .clsmc-theme-toggle{margin-left:4px}

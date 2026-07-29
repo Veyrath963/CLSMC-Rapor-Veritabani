@@ -1,0 +1,18 @@
+CLSMC V23.1 — ADMIN HESAPLARI YÖNETİMİ
+=========================================
+
+- Admin menüsüne “Admin Hesapları” butonu eklendi.
+- Yönetici panelinden yeni admin hesabı oluşturulabilir.
+- Admin kullanıcı adı benzersiz olmalıdır.
+- Admin şifresi en az 8 karakter olmalı ve iki kez doğrulanmalıdır.
+- Mevcut admin hesapları, aktif/pasif durumları, oluşturan yönetici ve son giriş zamanı görüntülenir.
+- Admin şifresi yönetici panelinden güvenli biçimde yenilenebilir.
+- Admin hesabı aktif veya pasif yapılabilir.
+- Başka bir admin hesabı kalıcı olarak silinebilir.
+- Oturum açılan admin hesabı kendisini pasif yapamaz veya silemez.
+- Sistemde en az bir aktif yönetici hesabı her zaman korunur.
+- Parolalar ve parola özetleri hiçbir ekranda gösterilmez veya loglara yazılmaz.
+- Mevcut kullanıcı, rapor, arşiv, izin, duyuru ve Neon verileri değiştirilmez.
+
+GITHUB COMMIT:
+CLSMC V23.1 - Add admin account management
