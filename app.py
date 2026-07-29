@@ -84,7 +84,15 @@ class DeletedUser(db.Model):
     deleted_by_admin = db.Column(db.String(120), nullable=False)
 
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Veyrath")
+LEGACY_ADMIN_USERNAME = "Veyrath"
+RENAMED_ADMIN_USERNAME = "Darius Blackwell"
+
+# Render Environment içinde eski ADMIN_USERNAME=Veyrath değeri kalmış olsa bile
+# yeni yönetici adı kullanılır. Başka özel bir admin adı verilmişse korunur.
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", RENAMED_ADMIN_USERNAME).strip()
+if not ADMIN_USERNAME or ADMIN_USERNAME.casefold() == LEGACY_ADMIN_USERNAME.casefold():
+    ADMIN_USERNAME = RENAMED_ADMIN_USERNAME
+
 DEFAULT_ADMIN_PASSWORD_HASH = os.environ.get(
     "ADMIN_PASSWORD_HASH",
     "pbkdf2:sha256:600000$635c0576bd5c09ff4ec55048337f9610$e34636540b30e59930fa6ed88661c20e72a06cc652cf2b37969485149c50d7be",
@@ -453,9 +461,59 @@ with app.app_context():
             text("UPDATE admin_accounts SET is_active=TRUE WHERE is_active IS NULL")
         )
 
+    # V23.5.5: Eski Veyrath admin hesabını kimliği ve parolası korunarak
+    # Darius Blackwell adına taşır. Normal kullanıcı tablosundaki aynı isim,
+    # admin_accounts tablosundan bağımsız olduğu için bu geçişi engellemez.
+    legacy_admin = AdminAccount.query.filter(
+        db.func.lower(AdminAccount.username) == LEGACY_ADMIN_USERNAME.lower()
+    ).first()
+    renamed_admin = AdminAccount.query.filter(
+        db.func.lower(AdminAccount.username) == RENAMED_ADMIN_USERNAME.lower()
+    ).first()
+
+    if legacy_admin and not renamed_admin:
+        previous_admin_name = legacy_admin.username
+        legacy_admin.username = RENAMED_ADMIN_USERNAME
+
+        # Kullanıcıya gösterilen yönetici geçmiş alanlarını yeni adla eşleştirir.
+        # AppLog kayıtları denetim bütünlüğü için bilerek değiştirilmez.
+        AdminAccount.query.filter(
+            AdminAccount.created_by_admin == previous_admin_name
+        ).update(
+            {AdminAccount.created_by_admin: RENAMED_ADMIN_USERNAME},
+            synchronize_session=False,
+        )
+        DeletedUser.query.filter(
+            DeletedUser.deleted_by_admin == previous_admin_name
+        ).update(
+            {DeletedUser.deleted_by_admin: RENAMED_ADMIN_USERNAME},
+            synchronize_session=False,
+        )
+        ReportArchive.query.filter(
+            ReportArchive.archived_by_admin == previous_admin_name
+        ).update(
+            {ReportArchive.archived_by_admin: RENAMED_ADMIN_USERNAME},
+            synchronize_session=False,
+        )
+        Announcement.query.filter(
+            Announcement.created_by_admin == previous_admin_name
+        ).update(
+            {Announcement.created_by_admin: RENAMED_ADMIN_USERNAME},
+            synchronize_session=False,
+        )
+        LeaveRequest.query.filter(
+            LeaveRequest.reviewed_by == previous_admin_name
+        ).update(
+            {LeaveRequest.reviewed_by: RENAMED_ADMIN_USERNAME},
+            synchronize_session=False,
+        )
+        db.session.commit()
+
     # Özel yönetici hesabını yalnızca ilk kez oluşturur.
     # Sonraki başlangıçlarda mevcut admin parolası değiştirilmez.
-    existing_admin = AdminAccount.query.filter_by(username=ADMIN_USERNAME).first()
+    existing_admin = AdminAccount.query.filter(
+        db.func.lower(AdminAccount.username) == ADMIN_USERNAME.lower()
+    ).first()
     if not existing_admin:
         db.session.add(
             AdminAccount(
@@ -1340,7 +1398,20 @@ def logout():
 
 
 def admin_required():
-    return bool(session.get("admin_id") and session.get("admin_username"))
+    admin_id = session.get("admin_id")
+    if not admin_id:
+        return False
+
+    admin = db.session.get(AdminAccount, admin_id)
+    if not admin or not admin.is_active:
+        session.clear()
+        return False
+
+    # Admin adı veritabanında değiştirildiyse açık oturumu da anında günceller.
+    if session.get("admin_username") != admin.username:
+        session["admin_username"] = admin.username
+
+    return True
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -1946,7 +2017,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.5.4",
+        "version": "V23.5.5",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -3028,4 +3099,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.5.4"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.5.5"}, 200
