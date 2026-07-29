@@ -26,3 +26,191 @@ pre,.bbcode,.legacy-code{border-radius:18px !important;background:linear-gradien
 .developer-credit{right:16px !important;bottom:14px !important;padding:8px 12px !important;border-radius:999px !important;background:color-mix(in srgb, var(--panel) 86%, transparent) !important;border:1px solid var(--line) !important;box-shadow:var(--shadow-1) !important;color:var(--muted) !important}
 main a[style*='background:#0d172b'], main div[style*='background:#152039'], [style*='background:#0f162a'], [style*='background:#0d1426']{background:color-mix(in srgb, var(--panel-3) 90%, transparent) !important;border-color:var(--line) !important;color:var(--text) !important;border-radius:16px !important}[style*='color:#9fc0ff'], [style*='color: #9fc0ff']{color:var(--accent) !important}[style*='color:#cbd6ee'], [style*='color: #cbd6ee'], [style*='color:#eef3ff']{color:var(--text) !important}
 @media (max-width:980px){.shell{padding:20px 16px 62px !important}.hero{padding:20px 18px !important}}@media (max-width:700px){.metrics{grid-template-columns:1fr !important}.topbar{padding:14px 16px !important}.topbar, .topbar > div{gap:10px !important}}
+
+
+/* CLSMC V21.1 — Yüksek Kontrast Okunabilirlik Düzeltmesi */
+
+/* Koyu tema */
+html[data-theme="dark"]{
+  --bg:#040a13 !important;
+  --bg-soft:#081426 !important;
+  --panel:#0d192b !important;
+  --panel-2:#12223b !important;
+  --panel-3:#071322 !important;
+  --line:#3a557d !important;
+  --line-soft:#4b678f !important;
+  --text:#ffffff !important;
+  --muted:#c5d1e5 !important;
+  --accent:#76b8ff !important;
+  --accent-2:#a18aff !important;
+  --accent-3:#61e8bd !important;
+}
+html[data-theme="dark"] body{color:#ffffff !important}
+html[data-theme="dark"] .topbar{
+  background:rgba(5,13,25,.96) !important;
+  border-bottom-color:#385179 !important;
+}
+html[data-theme="dark"] .topbar h1,
+html[data-theme="dark"] .topbar h2,
+html[data-theme="dark"] .topbar strong,
+html[data-theme="dark"] .topbar-brand strong{color:#ffffff !important}
+html[data-theme="dark"] .topbar small,
+html[data-theme="dark"] .topbar p,
+html[data-theme="dark"] .topbar-brand div{color:#c9d7ec !important}
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .login-card,
+html[data-theme="dark"] .doctor-box,
+html[data-theme="dark"] .profile{
+  background:linear-gradient(160deg,#0f1d32,#0b1728) !important;
+  border-color:#365178 !important;
+}
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] strong,
+html[data-theme="dark"] td{color:#ffffff !important}
+html[data-theme="dark"] .sub,
+html[data-theme="dark"] .subtitle,
+html[data-theme="dark"] .empty,
+html[data-theme="dark"] .hero p,
+html[data-theme="dark"] .metric span,
+html[data-theme="dark"] .note,
+html[data-theme="dark"] .doctor-identity,
+html[data-theme="dark"] .developer-credit{color:#c5d1e5 !important}
+html[data-theme="dark"] label,
+html[data-theme="dark"] .field label{color:#f4f8ff !important}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+  background:#071321 !important;
+  color:#ffffff !important;
+  border-color:#45638e !important;
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{
+  color:#91a4c2 !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] th{
+  background:#101f35 !important;
+  color:#f2f7ff !important;
+}
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger){
+  background:#182b49 !important;
+  color:#ffffff !important;
+  border-color:#4d698f !important;
+}
+html[data-theme="dark"] .badge,
+html[data-theme="dark"] .chip,
+html[data-theme="dark"] .status,
+html[data-theme="dark"] .count{
+  background:#152844 !important;
+  color:#eef5ff !important;
+  border-color:#48658c !important;
+}
+
+/* Aydınlık tema */
+html[data-theme="light"]{
+  --bg:#e7f0f4 !important;
+  --bg-soft:#f4f9fb !important;
+  --panel:#ffffff !important;
+  --panel-2:#f5fafc !important;
+  --panel-3:#edf5f8 !important;
+  --line:#b5ccd6 !important;
+  --line-soft:#9ebac6 !important;
+  --text:#0c2838 !important;
+  --muted:#476575 !important;
+  --accent:#006f94 !important;
+  --accent-2:#356fd6 !important;
+  --accent-3:#008e7e !important;
+}
+html[data-theme="light"] body{
+  color:#0c2838 !important;
+  background:
+    radial-gradient(circle at 0% 0%,rgba(0,111,148,.11),transparent 24%),
+    radial-gradient(circle at 100% 8%,rgba(0,142,126,.09),transparent 24%),
+    linear-gradient(160deg,#f9fcfd 0%,#eaf3f6 58%,#e2edf1 100%) !important;
+}
+html[data-theme="light"] .topbar{
+  background:rgba(8,73,98,.97) !important;
+  border-bottom-color:#0b617f !important;
+}
+html[data-theme="light"] .topbar h1,
+html[data-theme="light"] .topbar h2,
+html[data-theme="light"] .topbar strong,
+html[data-theme="light"] .topbar-brand strong{color:#ffffff !important}
+html[data-theme="light"] .topbar small,
+html[data-theme="light"] .topbar p,
+html[data-theme="light"] .topbar-brand div{color:#d8f2fa !important}
+html[data-theme="light"] .panel,
+html[data-theme="light"] .card,
+html[data-theme="light"] .metric,
+html[data-theme="light"] .auth-card,
+html[data-theme="light"] .login-card,
+html[data-theme="light"] .doctor-box,
+html[data-theme="light"] .profile{
+  background:#ffffff !important;
+  border-color:#b5ccd6 !important;
+}
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] strong,
+html[data-theme="light"] td{color:#0c2838 !important}
+html[data-theme="light"] .sub,
+html[data-theme="light"] .subtitle,
+html[data-theme="light"] .empty,
+html[data-theme="light"] .hero p,
+html[data-theme="light"] .metric span,
+html[data-theme="light"] .note,
+html[data-theme="light"] .doctor-identity,
+html[data-theme="light"] .developer-credit{color:#476575 !important}
+html[data-theme="light"] label,
+html[data-theme="light"] .field label{color:#123548 !important}
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea{
+  background:#ffffff !important;
+  color:#102d3d !important;
+  border-color:#9fbcc7 !important;
+}
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder{
+  color:#718995 !important;
+  opacity:1 !important;
+}
+html[data-theme="light"] th{
+  background:#dcebf0 !important;
+  color:#153b4d !important;
+}
+html[data-theme="light"] .btn-secondary,
+html[data-theme="light"] .btn:not(.btn-primary):not(.btn-good):not(.btn-danger):not(.primary):not(.danger){
+  background:#eef6f8 !important;
+  color:#173a4c !important;
+  border-color:#9ebbc6 !important;
+}
+html[data-theme="light"] .badge,
+html[data-theme="light"] .chip,
+html[data-theme="light"] .status,
+html[data-theme="light"] .count{
+  background:#e2f0f4 !important;
+  color:#17475a !important;
+  border-color:#9ebdc8 !important;
+}
+html[data-theme="light"] .topbar .clsmc-theme-toggle,
+html[data-theme="dark"] .topbar .clsmc-theme-toggle{
+  color:#ffffff !important;
+  border-color:rgba(255,255,255,.42) !important;
+  background:rgba(255,255,255,.14) !important;
+}
+
+/* Genel okunabilirlik */
+body,input,select,textarea,button,table{font-weight:500}
+p,.sub,.subtitle,.note,.empty{line-height:1.65 !important}
+table td,table th{font-size:13px !important}
