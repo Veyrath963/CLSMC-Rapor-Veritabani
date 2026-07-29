@@ -1,0 +1,284 @@
+/* CLSMC V23.2 — Arayüz Sabitleme ve Kayma Önleme
+   Kullanıcı ve admin ekranlarında ortak genişlik, üst menü yüksekliği,
+   sabit kaydırma alanı ve güvenli tablo taşması sağlar. */
+
+html{
+  width:100%;
+  min-width:320px;
+  overflow-y:scroll;
+  scrollbar-gutter:stable;
+  scroll-behavior:smooth;
+}
+
+body{
+  width:100%;
+  min-width:320px;
+  overflow-x:hidden !important;
+}
+
+*,*::before,*::after{
+  box-sizing:border-box;
+}
+
+img,svg,video,canvas{
+  display:block;
+  max-width:100%;
+}
+
+main,section,article,aside,header,footer,nav,
+.panel,.card,.metric,.v22-grid,.v23-grid,
+.v22-tab-panel,.v23-box,.table-wrap{
+  min-width:0;
+}
+
+/* Bütün sayfalarda aynı merkez ve genişlik */
+.shell,
+.v22-dashboard-shell{
+  width:min(1440px,calc(100% - 40px)) !important;
+  max-width:1440px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  padding:26px 0 78px !important;
+}
+
+/* Bütün admin ve kullanıcı üst menülerinde aynı hiza */
+.topbar{
+  width:100% !important;
+  min-height:76px !important;
+  padding:12px max(20px,calc((100vw - 1440px)/2)) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  flex-wrap:nowrap !important;
+  overflow:visible !important;
+}
+
+.topbar > *{
+  min-width:0;
+}
+
+.topbar .brand,
+.topbar-brand{
+  flex:1 1 auto;
+  min-width:220px !important;
+  max-width:620px;
+}
+
+.topbar .brand > div:last-child,
+.topbar-brand > div:last-child{
+  min-width:0;
+}
+
+.topbar .brand h1,
+.topbar .brand h2,
+.topbar-brand strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.topbar > :last-child,
+.topbar .actions,
+.topbar .v22-top-actions{
+  flex:0 1 auto;
+  max-width:65%;
+  min-width:0;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:9px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+.topbar > :last-child::-webkit-scrollbar,
+.topbar .actions::-webkit-scrollbar,
+.topbar .v22-top-actions::-webkit-scrollbar{
+  display:none;
+}
+
+.topbar .btn,
+.topbar button,
+.topbar a{
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+
+/* Kart ve formlar sayfa dışına taşmasın */
+.hero,.panel,.card,.metric,.v23-box,.v23-metric,
+.v22-system-mark,.v22-quick-card,.v23-module{
+  width:100%;
+  max-width:100%;
+}
+
+.grid,.grid2,.metrics,.v22-grid,.v23-grid,
+.v23-metrics,.v22-metrics,.v23-manager-cards,
+.v23-module-grid,.v23-announcement-form,
+.v23-leave-form,.filter-grid,.data-grid{
+  width:100%;
+}
+
+.grid > *,.grid2 > *,.metrics > *,
+.v22-grid > *,.v23-grid > *,.v23-metrics > *,
+.v22-metrics > *,.v23-manager-cards > *,
+.v23-module-grid > *,.v23-announcement-form > *,
+.v23-leave-form > *,.filter-grid > *,.data-grid > *{
+  min-width:0;
+}
+
+input,select,textarea,button{
+  max-width:100%;
+}
+
+.v23-announcement-form{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  align-items:end;
+}
+
+/* Tablolar paneli büyütmez; kendi içinde yatay kayar */
+.table-wrap{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-gutter:stable;
+}
+
+.table-wrap table{
+  width:100% !important;
+  min-width:860px;
+  margin:0;
+}
+
+table th,
+table td{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+table th{
+  white-space:nowrap;
+}
+
+/* Developer rozeti artık tam genişlik çizgi oluşturmaz */
+.developer-credit{
+  position:fixed !important;
+  left:auto !important;
+  right:16px !important;
+  top:auto !important;
+  bottom:14px !important;
+  width:max-content !important;
+  max-width:calc(100vw - 32px) !important;
+  min-width:0 !important;
+  margin:0 !important;
+  z-index:9000 !important;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+/* Hover/focus sırasında elemanların fiziksel yeri değişmesin */
+.btn:hover,.btn:focus,
+.btn-primary:hover,.btn-primary:focus,
+.btn-secondary:hover,.btn-secondary:focus,
+.primary:hover,.primary:focus,
+.danger:hover,.danger:focus,
+.btn-good:hover,.btn-good:focus,
+.card:hover,.v22-quick-card:hover,
+input:focus,select:focus,textarea:focus{
+  transform:none !important;
+}
+
+.v22-tab-panel.active{
+  animation:none !important;
+}
+
+/* Açılır dialog ve bildirimler içerik genişliğini etkilemez */
+dialog,.v22-confirm-dialog{
+  max-width:calc(100vw - 32px);
+}
+
+.v23-toast{
+  max-width:calc(100vw - 30px);
+}
+
+/* Büyük ekranlarda rapor ve admin merkezleri aynı genişliği kullanır */
+@media(min-width:1500px){
+  .shell,
+  .v22-dashboard-shell{
+    width:1440px !important;
+  }
+}
+
+/* Tablet */
+@media(max-width:900px){
+  .shell,
+  .v22-dashboard-shell{
+    width:calc(100% - 28px) !important;
+    padding:20px 0 70px !important;
+  }
+
+  .topbar{
+    min-height:auto !important;
+    padding:12px 14px !important;
+    align-items:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+
+  .topbar .brand,
+  .topbar-brand{
+    width:100%;
+    max-width:100%;
+    min-width:0 !important;
+  }
+
+  .topbar > :last-child,
+  .topbar .actions,
+  .topbar .v22-top-actions{
+    width:100%;
+    max-width:100%;
+    justify-content:flex-start !important;
+    overflow-x:auto;
+  }
+}
+
+/* Telefon */
+@media(max-width:650px){
+  .shell,
+  .v22-dashboard-shell{
+    width:calc(100% - 20px) !important;
+    padding:14px 0 64px !important;
+  }
+
+  .hero,.panel,.v23-box{
+    border-radius:16px !important;
+  }
+
+  .v23-announcement-form{
+    grid-template-columns:1fr !important;
+  }
+
+  .v23-announcement-form .wide{
+    grid-column:auto !important;
+  }
+
+  .developer-credit{
+    right:10px !important;
+    bottom:8px !important;
+    font-size:10px !important;
+  }
+}
+
+/* Hareket azaltma tercihi */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
