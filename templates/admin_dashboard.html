@@ -10,13 +10,13 @@
 </style>
 <script>(function(){var selected="dark";try{selected=localStorage.getItem("clsmc-interface-theme")==="light"?"light":"dark";}catch(error){}document.documentElement.dataset.theme=selected;document.documentElement.style.colorScheme=selected;})();</script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.5.4') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.5.4') }}">
 <style id="clsmc-critical-layout-v234">
 html{
   width:100%;
@@ -170,206 +170,252 @@ input:focus,select:focus,textarea:focus{
 }
 </style>
 
-<style id="clsmc-admin-topbar-v2352">
-@media (min-width: 901px){
-  .topbar .brand{
-    flex:0 1 430px !important;
-    max-width:430px !important;
-  }
-  .topbar .v22-top-actions{
-    flex:1 1 auto !important;
-    max-width:calc(100% - 446px) !important;
-    justify-content:flex-end !important;
-  }
-}
-</style>
-
-
-<style id="clsmc-admin-two-row-v2353">
-/* Admin üst menüsü: marka ve yardımcı işlemler üstte, yönetim butonları altta. */
-.topbar.admin-topbar-v2353{
+<style id="clsmc-admin-compact-v2354">
+/* Kompakt yönetim başlığı: butonlar ekranı doldurmaz. */
+.topbar.admin-header-v2354{
   display:block !important;
   width:100% !important;
-  min-height:0 !important;
+  min-height:64px !important;
   padding:0 !important;
   overflow:visible !important;
-  background:color-mix(in srgb,var(--bg) 82%,transparent) !important;
 }
 
-.admin-topbar-main{
-  width:min(1440px,calc(100% - 40px));
-  min-height:76px;
+.admin-header-inner{
+  width:min(1440px,calc(100% - 32px));
+  min-height:64px;
   margin:0 auto;
-  padding:12px 0;
-  display:flex;
+  padding:9px 0;
+  display:grid;
+  grid-template-columns:minmax(285px,auto) minmax(0,1fr) auto;
+  grid-template-areas:"brand nav tools";
   align-items:center;
-  justify-content:space-between;
-  gap:18px;
+  gap:14px;
 }
 
-.admin-topbar-main .brand{
-  flex:1 1 auto !important;
-  max-width:none !important;
+.admin-header-brand{
+  grid-area:brand;
   min-width:0 !important;
+  max-width:none !important;
+  flex:none !important;
 }
 
-.admin-topbar-main .brand h1,
-.admin-topbar-main .brand small{
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+.admin-header-brand .logo{
+  width:40px !important;
+  height:40px !important;
+  flex:0 0 40px;
 }
 
-.admin-topbar-utilities{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:9px;
+.admin-header-brand-text{
   min-width:0;
 }
 
-.admin-topbar-utilities form{
+.admin-header-brand h1{
+  margin:0 !important;
+  font-size:15px !important;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.admin-header-brand small{
+  display:block;
+  margin-top:3px;
+  max-width:390px;
+  font-size:10px !important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.admin-header-nav{
+  grid-area:nav;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+
+.admin-header-nav::-webkit-scrollbar{
+  display:none;
+}
+
+.admin-header-nav .admin-nav-button{
+  width:auto !important;
+  min-width:0 !important;
+  min-height:36px !important;
+  height:36px !important;
+  flex:0 0 auto !important;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
+.admin-header-tools{
+  grid-area:tools;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+}
+
+.admin-header-tools form{
   margin:0;
 }
 
-.admin-topbar-utilities .clsmc-theme-toggle,
-.admin-topbar-utilities .btn{
-  min-height:42px !important;
+.admin-header-tools .admin-status{
+  min-height:34px;
+  padding:6px 9px;
+  font-size:10px !important;
   white-space:nowrap;
 }
 
-.admin-topbar-nav{
-  width:100%;
-  padding:10px max(20px,calc((100vw - 1440px)/2)) 12px;
-  display:grid;
-  grid-template-columns:
-    minmax(185px,1.15fr)
-    repeat(3,minmax(145px,1fr))
-    minmax(145px,1fr);
-  gap:10px;
-  border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);
-  background:color-mix(in srgb,var(--panel-3) 82%,transparent);
-}
-
-.admin-topbar-nav .btn{
-  width:100% !important;
+.admin-header-tools .admin-tool-button{
+  width:auto !important;
   min-width:0 !important;
-  min-height:44px !important;
-  padding:10px 12px !important;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap !important;
+  min-height:36px !important;
+  height:36px !important;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  font-size:11px !important;
+  white-space:nowrap;
 }
 
-.admin-topbar-nav .v23-notification-count{
-  flex:0 0 auto;
-}
-
-/* Eski tek satır üst menü kuralları bu başlıkta uygulanmasın. */
-.topbar.admin-topbar-v2353 > :last-child{
+/* Eski genel topbar kurallarını bu özel başlıkta etkisizleştir. */
+.topbar.admin-header-v2354 > :last-child{
+  width:auto !important;
   max-width:none !important;
   overflow:visible !important;
 }
 
-@media(max-width:1050px){
-  .admin-topbar-nav{
-    grid-template-columns:repeat(3,minmax(0,1fr));
+@media(max-width:1230px){
+  .admin-header-inner{
+    grid-template-columns:minmax(260px,1fr) auto;
+    grid-template-areas:
+      "brand tools"
+      "nav nav";
+    row-gap:8px;
+    padding:9px 0 10px;
+  }
+
+  .admin-header-nav{
+    justify-content:flex-start;
+    padding:7px 0 0;
+    border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent);
   }
 }
 
 @media(max-width:760px){
-  .admin-topbar-main{
-    width:calc(100% - 28px);
-    align-items:flex-start;
-    flex-wrap:wrap;
+  .admin-header-inner{
+    width:calc(100% - 24px);
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "brand"
+      "tools"
+      "nav";
   }
 
-  .admin-topbar-main .brand{
-    width:100%;
-  }
-
-  .admin-topbar-utilities{
-    width:100%;
+  .admin-header-tools{
     justify-content:flex-start;
     overflow-x:auto;
-    padding-bottom:2px;
     scrollbar-width:none;
   }
 
-  .admin-topbar-utilities::-webkit-scrollbar{
+  .admin-header-tools::-webkit-scrollbar{
     display:none;
   }
 
-  .admin-topbar-nav{
-    padding:10px 14px 12px;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+  .admin-header-nav{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .admin-header-brand small{
+    max-width:100%;
   }
 }
 
-@media(max-width:500px){
-  .admin-topbar-main{
-    width:calc(100% - 20px);
+@media(max-width:480px){
+  .admin-header-inner{
+    width:calc(100% - 18px);
   }
 
-  .admin-topbar-main .brand small{
-    white-space:normal;
+  .admin-header-tools .admin-status{
+    display:none;
   }
 
-  .admin-topbar-nav{
-    padding:9px 10px 11px;
-    grid-template-columns:1fr;
+  .admin-header-nav .admin-nav-button,
+  .admin-header-tools .admin-tool-button{
+    min-height:34px !important;
+    height:34px !important;
+    padding:6px 9px !important;
+    font-size:10px !important;
   }
 }
 </style>
 
 </head>
 <body>
-<header class="topbar admin-topbar-v2353">
-  <div class="admin-topbar-main">
-    <div class="brand">
-      <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-      <div>
+<header class="topbar admin-header-v2354">
+  <div class="admin-header-inner">
+    <div class="brand admin-header-brand">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+      </div>
+      <div class="admin-header-brand-text">
         <h1>CLSMC Yönetim Merkezi</h1>
         <small>{{ system_name }} · Yönetici: {{ admin_username }}</small>
       </div>
     </div>
 
-    <div class="admin-topbar-utilities">
-      <span class="v22-status"><span class="v22-status-dot"></span>Sistem çevrimiçi</span>
-      <button type="button" class="clsmc-theme-toggle admin-theme-toggle"
+    <nav class="admin-header-nav" aria-label="Yönetim kısayolları">
+      <a class="btn admin-nav-button" href="{{ url_for('admin_hospital_management') }}">
+        <span aria-hidden="true">⚕</span>
+        <span>Hastane Yöneticisi</span>
+        {% if pending_leave_count %}
+          <span class="v23-notification-count">{{ pending_leave_count }}</span>
+        {% endif %}
+      </a>
+      <a class="btn admin-nav-button" href="{{ url_for('admin_archive') }}">
+        <span aria-hidden="true">🗄️</span><span>Veri Arşivi</span>
+      </a>
+      <a class="btn admin-nav-button" href="{{ url_for('admin_user_statistics') }}">
+        <span aria-hidden="true">◫</span><span>İstatistikler</span>
+      </a>
+      <a class="btn admin-nav-button" href="{{ url_for('admin_accounts') }}">
+        <span aria-hidden="true">🛡</span><span>Admin Hesapları</span>
+      </a>
+      <a class="btn btn-primary admin-nav-button" href="{{ url_for('admin_create_user') }}">
+        <span aria-hidden="true">＋</span><span>Yeni Üyelik</span>
+      </a>
+    </nav>
+
+    <div class="admin-header-tools">
+      <span class="v22-status admin-status">
+        <span class="v22-status-dot"></span>
+        <span>Sistem çevrimiçi</span>
+      </span>
+      <button type="button"
+              class="clsmc-theme-toggle admin-tool-button"
               data-clsmc-theme-toggle>
         <span class="theme-icon" aria-hidden="true"></span>
         <span class="theme-label"></span>
       </button>
       <form method="post" action="{{ url_for('admin_logout') }}">
-        <button class="btn admin-logout-button" type="submit">Çıkış</button>
+        <button class="btn admin-tool-button" type="submit">Çıkış</button>
       </form>
     </div>
   </div>
-
-  <nav class="admin-topbar-nav" aria-label="Yönetim kısayolları">
-    <a class="btn" href="{{ url_for('admin_hospital_management') }}">
-      <span aria-hidden="true">⚕</span>
-      <span>Hastane Yöneticisi</span>
-      {% if pending_leave_count %}
-        <span class="v23-notification-count">{{ pending_leave_count }}</span>
-      {% endif %}
-    </a>
-    <a class="btn" href="{{ url_for('admin_archive') }}">
-      <span aria-hidden="true">🗄️</span><span>Veri Arşivi</span>
-    </a>
-    <a class="btn" href="{{ url_for('admin_user_statistics') }}">
-      <span aria-hidden="true">◫</span><span>İstatistikler</span>
-    </a>
-    <a class="btn" href="{{ url_for('admin_accounts') }}">
-      <span aria-hidden="true">🛡</span><span>Admin Hesapları</span>
-    </a>
-    <a class="btn btn-primary" href="{{ url_for('admin_create_user') }}">
-      <span aria-hidden="true">＋</span><span>Yeni Üyelik</span>
-    </a>
-  </nav>
 </header>
 
 <main class="shell v22-dashboard-shell">

@@ -1,0 +1,21 @@
+CLSMC V23.5.4 — KOMPAKT ADMİN MENÜSÜ
+=======================================
+
+V23.5.3 iki satırlı grid menüsünde butonların bütün ekranı doldurarak
+gereğinden fazla büyümesi düzeltildi.
+
+Yeni düzen:
+- Butonlar yalnızca içerikleri kadar genişlik kaplar.
+- Masaüstünde logo, yönetim butonları ve araçlar kompakt tek satırda görünür.
+- Orta genişlikte yönetim butonları küçük ikinci satıra geçer; ekranı doldurmaz.
+- Telefonlarda küçük, yatay kaydırılabilir menü kullanılır.
+- Hastane Yöneticisi butonu tam görünür.
+- Tema, Çıkış ve Sistem çevrimiçi alanları kompakt hâle getirildi.
+- Logo ve yönetici bilgi alanı küçültüldü.
+- Admin panelinin içerik kartları ve istatistik alanları değiştirilmedi.
+- Veri Yedeği üst menü butonu kaldırılmış olarak kalır.
+
+Neon verileri, kullanıcılar, raporlar, izinler, bildirimler ve arşiv korunur.
+
+Sürüm: V23.5.4
+Developer: Veyrath
