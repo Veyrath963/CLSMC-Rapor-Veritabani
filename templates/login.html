@@ -29,9 +29,8 @@ a{text-decoration:none}
 
 .login-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
 .login-logo{
-  width:108px;height:108px;object-fit:contain;border-radius:50%;
-  box-shadow:0 10px 28px rgba(0,0,0,.22);
-  background:#fff;padding:4px;border:1px solid rgba(255,255,255,.08)
+  width:108px;height:108px;display:block;object-fit:contain;
+  background:transparent;border:0;box-shadow:none;
 }
 .brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
 .logo{
@@ -94,12 +93,13 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body>
+<body class="clsmc-modernized">
 <section class="auth-wrap">
   <div class="auth-card">
     <div class="login-logo-wrap">

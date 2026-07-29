@@ -29,12 +29,13 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0;background:#08101f;borde
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body>
+<body class="clsmc-modernized">
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Rapor Görüntüleme</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
   <div class="actions">

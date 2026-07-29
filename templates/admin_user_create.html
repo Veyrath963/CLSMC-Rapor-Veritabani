@@ -60,12 +60,13 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
 </script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
 </head>
-<body>
+<body class="clsmc-modernized">
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
     <strong>CLSMC Admin • Yeni Üyelik</strong><br>
@@ -101,7 +102,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
         <option value="Psychiatrist">Psychiatrist</option>
         <option value="Paramedic">Paramedic</option>
         <option value="Senior Paramedic">Senior Paramedic</option>
-        <option value="Emergency Medical Technician (EMT)">Emergency Medical Technician (EMT)</option>
+        <option value="EMT">EMT</option>
       </select>
     </div>
 
@@ -117,6 +118,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
     </div>
 
     <div class="note">
+      <strong>Paramedic ve EMT hesapları yalnızca EMS/Paramedic paneline erişir.</strong><br>
+
       Şifre veritabanına düz metin olarak kaydedilmez. Üyelik oluşturulduğunda güvenli şekilde
       hashlenir. EMS rütbeleri yalnızca EMS Saha Raporuna; tıbbi rütbeler ise yalnızca tıbbi raporlara erişir.
     </div>

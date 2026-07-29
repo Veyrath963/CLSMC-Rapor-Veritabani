@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLSMC — Veri Arşivi</title>
+<style>
+:root{--bg:#080d19;--panel:#111a2e;--line:#2a3657;--text:#eef3ff;--muted:#9eabc8;--accent:#5b8cff;--good:#38d39f;--shadow:0 14px 42px rgba(0,0,0,.26)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(91,140,255,.15),transparent 30%),var(--bg)}
+a{text-decoration:none;color:inherit}button,input,select{font:inherit}.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:15px 22px;background:rgba(8,13,25,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #344264;background:#202b49;color:#e6edff;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{border:0;background:linear-gradient(135deg,var(--accent),#7658ff);color:#fff}
+.shell{max-width:1380px;margin:0 auto;padding:25px 20px 60px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;flex-wrap:wrap}.hero h2{font-size:28px;margin:0 0 6px}.hero p{margin:0;color:var(--muted);max-width:780px;line-height:1.55}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.metric{padding:17px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:26px;margin-top:6px}
+.panel{padding:18px}.filter-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:10px;align-items:end}.field label{display:block;color:#c7d1ea;font-size:12px;margin-bottom:6px}.field input,.field select{width:100%;background:#0d1426;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 11px;outline:none}.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.table-wrap{overflow:auto;border:1px solid #202d4b;border-radius:13px;margin-top:16px}table{width:100%;border-collapse:collapse;min-width:980px}th,td{padding:11px 10px;border-bottom:1px solid #202d4b;text-align:left;font-size:12px;vertical-align:top}th{background:#0d1528;color:#cbd6ee;position:sticky;top:0}tr:last-child td{border-bottom:0}.badge{display:inline-block;padding:5px 8px;border:1px solid #304265;background:#182541;border-radius:999px;font-size:11px}.edit{color:#9fc0ff;font-weight:800}.empty{padding:32px;text-align:center;color:var(--muted)}
+.notice{margin:18px 0 0;padding:13px 14px;border:1px solid rgba(56,211,159,.35);background:rgba(56,211,159,.08);color:#a8f2da;border-radius:12px;font-size:13px;line-height:1.55}.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:17px;flex-wrap:wrap}.page-info{color:var(--muted);font-size:12px}.developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;opacity:.78}
+@media(max-width:900px){.metrics{grid-template-columns:1fr}.filter-grid{grid-template-columns:1fr 1fr}.filter-grid .search-field{grid-column:1/-1}}@media(max-width:560px){.filter-grid{grid-template-columns:1fr}.filter-grid .search-field{grid-column:auto}.topbar{align-items:flex-start;gap:10px}.shell{padding:20px 14px 55px}}
+</style>
+<script>(function(){var selected="dark";try{selected=localStorage.getItem("clsmc-interface-theme")==="light"?"light":"dark";}catch(error){}document.documentElement.dataset.theme=selected;document.documentElement.style.colorScheme=selected;})();</script>
+<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
+<script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
+<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
+</head>
+<body class="clsmc-modernized">
+<header class="topbar">
+  <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>CLSMC Veri Arşivi</strong><div style="font-size:11px;color:var(--muted)">Yönetici: {{ admin_username }}</div></div></div>
+  <div class="actions"><a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a><a class="btn" href="{{ url_for('admin_user_statistics') }}">Kullanıcı İstatistikleri</a></div>
+</header>
+<main class="shell">
+  <section class="hero"><div><h2>Rapor Veri Arşivi</h2><p>Her kullanıcı kaydı oluşturduğunda veya güncellediğinde raporun o anki hâli bağımsız bir yedek kopya olarak saklanır. Aktif rapor ya da kullanıcı silinse bile arşiv kaydı korunur.</p></div></section>
+  <div class="notice"><strong>Güvenlik:</strong> Parolalar ve parola özetleri bu arşive alınmaz. Arşiv yalnızca rapor verilerini, BBCode'u, form alanlarını ve kayıt sahibini saklar.</div>
+  <section class="metrics">
+    <div class="metric"><span>Toplam arşiv kopyası</span><strong>{{ total_archives }}</strong></div>
+    <div class="metric"><span>Arşivlenen kullanıcı</span><strong>{{ archived_user_count }}</strong></div>
+    <div class="metric"><span>Son yedekleme</span><strong style="font-size:17px">{{ latest_archive.archived_at.strftime("%d.%m.%Y %H:%M") if latest_archive and latest_archive.archived_at else "—" }}</strong></div>
+  </section>
+  <section class="panel">
+    <form method="get" class="filter-grid">
+      <div class="field search-field"><label for="q">Rapor numarası ara</label><input id="q" name="q" value="{{ search }}" placeholder="Örn. CLSMC-EMS-0001"></div>
+      <div class="field"><label for="user">Kullanıcı</label><select id="user" name="user"><option value="">Tüm kullanıcılar</option>{% for username in archive_users %}<option value="{{ username }}" {% if selected_user == username %}selected{% endif %}>{{ username }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="type">Rapor türü</label><select id="type" name="type"><option value="">Tüm rapor türleri</option>{% for key, label in report_type_labels.items() %}<option value="{{ key }}" {% if selected_type == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <button class="btn primary" type="submit">Filtrele</button>
+    </form>
+    {% if archive_rows %}
+    <div class="table-wrap"><table><thead><tr><th>Arşiv Zamanı</th><th>Veriyi Giren Hesap</th><th>Rapor Sahibi</th><th>Rapor No</th><th>Tür</th><th>Personel / Rütbe</th><th>Arşiv Nedeni</th><th>İşlem</th></tr></thead><tbody>
+    {% for row in archive_rows %}<tr><td>{{ row.archived_at.strftime("%d.%m.%Y %H:%M") if row.archived_at else "—" }}</td><td><strong>{{ row.submitted_by_username }}</strong></td><td>{{ row.created_by_username }}</td><td><span class="badge">{{ row.report_number }}</span></td><td>{{ report_type_labels.get(row.report_type, row.report_type) }}</td><td>{{ row.doctor_name }}<div style="color:var(--muted);font-size:11px;margin-top:3px">{{ row.doctor_rank or "—" }}</div></td><td>{{ archive_action_labels.get(row.archive_action, row.archive_action) }}{% if row.archived_by_admin %}<div style="color:var(--muted);font-size:11px;margin-top:3px">Yönetici: {{ row.archived_by_admin }}</div>{% endif %}</td><td><a class="edit" href="{{ url_for('admin_archive_view', archive_id=row.id) }}">Arşivi Görüntüle →</a></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty">Seçilen filtrelere uygun arşiv kaydı bulunmuyor.</div>{% endif %}
+    {% if pagination.pages > 1 %}<div class="pagination">{% if pagination.has_prev %}<a class="btn" href="{{ url_for('admin_archive', page=pagination.prev_num, user=selected_user, type=selected_type, q=search) }}">← Önceki</a>{% endif %}<span class="page-info">Sayfa {{ pagination.page }} / {{ pagination.pages }}</span>{% if pagination.has_next %}<a class="btn" href="{{ url_for('admin_archive', page=pagination.next_num, user=selected_user, type=selected_type, q=search) }}">Sonraki →</a>{% endif %}</div>{% endif %}
+  </section>
+</main><div class="developer-credit">Developer: Veyrath</div>
+</body></html>
