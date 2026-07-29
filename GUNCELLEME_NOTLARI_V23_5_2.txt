@@ -1,0 +1,12 @@
+CLSMC V23.5.2 — VERİ YEDEĞİ ÜST MENÜ BUTONU KALDIRILDI
+===========================================================
+
+- Admin üst menüsünde yarım görünen "Veri Yedeği" butonu tamamen kaldırıldı.
+- Bu buton admin_export_system_data bağlantısını kullanarak JSON sistem dışa aktarımı indiriyordu.
+- Veri Arşivi, İstatistikler, Admin Hesapları, Yeni Üyelik ve Çıkış butonları korunur.
+- Üst menü marka alanı ve işlem butonları için masaüstü hizalama güvencesi eklendi.
+- Alt bölümdeki yedekleme işlevi veya backend route silinmedi; yalnızca sorunlu üst menü bağlantısı kaldırıldı.
+- Neon verileri, raporlar, kullanıcılar ve arşiv kayıtları etkilenmez.
+
+Sürüm: V23.5.2
+Developer: Veyrath

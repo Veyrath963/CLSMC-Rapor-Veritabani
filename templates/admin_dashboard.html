@@ -10,14 +10,14 @@
 </style>
 <script>(function(){var selected="dark";try{selected=localStorage.getItem("clsmc-interface-theme")==="light"?"light":"dark";}catch(error){}document.documentElement.dataset.theme=selected;document.documentElement.style.colorScheme=selected;})();</script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.5.1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.5.1') }}">
-<style id="clsmc-critical-layout-v2351">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+<style id="clsmc-critical-layout-v234">
 html{
   width:100%;
   min-width:320px;
@@ -155,8 +155,6 @@ input:focus,select:focus,textarea:focus{
     width:100%;
     max-width:100%;
     justify-content:flex-start !important;
-    overflow-x:auto !important;
-    padding-bottom:4px;
   }
 }
 @media(max-width:650px){
@@ -171,6 +169,21 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
+
+<style id="clsmc-admin-topbar-v2352">
+@media (min-width: 901px){
+  .topbar .brand{
+    flex:0 1 430px !important;
+    max-width:430px !important;
+  }
+  .topbar .v22-top-actions{
+    flex:1 1 auto !important;
+    max-width:calc(100% - 446px) !important;
+    justify-content:flex-end !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">
