@@ -1946,7 +1946,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.1",
+        "version": "V23.2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -3028,4 +3028,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.1"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.2"}, 200
