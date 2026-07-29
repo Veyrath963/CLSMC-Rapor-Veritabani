@@ -18,13 +18,165 @@ a{text-decoration:none;color:inherit}button,input,select{font:inherit}.topbar{po
 </style>
 <script>(function(){var selected="dark";try{selected=localStorage.getItem("clsmc-interface-theme")==="light"?"light":"dark";}catch(error){}document.documentElement.dataset.theme=selected;document.documentElement.style.colorScheme=selected;})();</script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+<style id="clsmc-critical-layout-v234">
+html{
+  width:100%;
+  min-width:320px;
+  overflow-y:scroll;
+  scrollbar-gutter:stable;
+}
+body{
+  width:100%;
+  min-width:320px;
+  overflow-x:hidden !important;
+}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+
+.shell,.v22-dashboard-shell{
+  width:min(1440px,calc(100% - 40px)) !important;
+  max-width:1440px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+
+.topbar{
+  width:100% !important;
+  min-height:76px !important;
+  padding:12px max(20px,calc((100vw - 1440px)/2)) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  flex-wrap:nowrap !important;
+}
+.topbar>*{min-width:0}
+.topbar .brand,.topbar-brand{
+  flex:1 1 auto;
+  min-width:0 !important;
+  max-width:650px;
+}
+.topbar>:last-child,
+.topbar .actions,
+.topbar .v22-top-actions{
+  flex:0 1 auto;
+  max-width:65%;
+  min-width:0;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none;
+}
+.topbar>:last-child::-webkit-scrollbar,
+.topbar .actions::-webkit-scrollbar,
+.topbar .v22-top-actions::-webkit-scrollbar{display:none}
+.topbar a,.topbar button{flex:0 0 auto;white-space:nowrap}
+
+main,section,article,aside,header,footer,nav,
+.panel,.card,.metric,.v22-grid,.v23-grid,
+.v22-tab-panel,.v23-box,.table-wrap{min-width:0}
+
+.grid,.grid2,.metrics,.v22-grid,.v23-grid,
+.v23-metrics,.v22-metrics,.v23-manager-cards,
+.v23-module-grid,.v23-announcement-form,
+.v23-leave-form,.filter-grid,.data-grid{width:100%}
+
+.grid>*,.grid2>*,.metrics>*,
+.v22-grid>*,.v23-grid>*,.v23-metrics>*,
+.v22-metrics>*,.v23-manager-cards>*,
+.v23-module-grid>*,.v23-announcement-form>*,
+.v23-leave-form>*,.filter-grid>*,.data-grid>*{min-width:0}
+
+.table-wrap{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.table-wrap table{
+  width:100% !important;
+  min-width:860px;
+  margin:0;
+}
+table th{white-space:nowrap}
+table td{overflow-wrap:anywhere}
+
+.developer-credit{
+  position:fixed !important;
+  left:auto !important;
+  right:16px !important;
+  top:auto !important;
+  bottom:14px !important;
+  width:max-content !important;
+  max-width:calc(100vw - 32px) !important;
+  min-width:0 !important;
+  margin:0 !important;
+  z-index:9000 !important;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+.btn:hover,.btn:focus,
+.btn-primary:hover,.btn-primary:focus,
+.btn-secondary:hover,.btn-secondary:focus,
+.primary:hover,.primary:focus,
+.danger:hover,.danger:focus,
+.btn-good:hover,.btn-good:focus,
+.card:hover,.v22-quick-card:hover,
+input:focus,select:focus,textarea:focus{
+  transform:none !important;
+}
+.v22-tab-panel.active{animation:none !important}
+
+@media(max-width:900px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 28px) !important;
+  }
+  .topbar{
+    min-height:auto !important;
+    padding:12px 14px !important;
+    align-items:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+  .topbar .brand,.topbar-brand{
+    width:100%;
+    max-width:100%;
+  }
+  .topbar>:last-child,
+  .topbar .actions,
+  .topbar .v22-top-actions{
+    width:100%;
+    max-width:100%;
+    justify-content:flex-start !important;
+  }
+}
+@media(max-width:650px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 20px) !important;
+  }
+  .v23-announcement-form{grid-template-columns:1fr !important}
+  .developer-credit{
+    right:10px !important;
+    bottom:8px !important;
+    font-size:10px !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="topbar">

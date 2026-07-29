@@ -10,13 +10,165 @@
 </style>
 <script>(function(){var selected="dark";try{selected=localStorage.getItem("clsmc-interface-theme")==="light"?"light":"dark";}catch(error){}document.documentElement.dataset.theme=selected;document.documentElement.style.colorScheme=selected;})();</script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
 <script>document.getElementById("clsmc-light-theme").media=document.documentElement.dataset.theme==="light"?"all":"not all";</script>
 <script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+<style id="clsmc-critical-layout-v234">
+html{
+  width:100%;
+  min-width:320px;
+  overflow-y:scroll;
+  scrollbar-gutter:stable;
+}
+body{
+  width:100%;
+  min-width:320px;
+  overflow-x:hidden !important;
+}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+
+.shell,.v22-dashboard-shell{
+  width:min(1440px,calc(100% - 40px)) !important;
+  max-width:1440px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+
+.topbar{
+  width:100% !important;
+  min-height:76px !important;
+  padding:12px max(20px,calc((100vw - 1440px)/2)) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  flex-wrap:nowrap !important;
+}
+.topbar>*{min-width:0}
+.topbar .brand,.topbar-brand{
+  flex:1 1 auto;
+  min-width:0 !important;
+  max-width:650px;
+}
+.topbar>:last-child,
+.topbar .actions,
+.topbar .v22-top-actions{
+  flex:0 1 auto;
+  max-width:65%;
+  min-width:0;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none;
+}
+.topbar>:last-child::-webkit-scrollbar,
+.topbar .actions::-webkit-scrollbar,
+.topbar .v22-top-actions::-webkit-scrollbar{display:none}
+.topbar a,.topbar button{flex:0 0 auto;white-space:nowrap}
+
+main,section,article,aside,header,footer,nav,
+.panel,.card,.metric,.v22-grid,.v23-grid,
+.v22-tab-panel,.v23-box,.table-wrap{min-width:0}
+
+.grid,.grid2,.metrics,.v22-grid,.v23-grid,
+.v23-metrics,.v22-metrics,.v23-manager-cards,
+.v23-module-grid,.v23-announcement-form,
+.v23-leave-form,.filter-grid,.data-grid{width:100%}
+
+.grid>*,.grid2>*,.metrics>*,
+.v22-grid>*,.v23-grid>*,.v23-metrics>*,
+.v22-metrics>*,.v23-manager-cards>*,
+.v23-module-grid>*,.v23-announcement-form>*,
+.v23-leave-form>*,.filter-grid>*,.data-grid>*{min-width:0}
+
+.table-wrap{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.table-wrap table{
+  width:100% !important;
+  min-width:860px;
+  margin:0;
+}
+table th{white-space:nowrap}
+table td{overflow-wrap:anywhere}
+
+.developer-credit{
+  position:fixed !important;
+  left:auto !important;
+  right:16px !important;
+  top:auto !important;
+  bottom:14px !important;
+  width:max-content !important;
+  max-width:calc(100vw - 32px) !important;
+  min-width:0 !important;
+  margin:0 !important;
+  z-index:9000 !important;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+.btn:hover,.btn:focus,
+.btn-primary:hover,.btn-primary:focus,
+.btn-secondary:hover,.btn-secondary:focus,
+.primary:hover,.primary:focus,
+.danger:hover,.danger:focus,
+.btn-good:hover,.btn-good:focus,
+.card:hover,.v22-quick-card:hover,
+input:focus,select:focus,textarea:focus{
+  transform:none !important;
+}
+.v22-tab-panel.active{animation:none !important}
+
+@media(max-width:900px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 28px) !important;
+  }
+  .topbar{
+    min-height:auto !important;
+    padding:12px 14px !important;
+    align-items:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+  .topbar .brand,.topbar-brand{
+    width:100%;
+    max-width:100%;
+  }
+  .topbar>:last-child,
+  .topbar .actions,
+  .topbar .v22-top-actions{
+    width:100%;
+    max-width:100%;
+    justify-content:flex-start !important;
+  }
+}
+@media(max-width:650px){
+  .shell,.v22-dashboard-shell{
+    width:calc(100% - 20px) !important;
+  }
+  .v23-announcement-form{grid-template-columns:1fr !important}
+  .developer-credit{
+    right:10px !important;
+    bottom:8px !important;
+    font-size:10px !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -64,14 +216,14 @@
     <div class="metric"><div class="v22-metric-icon">🏥</div><span>Bekleyen İzin</span><strong>{{ pending_leave_count }}</strong><small class="v22-metric-foot">{{ active_announcement_count }} aktif hastane duyurusu</small></div>
   </section>
 
-  <nav class="v22-tabs" aria-label="Admin panel bölümleri">
-    <button class="v22-tab active" type="button" data-tab="overview">Genel Bakış</button>
-    <button class="v22-tab" type="button" data-tab="users">Kullanıcı Yönetimi</button>
-    <button class="v22-tab" type="button" data-tab="reports">Rapor Takibi</button>
-    <button class="v22-tab" type="button" data-tab="logs">Sistem Kayıtları</button>
+  <nav class="v22-tabs" role="tablist" aria-label="Admin panel bölümleri">
+    <button id="tab-overview" class="v22-tab active" type="button" role="tab" data-tab="overview" aria-controls="panel-overview" aria-selected="true" tabindex="0">Genel Bakış</button>
+    <button id="tab-users" class="v22-tab" type="button" role="tab" data-tab="users" aria-controls="panel-users" aria-selected="false" tabindex="-1">Kullanıcı Yönetimi</button>
+    <button id="tab-reports" class="v22-tab" type="button" role="tab" data-tab="reports" aria-controls="panel-reports" aria-selected="false" tabindex="-1">Rapor Takibi</button>
+    <button id="tab-logs" class="v22-tab" type="button" role="tab" data-tab="logs" aria-controls="panel-logs" aria-selected="false" tabindex="-1">Sistem Kayıtları</button>
   </nav>
 
-  <section class="v22-tab-panel active" data-panel="overview">
+  <section id="panel-overview" class="v22-tab-panel active" role="tabpanel" aria-labelledby="tab-overview" data-panel="overview">
     <div class="v22-grid">
       <article class="panel v22-span-4">
         <div class="v22-panel-head"><div><h3>Hızlı İşlemler</h3><div class="sub">En sık kullanılan yönetim araçları</div></div><span class="v22-panel-badge">Kısayollar</span></div>
@@ -141,7 +293,7 @@
     </div>
   </section>
 
-  <section class="v22-tab-panel" data-panel="users">
+  <section id="panel-users" class="v22-tab-panel" role="tabpanel" aria-labelledby="tab-users" data-panel="users" hidden>
     <div class="v22-grid">
       <article class="panel v22-span-12">
         <div class="v22-panel-head"><div><h3>Aktif Kullanıcı Hesapları</h3><div class="sub">Rütbe, kayıt tarihi ve hesap yönetimi</div></div><a class="btn btn-primary" href="{{ url_for('admin_create_user') }}">＋ Yeni Üyelik Oluştur</a></div>
@@ -157,7 +309,7 @@
     </div>
   </section>
 
-  <section class="v22-tab-panel" data-panel="reports">
+  <section id="panel-reports" class="v22-tab-panel" role="tabpanel" aria-labelledby="tab-reports" data-panel="reports" hidden>
     <article class="panel">
       <div class="v22-panel-head"><div><h3>Tüm Rapor Kayıtları</h3><div class="sub">Rapor numarası, tür, personel veya kullanıcı hesabına göre anlık arama</div></div><a class="btn" href="{{ url_for('admin_archive') }}">Arşiv Kopyalarını Aç</a></div>
       <div class="v22-table-tools"><div class="v22-search"><input type="search" placeholder="Rapor no, tür, personel veya hesap ara" data-table-search="reportsTable"></div><span class="v22-table-count">{{ reports|length }} rapor</span></div>
@@ -165,7 +317,7 @@
     </article>
   </section>
 
-  <section class="v22-tab-panel" data-panel="logs">
+  <section id="panel-logs" class="v22-tab-panel" role="tabpanel" aria-labelledby="tab-logs" data-panel="logs" hidden>
     <article class="panel">
       <div class="v22-panel-head"><div><h3>Son Sistem Kayıtları</h3><div class="sub">Giriş, rapor, kullanıcı ve yönetici işlemleri. Parolalar kaydedilmez.</div></div><span class="v22-panel-badge">Son {{ recent_logs|length }} işlem</span></div>
       <div class="v22-table-tools"><div class="v22-search"><input type="search" placeholder="Olay veya detay ara" data-table-search="logsTable"></div></div>
@@ -184,13 +336,38 @@
 (function(){
   const tabs = Array.from(document.querySelectorAll('[data-tab]'));
   const panels = Array.from(document.querySelectorAll('[data-panel]'));
-  function openTab(name){
+  function openTab(name, moveFocus){
     const valid = panels.some(panel => panel.dataset.panel === name) ? name : 'overview';
-    tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === valid));
-    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === valid));
+    tabs.forEach(tab => {
+      const selected = tab.dataset.tab === valid;
+      tab.classList.toggle('active', selected);
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if(selected){
+        tab.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+        if(moveFocus) tab.focus({preventScroll:true});
+      }
+    });
+    panels.forEach(panel => {
+      const selected = panel.dataset.panel === valid;
+      panel.classList.toggle('active', selected);
+      panel.hidden = !selected;
+    });
     try{history.replaceState(null,'','#'+valid);}catch(error){}
   }
-  tabs.forEach(tab => tab.addEventListener('click', () => openTab(tab.dataset.tab)));
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => openTab(tab.dataset.tab, false));
+    tab.addEventListener('keydown', event => {
+      let targetIndex = null;
+      if(event.key === 'ArrowRight') targetIndex = (index + 1) % tabs.length;
+      if(event.key === 'ArrowLeft') targetIndex = (index - 1 + tabs.length) % tabs.length;
+      if(event.key === 'Home') targetIndex = 0;
+      if(event.key === 'End') targetIndex = tabs.length - 1;
+      if(targetIndex === null) return;
+      event.preventDefault();
+      openTab(tabs[targetIndex].dataset.tab, true);
+    });
+  });
   document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => openTab(item.dataset.openTab)));
   if(location.hash) openTab(location.hash.slice(1));
 
