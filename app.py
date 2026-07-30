@@ -10,6 +10,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from legacy_darius_reports import DARIUS_LEGACY_REPORTS
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-me")
 
@@ -1060,6 +1062,283 @@ def import_alexander_whitmore_legacy_reports() -> dict:
     return result
 
 
+def import_darius_blackwell_legacy_reports() -> dict:
+    """Darius Blackwell hesabına 12 Vaka ve 1 Adli eski kaydı tekrarsız aktarır."""
+    darius = User.query.filter(
+        db.func.lower(User.username) == "darius blackwell"
+    ).first()
+    result = {
+        "account_found": bool(darius),
+        "imported": [],
+        "already_present": [],
+        "conflicts": [],
+    }
+    if not darius:
+        logger.warning(
+            "DARIUS_LEGACY_REPORT_IMPORT_SKIPPED | username=Darius Blackwell | "
+            "reason=user_not_found"
+        )
+        return result
+
+    doctor_rank = (darius.rank or "Attending Physician").strip() or "Attending Physician"
+    local_timezone = timezone(timedelta(hours=3))
+
+    for data in DARIUS_LEGACY_REPORTS:
+        report_type = str(data["report_type"]).strip()
+        report_number = str(data["report_number"]).strip()
+        existing = Report.query.filter_by(
+            report_type=report_type,
+            report_number=report_number,
+        ).first()
+        if existing:
+            same_owner = (
+                existing.created_by_user_id == darius.id
+                or (existing.created_by_username or "").strip().casefold()
+                == darius.username.casefold()
+            )
+            destination = (
+                result["already_present"] if same_owner else result["conflicts"]
+            )
+            destination.append(f"{report_type}:{report_number}")
+            continue
+
+        try:
+            report_datetime = datetime.fromisoformat(
+                str(data.get("created_at", ""))
+            )
+            if report_datetime.tzinfo is None:
+                report_datetime = report_datetime.replace(tzinfo=local_timezone)
+        except (TypeError, ValueError):
+            report_datetime = datetime.now(timezone.utc)
+
+        report = Report(
+            report_type=report_type,
+            report_number=report_number,
+            doctor_name=darius.username,
+            doctor_rank=doctor_rank,
+            report_date=str(data.get("report_date", "") or ""),
+            bbcode=str(data["bbcode"]),
+            form_data=json.dumps(data.get("form_data", {}), ensure_ascii=False),
+            created_by_user_id=darius.id,
+            created_by_username=darius.username,
+            created_at=report_datetime,
+            updated_at=report_datetime,
+            workflow_status="completed",
+            admin_note=(
+                "Kullanıcı tarafından sağlanan eski sistem kaydından "
+                "V23.7.4 ile otomatik aktarıldı. BBCode içeriği korunmuştur."
+            ),
+            is_favorite=False,
+        )
+        db.session.add(report)
+        db.session.flush()
+        add_report_archive_snapshot(
+            report,
+            "legacy_system_import",
+            archived_by_admin="Sistem",
+            submitted_by_user_id=darius.id,
+            submitted_by_username=darius.username,
+        )
+        result["imported"].append(f"{report_type}:{report_number}")
+
+    if result["imported"]:
+        vaka_count = sum(item.startswith("vaka:") for item in result["imported"])
+        adli_count = sum(item.startswith("adli:") for item in result["imported"])
+        db.session.add(
+            UserNotification(
+                user_id=darius.id,
+                username=darius.username,
+                title="Eski Raporlar Aktarıldı",
+                message=(
+                    f"Hesabınıza {vaka_count} Vaka ve {adli_count} Adli Vaka "
+                    "Raporu aktarıldı. Mevcut rapor numaraları tekrar oluşturulmadı."
+                ),
+                category="info",
+                related_type="legacy_report_import",
+                related_id=None,
+            )
+        )
+
+    db.session.add(
+        AppLog(
+            level="INFO" if not result["conflicts"] else "WARNING",
+            event="DARIUS_LEGACY_REPORT_IMPORT",
+            message=(
+                f"username={darius.username}; "
+                f"imported={','.join(result['imported']) or 'none'}; "
+                f"already_present={','.join(result['already_present']) or 'none'}; "
+                f"conflicts={','.join(result['conflicts']) or 'none'}"
+            ),
+        )
+    )
+    db.session.commit()
+    logger.info(
+        "DARIUS_LEGACY_REPORT_IMPORT | imported=%s | already_present=%s | conflicts=%s",
+        len(result["imported"]),
+        len(result["already_present"]),
+        len(result["conflicts"]),
+    )
+    return result
+
+
+def apply_darius_legacy_report_corrections() -> dict:
+    """V23.7.4 için yalnızca üç kullanıcı onaylı eski rapor düzeltmesini uygular."""
+    corrections = {
+        "CLSMC-VKR-0001": {
+            "patient": "Lamar Hate",
+            "bbcode_replacements": [
+                (
+                    "Lucius Blackwell - Attending Physician",
+                    "Darius Blackwell - Attending Physician",
+                )
+            ],
+            "form_replacements": {},
+        },
+        "CLSMC-VKR-0003": {
+            "patient": "Michael Anderson",
+            "bbcode_replacements": [
+                (
+                    "Michael Blackwood - Attending Physician",
+                    "Darius Blackwell - Attending Physician",
+                )
+            ],
+            "form_replacements": {},
+        },
+        "CLSMC-VKR-0018": {
+            "patient": "Luna Evergreen",
+            "bbcode_replacements": [
+                (
+                    "27.07.2027 tarihinde rutin muayeneye gelmiştir.",
+                    "27.07.2026 tarihinde rutin muayeneye gelmiştir.",
+                )
+            ],
+            "form_replacements": {
+                "vaka_aciklama": [
+                    (
+                        "27.07.2027 tarihinde rutin muayeneye gelmiştir.",
+                        "27.07.2026 tarihinde rutin muayeneye gelmiştir.",
+                    )
+                ]
+            },
+        },
+    }
+
+    result = {"updated": [], "already_correct": [], "skipped": []}
+
+    for report_number, correction in corrections.items():
+        report = Report.query.filter_by(
+            report_type="vaka",
+            report_number=report_number,
+        ).first()
+        if not report:
+            result["skipped"].append(f"{report_number}:not_found")
+            continue
+
+        is_darius_report = (
+            (report.created_by_username or "").strip().casefold()
+            == "darius blackwell"
+            or (report.doctor_name or "").strip().casefold()
+            == "darius blackwell"
+        )
+
+        try:
+            form_data = json.loads(report.form_data or "{}")
+        except (TypeError, ValueError):
+            form_data = {}
+
+        patient_name = str(form_data.get("adsoyad", "") or "").strip()
+        if (
+            not is_darius_report
+            or patient_name.casefold() != correction["patient"].casefold()
+        ):
+            result["skipped"].append(f"{report_number}:identity_mismatch")
+            continue
+
+        changed = False
+        updated_bbcode = report.bbcode or ""
+        for old_text, new_text in correction["bbcode_replacements"]:
+            if old_text in updated_bbcode:
+                updated_bbcode = updated_bbcode.replace(old_text, new_text, 1)
+                changed = True
+        report.bbcode = updated_bbcode
+
+        for field_name, replacements in correction["form_replacements"].items():
+            field_value = str(form_data.get(field_name, "") or "")
+            updated_value = field_value
+            for old_text, new_text in replacements:
+                if old_text in updated_value:
+                    updated_value = updated_value.replace(old_text, new_text, 1)
+                    changed = True
+            form_data[field_name] = updated_value
+
+        if correction["form_replacements"]:
+            report.form_data = json.dumps(form_data, ensure_ascii=False)
+
+        for archive_item in ReportArchive.query.filter_by(
+            source_report_id=report.id
+        ).all():
+            archive_changed = False
+            archive_bbcode = archive_item.bbcode or ""
+            for old_text, new_text in correction["bbcode_replacements"]:
+                if old_text in archive_bbcode:
+                    archive_bbcode = archive_bbcode.replace(old_text, new_text, 1)
+                    archive_changed = True
+            archive_item.bbcode = archive_bbcode
+
+            if correction["form_replacements"]:
+                try:
+                    archive_form = json.loads(archive_item.form_data or "{}")
+                except (TypeError, ValueError):
+                    archive_form = {}
+                for field_name, replacements in correction["form_replacements"].items():
+                    archive_value = str(archive_form.get(field_name, "") or "")
+                    updated_archive_value = archive_value
+                    for old_text, new_text in replacements:
+                        if old_text in updated_archive_value:
+                            updated_archive_value = updated_archive_value.replace(
+                                old_text,
+                                new_text,
+                                1,
+                            )
+                            archive_changed = True
+                    archive_form[field_name] = updated_archive_value
+                archive_item.form_data = json.dumps(
+                    archive_form,
+                    ensure_ascii=False,
+                )
+
+            if archive_changed:
+                changed = True
+
+        if changed:
+            result["updated"].append(report_number)
+        else:
+            result["already_correct"].append(report_number)
+
+    if result["updated"] or result["already_correct"] or result["skipped"]:
+        db.session.add(
+            AppLog(
+                level="INFO",
+                event="DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4",
+                message=(
+                    f"updated={','.join(result['updated']) or 'none'}; "
+                    f"already_correct={','.join(result['already_correct']) or 'none'}; "
+                    f"skipped={','.join(result['skipped']) or 'none'}"
+                ),
+            )
+        )
+        db.session.commit()
+
+    logger.info(
+        "DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4 | updated=%s | "
+        "already_correct=%s | skipped=%s",
+        len(result["updated"]),
+        len(result["already_correct"]),
+        len(result["skipped"]),
+    )
+    return result
+
+
 def write_log(level: str, event: str, message: str) -> None:
     """Write sanitized logs to both platform logs and the persistent database."""
     log_line = f"{event} | {message}"
@@ -1366,6 +1645,21 @@ with app.app_context():
     except Exception:
         db.session.rollback()
         logger.exception("ALEXANDER_LEGACY_REPORT_IMPORT_FAILED")
+
+    # V23.7.3: Darius Blackwell hesabına kullanıcı tarafından sağlanan
+    # 12 Vaka ve 1 Adli Vaka kaydını aktar. Aynı tür ve numara varsa atla.
+    try:
+        import_darius_blackwell_legacy_reports()
+    except Exception:
+        db.session.rollback()
+        logger.exception("DARIUS_LEGACY_REPORT_IMPORT_FAILED")
+
+    # V23.7.4: Darius eski raporlarındaki üç kullanıcı onaylı metin düzeltmesi.
+    try:
+        apply_darius_legacy_report_corrections()
+    except Exception:
+        db.session.rollback()
+        logger.exception("DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4_FAILED")
 
     # V20.5.8: Sistemde önceden bulunan tüm raporlar ilk kez arşive aktarılır.
     # Aynı aktif rapor için daha önce bir arşiv kaydı varsa tekrar oluşturulmaz.
@@ -3286,7 +3580,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.7.2",
+        "version": "V23.7.4",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4613,4 +4907,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.7.2"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.7.4"}, 200
