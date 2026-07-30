@@ -1,0 +1,45 @@
+CLSMC V23.6.0 — V24 MODÜLLERİ KALDIRILDI, ADMİN RAPOR OLUŞTURMA EKLENDİ
+================================================================================
+
+GERİ ALINAN V24 MODÜLLERİ
+- Ayrıntılı görev dağılım sistemi kaldırıldı.
+- Hasta teslim zinciri kaldırıldı.
+- Kapsamlı hasta dosyası modülü kaldırıldı.
+- Klinik operasyon merkezi kaldırıldı.
+- Kullanıcı klinik merkezi kaldırıldı.
+- Sistem V23.5.6 kararlı yapısı üzerine yeniden kuruldu.
+
+KORUNAN DÜZELTMELER
+- Admin adı: Darius Blackwell
+- Sabit giriş ekranları
+- Kompakt ve taşmayan admin menüsü
+- Üst menü Veri Yedeği butonunun kaldırılması
+- Duyuru silme
+- Onaylanmış izin iptal etme
+- Kullanıcı izin iptal bildirimi
+- Rapor arşivi, sürüm geçmişi ve JSON dışa aktarımı
+- Neon PostgreSQL bağlantısı
+- Kullanıcı ve admin hesap yönetimi
+
+YENİ: KULLANICI ADINA RAPOR OLUŞTURMA
+- Admin Paneli > Hızlı İşlemler alanına "Kullanıcı adına rapor" eklendi.
+- Rapor Takibi alanına "Kullanıcı Adına Rapor" butonu eklendi.
+- Yönetici tıbbi personel hesabı seçebilir.
+- Vaka Raporu veya Adli Vaka Raporu oluşturabilir.
+- Rapor seçilen kullanıcının ID'si ve kullanıcı adıyla Neon veritabanına kaydedilir.
+- Rapor seçilen kullanıcının kendi panelinde ve istatistiklerinde görünür.
+- Seçilen kullanıcının adı ve rütbesi BBCode'a otomatik işlenir.
+- İşlemi yapan yönetici AppLog ve rapor arşivinde ayrıca kaydedilir.
+- Kullanıcıya otomatik "Adınıza yeni rapor oluşturuldu" bildirimi gönderilir.
+- Aynı tür ve rapor numarası varsa yeni kayıt oluşturulmaz; mevcut kayıt düzenleme ekranına yönlendirilir.
+- Yönetici tarayıcıdan gönderilen doktor adı/rütbesine güvenmez; seçilen kullanıcıyı veritabanından tekrar doğrular.
+
+VERİTABANI
+- Yeni tablo veya zorunlu şema değişikliği yoktur.
+- Mevcut reports, report_archives, users, notifications ve app_logs tabloları kullanılır.
+- Mevcut Neon verileri silinmez veya sıfırlanmaz.
+- V24 sırasında oluşturulmuş kullanılmayan tablolar varsa bu sürüm onları okumaz ve kullanmaz.
+- Canlı veritabanı değişikliği paket deploy edildikten sonra gerçekleşir.
+
+Sürüm: V23.6.0
+Developer: Veyrath

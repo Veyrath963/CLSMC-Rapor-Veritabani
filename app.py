@@ -777,6 +777,10 @@ ALLOWED_USER_RANKS = MEDICAL_USER_RANKS | EMS_USER_RANKS
 MEDICAL_REPORT_TYPES = {"vaka", "adli", "otopsi", "ex"}
 EMS_REPORT_TYPES = {"ems"}
 
+# Yönetici kullanıcı adına yalnızca sunucuda kullanılan temel tıbbi raporları
+# oluşturabilir. Diğer raporlar mevcut kullanıcı akışından oluşturulmaya devam eder.
+ADMIN_PROXY_REPORT_TYPES = {"vaka", "adli"}
+
 
 def allowed_report_types_for_rank(rank: str | None) -> set[str]:
     normalized_rank = (rank or "").strip()
@@ -1915,6 +1919,64 @@ def admin_review_leave_request(leave_request_id: int):
     return redirect(url_for("admin_hospital_management") + "#leave-requests")
 
 
+@app.post("/admin/leave-requests/<int:leave_request_id>/cancel")
+def admin_cancel_leave_request(leave_request_id: int):
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    leave_request = db.session.get(LeaveRequest, leave_request_id)
+    if not leave_request:
+        flash("İzin talebi bulunamadı.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+    if leave_request.status != "approved":
+        flash("Yalnızca onaylanmış izinler yönetici tarafından iptal edilebilir.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+    cancel_note = request.form.get("cancel_note", "").strip()
+    leave_request.status = "cancelled"
+    leave_request.admin_note = cancel_note or "İzin yönetici tarafından iptal edildi."
+    leave_request.reviewed_by = session.get("admin_username", "")
+    leave_request.reviewed_at = datetime.now(timezone.utc)
+
+    user = (
+        db.session.get(User, leave_request.user_id)
+        if leave_request.user_id
+        else User.query.filter_by(username=leave_request.username).first()
+    )
+
+    notification_message = (
+        f"{leave_request.start_date} - {leave_request.end_date} tarihleri arasındaki "
+        f"{LEAVE_TYPE_LABELS.get(leave_request.leave_type, leave_request.leave_type)} "
+        "izniniz yönetici tarafından iptal edildi."
+    )
+    if cancel_note:
+        notification_message += f" Yönetici notu: {cancel_note}"
+
+    create_user_notification(
+        user,
+        "İzniniz iptal edildi",
+        notification_message,
+        "warning",
+        "leave_request",
+        leave_request.id,
+        username=leave_request.username,
+    )
+
+    db.session.commit()
+    write_log(
+        "WARNING",
+        "LEAVE_REQUEST_CANCELLED_BY_ADMIN",
+        (
+            f"admin={session.get('admin_username','')}; "
+            f"leave_request_id={leave_request.id}; "
+            f"username={leave_request.username}"
+        ),
+    )
+    flash("Onaylanmış izin iptal edildi ve kullanıcıya bildirim gönderildi.", "success")
+    return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+
 @app.post("/admin/announcements")
 def admin_create_announcement():
     if not admin_required():
@@ -1962,6 +2024,42 @@ def admin_toggle_announcement(announcement_id: int):
     announcement.is_active = not bool(announcement.is_active)
     db.session.commit()
     flash("Duyuru durumu güncellendi.", "success")
+    return redirect(url_for("admin_hospital_management") + "#announcements")
+
+
+@app.post("/admin/announcements/<int:announcement_id>/delete")
+def admin_delete_announcement(announcement_id: int):
+    if not admin_required():
+        return redirect(url_for("admin_login"))
+
+    announcement = db.session.get(Announcement, announcement_id)
+    if not announcement:
+        flash("Duyuru bulunamadı.", "error")
+        return redirect(url_for("admin_hospital_management") + "#announcements")
+
+    announcement_title = announcement.title
+    removed_notifications = UserNotification.query.filter_by(
+        related_type="announcement",
+        related_id=announcement.id,
+    ).delete(synchronize_session=False)
+
+    db.session.delete(announcement)
+    db.session.commit()
+
+    write_log(
+        "WARNING",
+        "ANNOUNCEMENT_DELETED",
+        (
+            f"admin={session.get('admin_username','')}; "
+            f"announcement_id={announcement_id}; "
+            f"removed_notifications={removed_notifications}; "
+            f"title={announcement_title}"
+        ),
+    )
+    flash(
+        f"Duyuru kalıcı olarak silindi. {removed_notifications} kullanıcı bildirimi kaldırıldı.",
+        "success",
+    )
     return redirect(url_for("admin_hospital_management") + "#announcements")
 
 
@@ -2017,7 +2115,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.5.5",
+        "version": "V23.5.6",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -2943,6 +3041,218 @@ def admin_permanently_delete_user(deleted_user_id: int):
         return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/reports/create-for-user", methods=["GET", "POST"])
+def admin_create_report_for_user():
+    if not admin_required():
+        flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
+        return redirect(url_for("admin_login"))
+
+    medical_users = (
+        User.query
+        .filter(User.rank.in_(sorted(MEDICAL_USER_RANKS)))
+        .order_by(User.username.asc())
+        .all()
+    )
+    if not medical_users:
+        flash(
+            "Vaka veya Adli Rapor adına kayıt oluşturulabilecek tıbbi personel hesabı bulunmuyor.",
+            "error",
+        )
+        return redirect(url_for("admin_create_user"))
+
+    user_map = {user.id: user for user in medical_users}
+    create_numbers = {
+        "vaka": next_report_number("vaka", "CLSMC-VKR"),
+        "adli": next_report_number("adli", "CLSMC-ADL"),
+    }
+
+    def render_create_form(
+        selected_user: User,
+        selected_type: str = "vaka",
+        form_data: dict | None = None,
+        status_code: int = 200,
+    ):
+        normalized_type = (
+            selected_type
+            if selected_type in ADMIN_PROXY_REPORT_TYPES
+            else "vaka"
+        )
+        payload = dict(form_data or {})
+        if normalized_type == "vaka":
+            payload.setdefault("rapor_no", create_numbers["vaka"])
+        else:
+            payload.setdefault("adli_rapor_no", create_numbers["adli"])
+
+        draft_report = Report(
+            report_type=normalized_type,
+            report_number=(
+                payload.get("rapor_no", "")
+                if normalized_type == "vaka"
+                else payload.get("adli_rapor_no", "")
+            ),
+            doctor_name=selected_user.username,
+            doctor_rank=selected_user.rank,
+            report_date=None,
+            bbcode="",
+            form_data=json.dumps(payload, ensure_ascii=False),
+            created_by_user_id=selected_user.id,
+            created_by_username=selected_user.username,
+            workflow_status="completed",
+        )
+
+        response = render_template(
+            "admin_report_edit.html",
+            admin_username=session.get("admin_username", ""),
+            report=draft_report,
+            users=medical_users,
+            report_type_labels=REPORT_TYPE_LABELS,
+            report_form_data=payload,
+            report_is_legacy=False,
+            preview_mode=False,
+            create_mode=True,
+            create_report_numbers=create_numbers,
+        )
+        return (response, status_code) if status_code != 200 else response
+
+    if request.method == "GET":
+        requested_user_id = request.args.get("user_id", type=int)
+        selected_user = user_map.get(requested_user_id) or medical_users[0]
+        requested_type = request.args.get("type", "vaka").strip()
+        return render_create_form(selected_user, requested_type)
+
+    target_user_id = request.form.get("target_user_id", type=int)
+    report_type = request.form.get("report_type", "").strip()
+    report_number = request.form.get("report_number", "").strip()
+    report_date = request.form.get("report_date", "").strip()
+    bbcode = request.form.get("bbcode", "").strip()
+    form_data_text = request.form.get("form_data", "").strip()
+
+    selected_user = user_map.get(target_user_id)
+    if not selected_user:
+        flash("Rapor adına oluşturulacak kullanıcı bulunamadı.", "error")
+        return render_create_form(medical_users[0], report_type, status_code=400)
+
+    try:
+        form_data_obj = json.loads(form_data_text or "{}")
+        if not isinstance(form_data_obj, dict):
+            raise ValueError("form_data must be an object")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        flash("Rapor form verileri okunamadı.", "error")
+        return render_create_form(selected_user, report_type, status_code=400)
+
+    if report_type not in ADMIN_PROXY_REPORT_TYPES:
+        flash("Yönetici panelinden yalnızca Vaka veya Adli Rapor oluşturulabilir.", "error")
+        return render_create_form(selected_user, "vaka", form_data_obj, 400)
+
+    if report_type not in allowed_report_types_for_rank(selected_user.rank):
+        flash("Seçilen kullanıcının rütbesi bu rapor türüne uygun değil.", "error")
+        return render_create_form(selected_user, report_type, form_data_obj, 403)
+
+    if not report_number:
+        flash("Rapor numarası boş bırakılamaz.", "error")
+        return render_create_form(selected_user, report_type, form_data_obj, 400)
+
+    if not bbcode:
+        flash("BBCode oluşturulamadı. Form alanlarını kontrol edin.", "error")
+        return render_create_form(selected_user, report_type, form_data_obj, 400)
+
+    existing_report = Report.query.filter_by(
+        report_type=report_type,
+        report_number=report_number,
+    ).first()
+    if existing_report:
+        flash(
+            "Bu rapor türü ve numarasıyla bir kayıt zaten bulunuyor. "
+            "Mevcut kaydı Rapor Takibi bölümünden düzenleyin.",
+            "error",
+        )
+        return render_create_form(selected_user, report_type, form_data_obj, 409)
+
+    admin_username = session.get("admin_username", "")
+    try:
+        report = Report(
+            report_type=report_type,
+            report_number=report_number,
+            doctor_name=selected_user.username,
+            doctor_rank=selected_user.rank or None,
+            report_date=report_date or None,
+            bbcode=bbcode,
+            form_data=json.dumps(form_data_obj, ensure_ascii=False),
+            created_by_user_id=selected_user.id,
+            created_by_username=selected_user.username,
+            workflow_status="completed",
+            admin_note=(
+                f"{admin_username} adlı yönetici tarafından "
+                f"{selected_user.username} adına oluşturuldu."
+            ),
+        )
+        db.session.add(report)
+        db.session.flush()
+
+        add_report_archive_snapshot(
+            report,
+            "admin_created_for_user",
+            archived_by_admin=admin_username,
+            submitted_by_user_id=None,
+            submitted_by_username=f"Admin: {admin_username}",
+        )
+
+        create_user_notification(
+            selected_user,
+            "Adınıza yeni rapor oluşturuldu",
+            (
+                f"{REPORT_TYPE_LABELS.get(report_type, report_type)} "
+                f"{report_number}, {admin_username} adlı yönetici tarafından "
+                "hesabınız adına oluşturuldu."
+            ),
+            "info",
+            "report",
+            report.id,
+        )
+
+        db.session.commit()
+
+        write_log(
+            "INFO",
+            "ADMIN_REPORT_CREATED_FOR_USER",
+            (
+                f"admin={admin_username}; user_id={selected_user.id}; "
+                f"username={selected_user.username}; report_id={report.id}; "
+                f"report_type={report_type}; report_number={report_number}"
+            ),
+        )
+
+        flash(
+            f"{report_number}, {selected_user.username} adına başarıyla oluşturuldu.",
+            "success",
+        )
+        return redirect(url_for("admin_view_report", report_id=report.id))
+
+    except Exception as exc:
+        db.session.rollback()
+        logger.exception(
+            "ADMIN_REPORT_CREATE_FOR_USER_ERROR | user_id=%s | type=%s | number=%s",
+            selected_user.id,
+            report_type,
+            report_number,
+        )
+        try:
+            write_log(
+                "ERROR",
+                "ADMIN_REPORT_CREATE_FOR_USER_ERROR",
+                (
+                    f"admin={admin_username}; user_id={selected_user.id}; "
+                    f"report_type={report_type}; report_number={report_number}; "
+                    f"error={type(exc).__name__}"
+                ),
+            )
+        except Exception:
+            pass
+
+        flash("Kullanıcı adına rapor oluşturulurken bir hata meydana geldi.", "error")
+        return render_create_form(selected_user, report_type, form_data_obj, 500)
+
+
 @app.route("/admin/reports/<int:report_id>", methods=["GET", "POST"])
 def admin_edit_report(report_id: int):
     if not admin_required():
@@ -3099,4 +3409,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.5.5"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.6.0"}, 200
