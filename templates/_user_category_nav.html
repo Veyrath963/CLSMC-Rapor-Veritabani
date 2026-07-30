@@ -1,0 +1,26 @@
+{% set active_endpoint = request.endpoint or '' %}
+<nav class="v238-category-nav" aria-label="Kullanıcı paneli kategorileri">
+  <div class="v238-category-group">
+    <span class="v238-category-label">Genel</span>
+    <a class="v238-category-link {% if active_endpoint == 'panel' %}active{% endif %}" href="{{ url_for('panel') }}">⌂ Ana Sayfa</a>
+  </div>
+
+  <div class="v238-category-group">
+    <span class="v238-category-label">Rapor İşlemleri</span>
+    <a class="v238-category-link {% if active_endpoint == 'user_report_create' %}active{% endif %}" href="{{ url_for('user_report_create') }}">＋ Yeni Rapor</a>
+    <a class="v238-category-link {% if active_endpoint in ['user_report_center','user_report_view','user_report_version_view'] %}active{% endif %}" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
+    <a class="v238-category-link {% if active_endpoint == 'user_drafts' %}active{% endif %}" href="{{ url_for('user_drafts') }}">▣ Taslaklar</a>
+  </div>
+
+  <div class="v238-category-group">
+    <span class="v238-category-label">Personel İşlemleri</span>
+    <a class="v238-category-link {% if active_endpoint == 'user_communications' %}active{% endif %}" href="{{ url_for('user_communications') }}">🔔 Bildirimler ve Duyurular{% if unread_notification_count|default(0) %}<b class="v238-nav-count">{{ unread_notification_count }}</b>{% endif %}</a>
+    <a class="v238-category-link {% if active_endpoint == 'user_leave_center' %}active{% endif %}" href="{{ url_for('user_leave_center') }}">◷ İzin İşlemleri</a>
+  </div>
+
+  <div class="v238-category-group">
+    <span class="v238-category-label">Hesabım</span>
+    <a class="v238-category-link {% if active_endpoint == 'statistics' %}active{% endif %}" href="{{ url_for('statistics') }}">▥ İstatistikler</a>
+    <a class="v238-category-link {% if active_endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">⚙ Ayarlar</a>
+  </div>
+</nav>

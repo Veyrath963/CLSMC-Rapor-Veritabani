@@ -1766,6 +1766,30 @@ def register():
 
 @app.get("/panel")
 def panel():
+    return render_user_panel("dashboard")
+
+
+@app.get("/reports/new")
+def user_report_create():
+    return render_user_panel("report_create")
+
+
+@app.get("/workspace/notifications")
+def user_communications():
+    return render_user_panel("communications")
+
+
+@app.get("/workspace/drafts")
+def user_drafts():
+    return render_user_panel("drafts")
+
+
+@app.get("/workspace/leave")
+def user_leave_center():
+    return render_user_panel("leave")
+
+
+def render_user_panel(page_mode: str = "dashboard"):
     if not session.get("user_id"):
         flash("Önce giriş yapmalısınız.", "error")
         return redirect(url_for("login_page"))
@@ -1910,6 +1934,7 @@ def panel():
     return render_template(
         "panel.html",
         system_name=SYSTEM_NAME,
+        page_mode=page_mode,
         username=user.username,
         user_rank=user.rank or "",
         user_created_at=user.created_at,
@@ -2471,10 +2496,10 @@ def user_report_copy(report_id: int):
     )
     return redirect(
         url_for(
-            "panel",
+            "user_report_create",
             report_type=report.report_type,
             copy="1",
-        ) + "#report-creator"
+        )
     )
 
 
@@ -2502,7 +2527,7 @@ def user_notification_read(notification_id: int):
     if user and notification and (notification.user_id == user.id or (notification.user_id is None and notification.username == user.username)):
         notification.is_read = True
         db.session.commit()
-    return redirect(url_for("panel") + "#notifications")
+    return redirect(url_for("user_communications"))
 
 
 @app.post("/notifications/read-all")
@@ -2519,7 +2544,7 @@ def user_notifications_read_all():
             UserNotification.is_read.is_(False),
         ).update({"is_read": True}, synchronize_session=False)
         db.session.commit()
-    return redirect(url_for("panel") + "#notifications")
+    return redirect(url_for("user_communications"))
 
 
 @app.post("/leave-requests")
@@ -2537,20 +2562,20 @@ def user_create_leave_request():
     reason = request.form.get("reason", "").strip()
     if leave_type not in LEAVE_TYPE_LABELS or not start_date or not end_date or not reason:
         flash("İzin türü, tarih aralığı ve açıklama zorunludur.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     try:
         start_value = datetime.strptime(start_date, "%Y-%m-%d").date()
         end_value = datetime.strptime(end_date, "%Y-%m-%d").date()
     except ValueError:
         flash("İzin tarihleri geçersiz.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     if end_value < start_value:
         flash("İzin bitiş tarihi başlangıç tarihinden önce olamaz.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     existing_pending = LeaveRequest.query.filter_by(user_id=user.id, status="pending").first()
     if existing_pending:
         flash("Zaten inceleme bekleyen bir izin talebiniz bulunuyor.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     leave_request = LeaveRequest(
         user_id=user.id,
         username=user.username,
@@ -2565,7 +2590,7 @@ def user_create_leave_request():
     db.session.commit()
     write_log("INFO", "LEAVE_REQUEST_CREATED", f"username={user.username}; leave_request_id={leave_request.id}")
     flash("İzin talebiniz Hastane Yöneticisi paneline iletildi.", "success")
-    return redirect(url_for("panel") + "#leave-center")
+    return redirect(url_for("user_leave_center"))
 
 
 @app.post("/leave-requests/<int:leave_request_id>/cancel")
@@ -2576,14 +2601,14 @@ def user_cancel_leave_request(leave_request_id: int):
     leave_request = db.session.get(LeaveRequest, leave_request_id)
     if not user or not leave_request or leave_request.user_id != user.id:
         flash("İzin talebi bulunamadı.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     if leave_request.status != "pending":
         flash("Yalnızca inceleme bekleyen izin talebi iptal edilebilir.", "error")
-        return redirect(url_for("panel") + "#leave-center")
+        return redirect(url_for("user_leave_center"))
     leave_request.status = "cancelled"
     db.session.commit()
     flash("İzin talebiniz iptal edildi.", "success")
-    return redirect(url_for("panel") + "#leave-center")
+    return redirect(url_for("user_leave_center"))
 
 
 @app.get("/statistics")
@@ -3580,7 +3605,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.7.4",
+        "version": "V23.8.0",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4907,4 +4932,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.7.4"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.8.0"}, 200

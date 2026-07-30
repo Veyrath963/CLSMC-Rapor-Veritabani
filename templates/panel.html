@@ -390,56 +390,194 @@ input:focus,select:focus,textarea:focus{
     <div class="left">
       <div class="mini-logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
       <div>
-        <h2>CLSMC Merkezi Takip ve Raporlama Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
-        <small>Rapor Paneli</small>
+        <h2>CLSMC Merkezi Takip ve Raporlama Sistemi</h2>
+        <small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
+        <small>
+          {% if page_mode == 'dashboard' %}Ana Sayfa
+          {% elif page_mode == 'report_create' %}Yeni Rapor
+          {% elif page_mode == 'communications' %}Bildirimler ve Duyurular
+          {% elif page_mode == 'drafts' %}Taslaklar
+          {% elif page_mode == 'leave' %}İzin İşlemleri
+          {% endif %}
+        </small>
       </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
-      <a class="btn btn-secondary" href="#notifications">🔔 Bildirimler {% if unread_notification_count %}<span class="v23-notification-count">{{ unread_notification_count }}</span>{% endif %}</a>
-      <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
-      <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
+    <div class="v238-top-actions">
       <form method="post" action="{{ url_for('logout') }}" style="margin:0">
         <button class="btn btn-secondary" type="submit">Çıkış</button>
       </form>
     </div>
   </header>
 
-  <main class="shell">
-    <section class="v23-user-home">
-      <article class="hero v23-welcome">
-        <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, taslaklarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
-        <div class="v23-user-actions"><a class="btn btn-primary" href="#report-creator">＋ Yeni Rapor</a><a class="btn btn-secondary" href="#report-creator" onclick="setTimeout(loadDraft,50)">▣ Taslağı Devam Ettir</a><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a><a class="btn btn-secondary" href="#leave-center">İzin Talebi</a></div>
-      </article>
+  {% include "_user_category_nav.html" %}
 
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="padding:13px 15px">{{ message }}</div>{% endfor %}{% endwith %}
+  <main class="shell v238-shell">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category,message in messages %}
+        <div class="flash {{ category }}" style="padding:13px 15px;margin-bottom:14px">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
 
-      <section class="v23-metrics">
-        <div class="v23-metric"><span>Toplam Raporum</span><strong>{{ personal_stats.total }}</strong></div>
-        <div class="v23-metric"><span>Bu Hafta</span><strong>{{ personal_stats.week }}</strong></div>
-        <div class="v23-metric"><span>Bu Ay</span><strong>{{ personal_stats.month }}</strong></div>
-        <div class="v23-metric"><span>Favoriler</span><strong>{{ personal_stats.favorites }}</strong></div>
-        <div class="v23-metric"><span>Kayıtlı Taslak</span><strong>{{ drafts|length }}</strong></div>
-        <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
+    {% if page_mode == "dashboard" %}
+      <section class="v23-user-home">
+        <article class="hero v23-welcome">
+          <div>
+            <div class="v23-kicker">⚕ Personel çalışma merkezi</div>
+            <h1>Hoş geldiniz, {{ username }}</h1>
+            <p>Ana sayfa artık yalnızca özet bilgileri gösterir. Ayrıntılı işlemler üstteki kategorilere taşındı.</p>
+          </div>
+          <div class="v23-user-actions">
+            <a class="btn btn-primary" href="{{ url_for('user_report_create') }}">＋ Yeni Rapor</a>
+            <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
+            <a class="btn btn-secondary" href="{{ url_for('user_communications') }}">🔔 Bildirimler</a>
+            <a class="btn btn-secondary" href="{{ url_for('user_leave_center') }}">◷ İzin İşlemleri</a>
+          </div>
+        </article>
+
+        <section class="v23-metrics">
+          <div class="v23-metric"><span>Toplam Raporum</span><strong>{{ personal_stats.total }}</strong></div>
+          <div class="v23-metric"><span>Bu Hafta</span><strong>{{ personal_stats.week }}</strong></div>
+          <div class="v23-metric"><span>Bu Ay</span><strong>{{ personal_stats.month }}</strong></div>
+          <div class="v23-metric"><span>Favoriler</span><strong>{{ personal_stats.favorites }}</strong></div>
+          <div class="v23-metric"><span>Kayıtlı Taslak</span><strong>{{ drafts|length }}</strong></div>
+          <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
+        </section>
+
+        <section class="v238-category-cards">
+          <a class="v238-category-card" href="{{ url_for('user_report_create') }}">
+            <span>Rapor İşlemleri</span><strong>Yeni Rapor Oluştur</strong><small>Vaka, Adli, Otopsi, Ex veya EMS rapor formunu aç.</small>
+          </a>
+          <a class="v238-category-card" href="{{ url_for('user_report_center') }}">
+            <span>Rapor İşlemleri</span><strong>Raporlarımı Görüntüle</strong><small>Arama, filtreleme, favoriler ve rapor geçmişi.</small>
+          </a>
+          <a class="v238-category-card" href="{{ url_for('user_drafts') }}">
+            <span>Rapor İşlemleri</span><strong>Taslaklarım</strong><small>{{ drafts|length }} kayıtlı taslağı yönet veya devam ettir.</small>
+          </a>
+          <a class="v238-category-card" href="{{ url_for('user_communications') }}">
+            <span>Personel İşlemleri</span><strong>Bildirimler ve Duyurular</strong><small>{{ unread_notification_count }} okunmamış bildirimi ve hastane duyurularını aç.</small>
+          </a>
+          <a class="v238-category-card" href="{{ url_for('user_leave_center') }}">
+            <span>Personel İşlemleri</span><strong>İzin İşlemleri</strong><small>Yeni izin talebi oluştur ve geçmiş kararları görüntüle.</small>
+          </a>
+          <a class="v238-category-card" href="{{ url_for('settings') }}">
+            <span>Hesabım</span><strong>Ayarlar ve Varsayılanlar</strong><small>İmza, personel numarası ve rapor varsayılanlarını düzenle.</small>
+          </a>
+        </section>
+
+        <section class="v23-box" style="margin-top:18px">
+          <div class="v23-box-head">
+            <div><h3>Son Raporlarım</h3><div class="sub">Son beş kaydın kısa özeti</div></div>
+            <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">Tüm Raporları Aç</a>
+          </div>
+          {% if recent_reports %}
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Rapor No</th><th>Tür</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead>
+                <tbody>
+                  {% for report in recent_reports[:5] %}
+                    <tr>
+                      <td><strong>{{ report.report_number }}</strong>{% if report.is_favorite %} ★{% endif %}</td>
+                      <td>{{ report_type_labels.get(report.report_type,report.report_type) }}</td>
+                      <td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,'Tamamlandı') }}</span></td>
+                      <td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td>
+                      <td><a class="edit" href="{{ url_for('user_report_view',report_id=report.id) }}">Görüntüle</a></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty">Henüz rapor kaydınız bulunmuyor.</div>
+          {% endif %}
+        </section>
+      </section>
+
+    {% elif page_mode == "communications" %}
+      <section class="hero v238-page-hero">
+        <div><div class="v23-kicker">Personel İşlemleri</div><h1>Bildirimler ve Duyurular</h1><p>Yönetici bildirimleri ve hastane duyuruları tek iletişim kategorisinde toplandı.</p></div>
       </section>
 
       <section class="v23-grid">
-        <article class="v23-box v23-span-7">
-          <div class="v23-box-head"><div><h3>Son Raporlarım</h3><div class="sub">Raporlar ayrıca yönetici veya rütbeli onayı beklemeden doğrudan kaydedilir.</div></div><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">Tümünü Aç</a></div>
-          {% if recent_reports %}<div class="table-wrap"><table><thead><tr><th>Rapor No</th><th>Tür</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead><tbody>{% for report in recent_reports %}<tr><td><strong>{{ report.report_number }}</strong>{% if report.is_favorite %} ★{% endif %}</td><td>{{ report_type_labels.get(report.report_type,report.report_type) }}</td><td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,'Tamamlandı') }}</span></td><td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td><td><a class="edit" href="{{ url_for('user_report_view',report_id=report.id) }}">Görüntüle</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">Henüz rapor kaydınız bulunmuyor.</div>{% endif %}
+        <article class="v23-box v23-span-6">
+          <div class="v23-box-head">
+            <div><h3>Bildirim Merkezi</h3><div class="sub">İzin, rapor ve yönetici bildirimleri</div></div>
+            {% if unread_notification_count %}
+              <form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="btn btn-secondary" type="submit">Tümünü Okundu Yap</button></form>
+            {% endif %}
+          </div>
+          <div class="v23-list">
+            {% for item in notifications %}
+              <div class="v23-item {% if not item.is_read %}unread{% endif %}">
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.message }}</p>
+                <div class="v23-item-meta">
+                  <span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>
+                  {% if not item.is_read %}
+                    <form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <div class="empty">Yeni bildiriminiz yok.</div>
+            {% endfor %}
+          </div>
         </article>
 
-        <article class="v23-box v23-span-5" id="notifications">
-          <div class="v23-box-head"><div><h3>Bildirim Merkezi</h3><div class="sub">İzin, rapor ve yönetici bildirimleri</div></div>{% if unread_notification_count %}<form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="btn btn-secondary" type="submit">Tümünü Okundu Yap</button></form>{% endif %}</div>
-          <div class="v23-list">{% for item in notifications %}<div class="v23-item {% if not item.is_read %}unread{% endif %}"><strong>{{ item.title }}</strong><p>{{ item.message }}</p><div class="v23-item-meta"><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>{% if not item.is_read %}<form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>{% endif %}</div></div>{% else %}<div class="empty">Yeni bildiriminiz yok.</div>{% endfor %}</div>
+        <article class="v23-box v23-span-6">
+          <div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div>
+          <div class="v23-list">
+            {% for item in announcements %}
+              <div class="v23-item v23-announcement">
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.body }}</p>
+                <div class="v23-item-meta">
+                  <span>Duyuruyu yapan: <strong>{{ item.author_name or item.created_by_admin }}</strong> — {{ item.author_rank or 'Yönetici' }}</span>
+                  <span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>
+                </div>
+              </div>
+            {% else %}
+              <div class="empty">Aktif hastane duyurusu bulunmuyor.</div>
+            {% endfor %}
+          </div>
         </article>
+      </section>
 
-        {% if drafts %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Kayıtlı Taslaklarım</h3><div class="sub">Taslaklar sunucuda ve tarayıcıda saklanır; rapor kaydedildiğinde ilgili taslak temizlenir.</div></div></div><div class="v23-list">{% for draft in drafts %}<div class="v23-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>{{ report_type_labels.get(draft.report_type,draft.report_type) }}</strong><p>Son otomatik kayıt: {{ draft.updated_at.strftime('%d.%m.%Y %H:%M') if draft.updated_at else '—' }}</p></div><div style="display:flex;gap:8px"><a class="btn btn-secondary" href="#report-creator" onclick="loadServerDraft('{{ draft.report_type }}')">Devam Et</a><button class="btn btn-danger" type="button" onclick="deleteDraftType('{{ draft.report_type }}')">Sil</button></div></div></div>{% endfor %}</div></article>{% endif %}
+    {% elif page_mode == "drafts" %}
+      <section class="hero v238-page-hero">
+        <div><div class="v23-kicker">Rapor İşlemleri</div><h1>Kayıtlı Taslaklar</h1><p>Yarım kalan raporları burada görüntüleyebilir, devam ettirebilir veya silebilirsiniz.</p></div>
+        <a class="btn btn-primary" href="{{ url_for('user_report_create') }}">＋ Yeni Rapor</a>
+      </section>
 
-        {% if announcements %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>Duyuruyu yapan: <strong>{{ item.author_name or item.created_by_admin }}</strong> — {{ item.author_rank or 'Yönetici' }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
+      <section class="v23-box">
+        <div class="v23-box-head"><div><h3>Taslaklarım</h3><div class="sub">{{ drafts|length }} kayıtlı taslak</div></div></div>
+        <div class="v23-list">
+          {% for draft in drafts %}
+            <div class="v23-item">
+              <div class="v238-draft-row">
+                <div>
+                  <strong>{{ report_type_labels.get(draft.report_type,draft.report_type) }}</strong>
+                  <p>Son otomatik kayıt: {{ draft.updated_at.strftime('%d.%m.%Y %H:%M') if draft.updated_at else '—' }}</p>
+                </div>
+                <div class="v238-row-actions">
+                  <a class="btn btn-primary" href="{{ url_for('user_report_create', report_type=draft.report_type, copy='1') }}">Devam Et</a>
+                  <button class="btn btn-danger" type="button" onclick="deleteDraftFromCenter('{{ draft.report_type }}')">Sil</button>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="empty">Kayıtlı taslağınız bulunmuyor.</div>
+          {% endfor %}
+        </div>
+      </section>
 
-        <article class="v23-box v23-span-6" id="leave-center">
-          <div class="v23-box-head"><div><h3>İzin Talebi</h3><div class="sub">Talep Hastane Yöneticisi paneline düşer; sonuçlandığında bildirim alırsınız.</div></div></div>
+    {% elif page_mode == "leave" %}
+      <section class="hero v238-page-hero">
+        <div><div class="v23-kicker">Personel İşlemleri</div><h1>İzin İşlemleri</h1><p>Yeni izin talebi ve geçmiş talepler aynı kategoride gösterilir.</p></div>
+      </section>
+
+      <section class="v23-grid">
+        <article class="v23-box v23-span-6">
+          <div class="v23-box-head"><div><h3>Yeni İzin Talebi</h3><div class="sub">Talep Hastane Yöneticisi paneline iletilir.</div></div></div>
           <form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form">
             <div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
             <div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div>
@@ -449,12 +587,29 @@ input:focus,select:focus,textarea:focus{
           </form>
         </article>
 
-        <article class="v23-box v23-span-6"><div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleriniz ve yönetici kararları</div></div></div><div class="v23-list">{% for item in leave_requests %}<div class="v23-item"><div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div><p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>{% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}{% if item.status=='pending' %}<form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>{% endif %}</div>{% else %}<div class="empty">Henüz izin talebiniz yok.</div>{% endfor %}</div></article>
-
-        <article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Aktif Personel Hizmetleri</h3><div class="sub">Günlük kullanımda aktif olan personel işlemleri.</div></div></div><div class="v23-module-grid"><div class="v23-module active"><span class="tag">Aktif</span><strong>İzin ve Devamsızlık</strong><small>İzin gönderme, yönetici kararı ve kullanıcı bildirimi.</small></div><div class="v23-module active"><span class="tag">Aktif</span><strong>Duyuru Merkezi</strong><small>Hedefli hastane duyuruları ve bildirimler.</small></div></div></article>
+        <article class="v23-box v23-span-6">
+          <div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleri ve yönetici kararları</div></div></div>
+          <div class="v23-list">
+            {% for item in leave_requests %}
+              <div class="v23-item">
+                <div class="v238-leave-head">
+                  <strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong>
+                  <span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span>
+                </div>
+                <p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>
+                {% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}
+                {% if item.status == 'pending' %}
+                  <form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="empty">Henüz izin talebiniz yok.</div>
+            {% endfor %}
+          </div>
+        </article>
       </section>
-    </section>
 
+    {% elif page_mode == "report_create" %}
     <section class="hero" id="report-creator">
       <h1>Rapor oluştur</h1>
       <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
@@ -565,9 +720,12 @@ input:focus,select:focus,textarea:focus{
         </div>
       </div>
     </section>
-  </main>
 
+    {% endif %}
+  </main>
 </section>
+
+{% if page_mode == "report_create" %}
 <script>
 
 const ALLOWED_REPORT_TYPES = {{ allowed_report_types|tojson }};
@@ -2320,8 +2478,28 @@ window.addEventListener('beforeunload', function(event){
 
 </script>
 <div id="copyToast" class="v23-toast" role="status" aria-live="polite">✓ BBCode kopyalandı</div>
+{% elif page_mode == "drafts" %}
+<script>
+async function deleteDraftFromCenter(reportType){
+  if(!confirm('Bu taslak silinsin mi?')) return;
+  try{
+    const response = await fetch(`/api/drafts/${encodeURIComponent(reportType)}`, {
+      method: 'DELETE',
+      headers: {'Accept': 'application/json'}
+    });
+    const result = await response.json();
+    if(!response.ok || !result.ok){
+      alert(result.message || 'Taslak silinemedi.');
+      return;
+    }
+    window.location.reload();
+  }catch(error){
+    alert('Taslak silinirken bağlantı hatası oluştu.');
+  }
+}
+</script>
+{% endif %}
 
 <div class="developer-credit">Developer: Veyrath</div>
-
 </body>
 </html>
