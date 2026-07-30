@@ -364,6 +364,24 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
+
+<style id="clsmc-v2370-productivity">
+.v237-toolbox{margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:15px;background:color-mix(in srgb,var(--panel-3) 88%,transparent)}
+.v237-toolbox-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:11px}
+.v237-toolbox-head strong{display:block}.v237-toolbox-head small{color:var(--muted)}
+.v237-template-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr) auto auto;gap:8px;align-items:end}
+.v237-template-grid label{display:block;margin-bottom:5px;font-size:11px;color:var(--muted)}
+.v237-template-grid input,.v237-template-grid select{min-height:40px}
+.v237-quality{margin-bottom:14px;padding:13px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel-3) 88%,transparent)}
+.v237-quality-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.v237-quality h4{margin:0}.v237-quality-list{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:7px}
+.v237-quality-item{padding:8px 10px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.v237-quality-item.error{border-color:color-mix(in srgb,var(--danger) 55%,var(--line));background:color-mix(in srgb,var(--danger) 10%,transparent)}
+.v237-quality-item.warning{border-color:color-mix(in srgb,var(--warning) 55%,var(--line));background:color-mix(in srgb,var(--warning) 10%,transparent)}
+.v237-quality-item.good{border-color:color-mix(in srgb,var(--good) 55%,var(--line));background:color-mix(in srgb,var(--good) 10%,transparent)}
+@media(max-width:950px){.v237-template-grid{grid-template-columns:1fr 1fr}.v237-template-grid .v237-wide{grid-column:1/-1}}
+@media(max-width:560px){.v237-template-grid{grid-template-columns:1fr}.v237-template-grid .v237-wide{grid-column:auto}}
+</style>
+
 </head>
 <body>
 <section class="app">
@@ -494,6 +512,16 @@ input:focus,select:focus,textarea:focus{
           <span class="badge"><span class="dot"></span> Otomatik oluşturma açık</span>
         </div>
         <div class="panel-body">
+          <div class="v237-toolbox">
+            <div class="v237-toolbox-head"><div><strong>Rapor Şablonları ve Hızlı Doldurma</strong><small>Hazır şablon kullan veya mevcut klinik metinleri kişisel şablon olarak kaydet.</small></div><span class="badge">En fazla 12 kişisel şablon</span></div>
+            <div class="v237-template-grid">
+              <div class="v237-wide"><label>Uygulanacak Şablon</label><select id="reportTemplateSelect"><option value="">Şablon seçiniz</option></select></div>
+              <button class="btn btn-secondary" type="button" onclick="applySelectedTemplate()">Şablonu Uygula</button>
+              <div class="v237-wide"><label>Kişisel Şablon Adı</label><input id="reportTemplateName" maxlength="80" placeholder="Örn. Kontrol muayenesi"></div>
+              <button class="btn btn-primary" type="button" onclick="saveCurrentAsTemplate()">Şablon Kaydet</button>
+              <button class="btn btn-danger" id="deleteTemplateButton" type="button" onclick="deleteSelectedTemplate()" disabled>Şablonu Sil</button>
+            </div>
+          </div>
           <div id="dynamicFields"></div>
 
           <div class="actions">
@@ -524,6 +552,10 @@ input:focus,select:focus,textarea:focus{
           <span id="saveStatus" class="status">Hazır</span>
         </div>
         <div class="panel-body">
+          <div class="v237-quality" id="reportQualityPanel">
+            <div class="v237-quality-head"><div><h4>Rapor Kalite Kontrolü</h4><small class="status">Eksik alanları, tarih tutarsızlığını ve kullanılan rapor numarasını kontrol eder.</small></div><button class="btn btn-secondary" type="button" onclick="runQualityControl(true)">Kontrol Et</button></div>
+            <ul class="v237-quality-list" id="reportQualityList"><li class="v237-quality-item good">Kontrol başlatılmadı.</li></ul>
+          </div>
           <div id="bbcodePreview" class="bbcode"></div>
           <div class="actions">
             <button class="btn btn-good" onclick="copyBBCode()">BBCode'u Kopyala</button>
@@ -546,6 +578,11 @@ let currentType = INITIAL_REPORT_TYPE;
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
 const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
 const SERVER_DRAFTS = {{ draft_payloads|tojson }};
+const BUILTIN_TEMPLATES = {{ built_in_templates|tojson }};
+let USER_TEMPLATES = {{ custom_templates|tojson }};
+const USER_DEFAULTS = {{ user_defaults|tojson }};
+const REPORT_NUMBER_DEFAULTS = {{ report_number_defaults|tojson }};
+const FORCED_DRAFT_TYPE = {{ forced_draft_type|tojson }};
 let hasUnsavedChanges = false;
 let autoSaveTimer = null;
 
@@ -613,6 +650,7 @@ const reportConfig = {
           <label>Başvuru Şekli</label>
           <select data-field="basvuru" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
+            <option>Ayaktan</option>
             <option>Acil Giriş</option>
             <option>Randevu</option>
             <option>Ambulans</option>
@@ -623,6 +661,7 @@ const reportConfig = {
           <select data-field="hasta_sonucu" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
             <option>Taburcu</option>
+            <option>Müşahede sonrası taburcu</option>
             <option>Müşahede</option>
             <option>Servise Yatış</option>
             <option>Ameliyat</option>
@@ -1194,6 +1233,196 @@ const reportConfig = {
 
 
 
+function reportNumberField(type){
+  return {vaka:'rapor_no',adli:'adli_rapor_no',otopsi:'otp_rapor_no',ex:'ex_rapor_no',ems:'ems_rapor_no'}[type] || '';
+}
+
+function applyReportNumberDefault(type){
+  const field = reportNumberField(type);
+  const element = field ? document.querySelector(`[data-field="${field}"]`) : null;
+  if(!element) return;
+  const current = (element.value || '').trim();
+  if(!current || /-0000$/.test(current)) element.value = REPORT_NUMBER_DEFAULTS[type] || current;
+}
+
+function applyUserDefaults(){
+  const mappings = {
+    vaka: {imza:'digital_signature',olayyeri:'default_case_location',hemsire:'default_nurse'},
+    adli: {adli_imza:'digital_signature'},
+    otopsi: {otp_imza:'digital_signature'},
+    ex: {ex_imza:'digital_signature'},
+    ems: {ems_imza:'digital_signature'}
+  };
+  Object.entries(mappings[currentType] || {}).forEach(([field, profileKey])=>{
+    const element = document.querySelector(`[data-field="${field}"]`);
+    if(element && !(element.value || '').trim() && USER_DEFAULTS[profileKey]){
+      element.value = USER_DEFAULTS[profileKey];
+    }
+  });
+}
+
+function templatesForCurrentType(){
+  const builtins = (BUILTIN_TEMPLATES[currentType] || []).map(item=>({...item,source:'builtin'}));
+  const customs = USER_TEMPLATES.filter(item=>item.report_type===currentType).map(item=>({...item,source:'user'}));
+  return [...builtins,...customs];
+}
+
+function renderTemplateOptions(){
+  const select = document.getElementById('reportTemplateSelect');
+  if(!select) return;
+  const previous = select.value;
+  select.innerHTML = '<option value="">Şablon seçiniz</option>';
+  templatesForCurrentType().forEach(item=>{
+    const option = document.createElement('option');
+    option.value = `${item.source}:${item.id}`;
+    option.textContent = `${item.source==='builtin' ? 'Hazır' : 'Kişisel'} — ${item.name}`;
+    select.appendChild(option);
+  });
+  if([...select.options].some(option=>option.value===previous)) select.value=previous;
+  syncDeleteTemplateButton();
+}
+
+function selectedTemplate(){
+  const select = document.getElementById('reportTemplateSelect');
+  const [source,id] = String(select?.value || '').split(':');
+  if(!source || !id) return null;
+  return templatesForCurrentType().find(item=>item.source===source && String(item.id)===id) || null;
+}
+
+function syncDeleteTemplateButton(){
+  const button = document.getElementById('deleteTemplateButton');
+  const item = selectedTemplate();
+  if(button) button.disabled = !item || item.source !== 'user';
+}
+
+function applySelectedTemplate(){
+  const item = selectedTemplate();
+  if(!item){ window.alert('Önce bir rapor şablonu seçin.'); return; }
+  Object.entries(item.values || {}).forEach(([key,value])=>{
+    const element = document.querySelector(`[data-field="${key}"]`);
+    if(element) element.value = value ?? '';
+  });
+  applyUserDefaults();
+  if(currentType==='adli') toggleAdliOther();
+  renderBBCode();
+  scheduleAutoSave();
+  setStatus(`${item.name} şablonu uygulandı`);
+}
+
+async function saveCurrentAsTemplate(){
+  const input = document.getElementById('reportTemplateName');
+  const name = (input?.value || '').trim();
+  if(!name){ window.alert('Kişisel şablon için bir ad yazın.'); return; }
+  try{
+    const response = await fetch('/api/report-templates',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
+      body:JSON.stringify({name,report_type:currentType,form_data:collectFormData()})
+    });
+    const result = await response.json().catch(()=>({}));
+    if(!response.ok || !result.ok) throw new Error(result.message || 'Şablon kaydedilemedi.');
+    const index = USER_TEMPLATES.findIndex(item=>item.id===result.template.id);
+    if(index>=0) USER_TEMPLATES[index]=result.template; else USER_TEMPLATES.push(result.template);
+    renderTemplateOptions();
+    document.getElementById('reportTemplateSelect').value=`user:${result.template.id}`;
+    syncDeleteTemplateButton();
+    if(input) input.value='';
+    setStatus('Kişisel şablon kaydedildi');
+  }catch(error){ window.alert(error.message || 'Şablon kaydedilemedi.'); }
+}
+
+async function deleteSelectedTemplate(){
+  const item = selectedTemplate();
+  if(!item || item.source!=='user') return;
+  if(!window.confirm(`${item.name} şablonu silinsin mi?`)) return;
+  try{
+    const response = await fetch(`/api/report-templates/${item.id}`,{method:'DELETE',credentials:'same-origin'});
+    const result = await response.json().catch(()=>({}));
+    if(!response.ok || !result.ok) throw new Error(result.message || 'Şablon silinemedi.');
+    USER_TEMPLATES = USER_TEMPLATES.filter(template=>template.id!==item.id);
+    renderTemplateOptions();
+    setStatus('Şablon silindi');
+  }catch(error){ window.alert(error.message || 'Şablon silinemedi.'); }
+}
+
+const QUALITY_RULES = {
+  vaka:{
+    required:[['rapor_no','Rapor numarası'],['adsoyad','Hasta adı ve soyadı'],['vaka_aciklama','Vaka açıklaması'],['muayene','Muayene bulguları'],['tani','Tanı'],['islemler','Uygulanan işlemler']],
+    recommended:[['tarih','Vaka tarihi'],['rapor_tarihi','Rapor tarihi'],['ekran','Ekran görüntüsü'],['imza','Dijital imza']]
+  },
+  adli:{
+    required:[['adli_rapor_no','Rapor numarası'],['adli_adsoyad','Hasta adı ve soyadı'],['adli_olay','Olay açıklaması'],['adli_yaralanmalar','Tespit edilen yaralanmalar'],['adli_islemler','Tıbbi işlemler']],
+    recommended:[['adli_tarih','Vaka tarihi'],['adli_bildirim_birim','Bildirim yapılan birim'],['adli_ekran','Ekran görüntüsü'],['adli_imza','Dijital imza']]
+  },
+  otopsi:{
+    required:[['otp_rapor_no','Rapor numarası'],['otp_adsoyad','Ad soyad'],['otp_genel_gorunum','Genel görünüm'],['otp_ic_bulgular','İç muayene bulguları'],['otp_kesin_neden','Kesin ölüm nedeni']],
+    recommended:[['otp_otopsi_tarih','Otopsi tarihi'],['otp_ekran','Ekran görüntüsü'],['otp_imza','Dijital imza']]
+  },
+  ex:{
+    required:[['ex_rapor_no','Rapor numarası'],['ex_adsoyad','Ad soyad'],['ex_bulgular','Tıbbi bulgular'],['ex_mudahale','Uygulanan müdahaleler'],['ex_on_neden','Ön ölüm nedeni']],
+    recommended:[['ex_olum_tarih','Ölüm tarihi'],['ex_ekran','Ekran görüntüsü'],['ex_imza','Dijital imza']]
+  },
+  ems:{
+    required:[['ems_rapor_no','Rapor numarası'],['ems_adsoyad','Hasta adı ve soyadı'],['ems_bulgular','Tıbbi bulgular'],['ems_mudahale','Saha müdahalesi'],['ems_nakil_durumu','Nakil durumu']],
+    recommended:[['ems_vaka_tarih','Vaka tarihi'],['ems_ekran','Ekran görüntüsü'],['ems_imza','Dijital imza']]
+  }
+};
+
+function localQualityIssues(){
+  const rules = QUALITY_RULES[currentType] || {required:[],recommended:[]};
+  const issues=[];
+  rules.required.forEach(([field,label])=>{ if(!getVal(field)) issues.push({level:'error',text:`${label} boş bırakılamaz.`}); });
+  rules.recommended.forEach(([field,label])=>{ if(!getVal(field)) issues.push({level:'warning',text:`${label} eklenmedi.`}); });
+  if(!CURRENT_DOCTOR_RANK) issues.push({level:'error',text:'Hesabınıza geçerli bir rütbe atanmamış.'});
+  if(currentType==='vaka' && getVal('tarih') && getVal('rapor_tarihi')){
+    const incident=new Date(getVal('tarih')); const reportDate=new Date(getVal('rapor_tarihi'));
+    if(!isNaN(incident) && !isNaN(reportDate) && reportDate < incident){
+      issues.push({level:'warning',text:'Rapor tarihi vaka tarihinden önce görünüyor.'});
+    }
+  }
+  if(currentType==='adli' && getVal('adli_tarih') && getVal('adli_bildirim_tarih')){
+    const incident=new Date(getVal('adli_tarih')); const notice=new Date(getVal('adli_bildirim_tarih'));
+    if(!isNaN(incident) && !isNaN(notice) && notice < incident){
+      issues.push({level:'warning',text:'Adli bildirim tarihi vaka tarihinden önce görünüyor.'});
+    }
+  }
+  return issues;
+}
+
+function renderQualityIssues(issues){
+  const list=document.getElementById('reportQualityList');
+  if(!list) return;
+  list.innerHTML='';
+  if(!issues.length){
+    const li=document.createElement('li'); li.className='v237-quality-item good'; li.textContent='✓ Belirgin bir eksik veya tutarsızlık bulunmadı.'; list.appendChild(li); return;
+  }
+  issues.forEach(issue=>{
+    const li=document.createElement('li'); li.className=`v237-quality-item ${issue.level}`;
+    li.textContent=`${issue.level==='error' ? '✕' : '⚠'} ${issue.text}`; list.appendChild(li);
+  });
+}
+
+async function runQualityControl(checkDuplicate=false){
+  const issues=localQualityIssues();
+  const meta=getReportMetadata();
+  if(checkDuplicate && meta.report_number){
+    try{
+      const query=new URLSearchParams({type:currentType,number:meta.report_number});
+      const response=await fetch(`/api/reports/check-number?${query.toString()}`,{credentials:'same-origin'});
+      const result=await response.json().catch(()=>({}));
+      if(response.ok && result.exists){
+        issues.push({
+          level:result.owned ? 'warning' : 'error',
+          text:result.owned
+            ? 'Bu rapor numarası daha önce kullanılmış. Kaydetme işlemi mevcut raporu günceller.'
+            : 'Bu rapor numarası başka bir kullanıcıya ait. Farklı numara kullanın.'
+        });
+      }
+    }catch(error){ issues.push({level:'warning',text:'Rapor numarası çevrim içi doğrulanamadı.'}); }
+  }
+  renderQualityIssues(issues);
+  return issues;
+}
+
 function setReportType(type, el){
   if(!ALLOWED_REPORT_TYPES.includes(type) || !reportConfig[type]) return;
   currentType = type;
@@ -1201,6 +1430,9 @@ function setReportType(type, el){
   if(el) el.classList.add('active');
   document.getElementById('formTitle').textContent = reportConfig[type].title + ' Formu';
   document.getElementById('dynamicFields').innerHTML = reportConfig[type].fields;
+  applyReportNumberDefault(type);
+  applyUserDefaults();
+  renderTemplateOptions();
   if(type === 'adli') toggleAdliOther();
   renderBBCode();
 }
@@ -1813,6 +2045,18 @@ async function copyBBCode(){
   const text = document.getElementById('bbcodePreview').textContent;
 
   try{
+    const qualityIssues = await runQualityControl(true);
+    const errors = qualityIssues.filter(item=>item.level==='error');
+    const warnings = qualityIssues.filter(item=>item.level==='warning');
+    if(errors.length){
+      window.alert('Rapor kaydedilmedi. Kalite kontrolündeki kırmızı hataları düzeltin.');
+      setStatus('Kalite kontrolü başarısız');
+      return;
+    }
+    if(warnings.length && !window.confirm(`${warnings.length} uyarı bulunuyor. Yine de raporu kaydedip BBCode'u kopyalamak istiyor musunuz?`)){
+      setStatus('Kayıt kullanıcı tarafından durduruldu');
+      return;
+    }
     setStatus('Rapor kaydediliyor...');
     const saveResult = await saveReportAutomatically(text);
 
@@ -2032,11 +2276,10 @@ function fillEmsSample(){
 
 function clearForm(){
   document.querySelectorAll('[data-field]').forEach(el => el.value = '');
-  if(currentType === 'ems'){
-    const reportNo = document.querySelector('[data-field="ems_rapor_no"]');
-    if(reportNo) reportNo.value = EMS_DEFAULT_REPORT_NUMBER;
-  }
+  applyReportNumberDefault(currentType);
+  applyUserDefaults();
   renderBBCode();
+  renderQualityIssues([]);
   setStatus('Form temizlendi');
 }
 
@@ -2055,8 +2298,12 @@ function downloadTxt(){
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('reportTemplateSelect')?.addEventListener('change', syncDeleteTemplateButton);
   const saved = localStorage.getItem('raporDemoDraft');
-  if(saved || Object.keys(SERVER_DRAFTS || {}).length){
+  if(FORCED_DRAFT_TYPE && SERVER_DRAFTS[FORCED_DRAFT_TYPE]){
+    localStorage.setItem('raporDemoDraft',JSON.stringify({type:FORCED_DRAFT_TYPE,values:SERVER_DRAFTS[FORCED_DRAFT_TYPE]}));
+    loadDraft();
+  }else if(saved || Object.keys(SERVER_DRAFTS || {}).length){
     loadDraft();
   }
   const activeCard = document.querySelector(`.card[data-type="${currentType}"]`);

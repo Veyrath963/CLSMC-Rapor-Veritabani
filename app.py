@@ -64,6 +64,12 @@ class User(db.Model):
     )
     last_login_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
+    # V23.7.0: Doktorun rapor formunda otomatik kullanılabilen kişisel bilgiler.
+    digital_signature = db.Column(db.String(120), nullable=True)
+    personnel_number = db.Column(db.String(80), nullable=True)
+    default_case_location = db.Column(db.String(180), nullable=True)
+    default_nurse = db.Column(db.String(120), nullable=True)
+
 
 
 class DeletedUser(db.Model):
@@ -75,6 +81,10 @@ class DeletedUser(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     rank = db.Column(db.String(120), nullable=True)
     original_created_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    digital_signature = db.Column(db.String(120), nullable=True)
+    personnel_number = db.Column(db.String(80), nullable=True)
+    default_case_location = db.Column(db.String(180), nullable=True)
+    default_nurse = db.Column(db.String(120), nullable=True)
     deleted_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
@@ -265,6 +275,34 @@ class LeaveRequest(db.Model):
     reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
 
+class ReportTemplate(db.Model):
+    __tablename__ = "report_templates"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id", "report_type", "name",
+            name="uq_report_template_user_type_name",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    username = db.Column(db.String(120), nullable=False, index=True)
+    name = db.Column(db.String(80), nullable=False)
+    report_type = db.Column(db.String(30), nullable=False, index=True)
+    form_data = db.Column(db.Text, nullable=False, default="{}")
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class ReportDraft(db.Model):
     __tablename__ = "report_drafts"
     __table_args__ = (
@@ -290,6 +328,7 @@ ARCHIVE_ACTION_LABELS = {
     "created": "Kullanıcı tarafından oluşturuldu",
     "updated": "Kullanıcı tarafından güncellendi",
     "admin_updated": "Yönetici tarafından güncellendi",
+    "copied_to_draft": "Yeni rapor taslağına kopyalandı",
     "deleted_by_admin": "Aktif kayıttan silinmeden önce yedeklendi",
 }
 
@@ -323,6 +362,154 @@ ANNOUNCEMENT_AUTHOR_PROFILES = {
     "Adreanna Vetroa": "Psychiatrist",
     "Darius Blackwell": "Attending Physician",
 }
+
+REPORT_NUMBER_CONFIG = {
+    "vaka": ("rapor_no", "CLSMC-VKR"),
+    "adli": ("adli_rapor_no", "CLSMC-ADL"),
+    "otopsi": ("otp_rapor_no", "CLSMC-OTP"),
+    "ex": ("ex_rapor_no", "CLSMC-EX"),
+    "ems": ("ems_rapor_no", "CLSMC-EMS"),
+}
+
+REPORT_COPY_CLEAR_FIELDS = {
+    "vaka": {"tarih", "rapor_tarihi", "ekran"},
+    "adli": {"adli_tarih", "adli_bildirim_tarih", "adli_ekran"},
+    "otopsi": {"otp_olum_tarih", "otp_otopsi_tarih", "otp_ekran"},
+    "ex": {"ex_kabul_tarih", "ex_olum_tarih", "ex_ekran"},
+    "ems": {"ems_vaka_tarih", "ems_ekran"},
+}
+
+REPORT_TEMPLATE_EXCLUDED_FIELDS = {
+    "vaka": {
+        "rapor_no", "adsoyad", "cinsiyet", "telefon", "adres", "tarih",
+        "ekran", "hemsire", "rapor_tarihi", "imza",
+    },
+    "adli": {
+        "adli_rapor_no", "adli_adsoyad", "adli_cinsiyet", "adli_telefon",
+        "adli_adres", "adli_tarih", "adli_bildirim_tarih",
+        "adli_teslim_yetkili", "adli_imza", "adli_ekran",
+    },
+    "otopsi": {
+        "otp_rapor_no", "otp_adsoyad", "otp_cinsiyet", "otp_yas",
+        "otp_olum_tarih", "otp_otopsi_tarih", "otp_dosya_no",
+        "otp_teslim_yetkili", "otp_imza", "otp_ekran",
+    },
+    "ex": {
+        "ex_rapor_no", "ex_adsoyad", "ex_cinsiyet", "ex_yas",
+        "ex_kabul_tarih", "ex_olum_tarih", "ex_yakin_bilgi",
+        "ex_cenaze", "ex_imza", "ex_ekran",
+    },
+    "ems": {
+        "ems_rapor_no", "ems_vaka_tarih", "ems_konum", "ems_adsoyad",
+        "ems_teslim", "ems_ekip", "ems_ambulans", "ems_imza", "ems_ekran",
+    },
+}
+
+BUILTIN_REPORT_TEMPLATES = {
+    "vaka": [
+        {
+            "id": "builtin-vaka-acil",
+            "name": "Acil Servis Muayenesi",
+            "values": {
+                "basvuru": "Acil Giriş",
+                "hasta_sonucu": "Taburcu",
+                "vaka_aciklama": "Hasta mevcut şikâyetleri nedeniyle acil servise başvurdu. Hastanın öyküsü alınarak genel değerlendirmesi yapıldı.",
+                "muayene": "Hastanın bilinci açık, iletişimi uyumlu ve genel durumu stabil olarak değerlendirildi. Şikâyete yönelik fizik muayene gerçekleştirildi.",
+                "islemler": "Gerekli klinik değerlendirme ve semptomlara yönelik müdahale uygulandı. Hastaya kontrol önerileri anlatıldı.",
+            },
+        },
+        {
+            "id": "builtin-vaka-enfeksiyon",
+            "name": "Enfeksiyon Değerlendirmesi",
+            "values": {
+                "basvuru": "Acil Giriş",
+                "hasta_sonucu": "Taburcu",
+                "vaka_aciklama": "Hasta ateş, halsizlik ve enfeksiyonla uyumlu şikâyetler nedeniyle başvurdu.",
+                "muayene": "Genel durum, solunum sistemi ve ilgili şikâyet bölgesi değerlendirildi. Enfeksiyon bulguları açısından muayene gerçekleştirildi.",
+                "tani": "Enfeksiyon şüphesi / klinik bulgularla uyumlu enfeksiyon tablosu.",
+                "islemler": "Semptomatik destek sağlandı, takip ve yeniden başvuru koşulları hastaya anlatıldı.",
+            },
+        },
+        {
+            "id": "builtin-vaka-kirik",
+            "name": "Kırık veya Çıkık Şüphesi",
+            "values": {
+                "basvuru": "Acil Giriş",
+                "hasta_sonucu": "Taburcu",
+                "vaka_aciklama": "Hasta travma sonrası ağrı, hassasiyet ve hareket kısıtlılığı şikâyetiyle başvurdu.",
+                "muayene": "İlgili ekstremitede deformite, hassasiyet, dolaşım ve hareket durumu değerlendirildi.",
+                "tani": "Kırık / çıkık şüphesi.",
+                "islemler": "İlgili bölge sabitlendi, gerekli görüntüleme değerlendirmesi yapıldı ve kontrol önerildi.",
+            },
+        },
+        {
+            "id": "builtin-vaka-kontrol",
+            "name": "Kontrol Muayenesi",
+            "values": {
+                "basvuru": "Randevu",
+                "hasta_sonucu": "Taburcu",
+                "vaka_aciklama": "Hasta daha önce uygulanan tedavinin kontrolü amacıyla yeniden başvurdu.",
+                "muayene": "Tedavi edilen bölge ve hastanın güncel şikâyetleri değerlendirildi. İyileşme süreci kontrol edildi.",
+                "islemler": "Kontrol muayenesi tamamlandı ve güncel bakım önerileri hastaya aktarıldı.",
+            },
+        },
+    ],
+    "adli": [
+        {
+            "id": "builtin-adli-darp",
+            "name": "Darp Vakası",
+            "values": {
+                "adli_vaka_turu": "Darp",
+                "adli_durum": "Stabil",
+                "adli_delil": "Bulunmuyor",
+                "adli_olay": "Hasta darp iddiası sonrasında adli değerlendirme amacıyla muayene edildi.",
+                "adli_yaralanmalar": "Gözle görülen travmatik bulgular anatomik bölgeleriyle birlikte değerlendirildi ve kayıt altına alındı.",
+                "adli_islemler": "Yaralanmalara yönelik gerekli tıbbi değerlendirme ve müdahale uygulandı.",
+                "adli_bildirim_birim": "LSPD",
+            },
+        },
+        {
+            "id": "builtin-adli-atesli",
+            "name": "Ateşli Silah Yaralanması",
+            "values": {
+                "adli_vaka_turu": "Ateşli Silah",
+                "adli_durum": "Ciddi",
+                "adli_delil": "Muhafaza altına alındı",
+                "adli_olay": "Hasta ateşli silah yaralanması şüphesiyle acil değerlendirmeye alındı.",
+                "adli_yaralanmalar": "Giriş ve varsa çıkış yarası, kanama durumu ve eşlik eden travmatik bulgular değerlendirildi.",
+                "adli_islemler": "Kanama kontrolü, stabilizasyon ve yaralanmanın gerektirdiği tıbbi müdahaleler uygulandı.",
+                "adli_bildirim_birim": "LSPD",
+            },
+        },
+    ],
+    "ems": [
+        {
+            "id": "builtin-ems-trafik",
+            "name": "Trafik Kazası",
+            "values": {
+                "ems_vaka_turu": "Trafik Kazası",
+                "ems_bilinc": "Açık",
+                "ems_genel_durum": "Stabil",
+                "ems_olay_degerlendirme": "Olay yeri güvenliği sağlandı ve travma mekanizması değerlendirildi.",
+                "ems_mudahale": "Primer değerlendirme yapıldı, gerekli stabilizasyon ve saha müdahalesi uygulandı.",
+                "ems_nakil_durumu": "CLSMC’ye Nakledildi",
+                "ems_nakil_sirasinda": "Stabil",
+            },
+        },
+    ],
+}
+
+def sanitize_report_template_form_data(report_type: str, form_data: dict) -> dict:
+    excluded = REPORT_TEMPLATE_EXCLUDED_FIELDS.get(report_type, set())
+    clean = {}
+    for key, value in form_data.items():
+        if key in excluded:
+            continue
+        if not isinstance(key, str) or len(key) > 80:
+            continue
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            clean[key] = value
+    return clean
 
 
 def create_user_notification(
@@ -408,6 +595,471 @@ def add_report_archive_snapshot(
     return archive
 
 
+def build_legacy_vaka_bbcode(
+    data: dict,
+    doctor_name: str,
+    doctor_rank: str,
+) -> str:
+    """Eski sistem Vaka kayıtlarını güncel görünümle BBCode'a dönüştürür."""
+    missing = "Bulunamadı [Eski Sistem]"
+
+    def value(key: str, fallback: str = "—") -> str:
+        result = str(data.get(key, "") or "").strip()
+        return result or fallback
+
+    def tr_datetime(iso_value: str) -> str:
+        text_value = (iso_value or "").strip()
+        try:
+            parsed = datetime.fromisoformat(text_value)
+            return parsed.strftime("%d.%m.%Y - %H.%M")
+        except (TypeError, ValueError):
+            return text_value or "—"
+
+    optional_identity_lines = []
+    if value("vaka_adi", ""):
+        optional_identity_lines.append(
+            f"\n[b][color=#4C88A8]Vaka Adı:[/color][/b]\n{value('vaka_adi')}"
+        )
+    if value("dogum_tarihi", ""):
+        optional_identity_lines.append(
+            f"\n[b][color=#4C88A8]Doğum Tarihi:[/color][/b]\n{value('dogum_tarihi')}"
+        )
+    if value("uyruk", ""):
+        optional_identity_lines.append(
+            f"\n[b][color=#4C88A8]Uyruk:[/color][/b]\n{value('uyruk')}"
+        )
+    optional_identity = "\n".join(optional_identity_lines)
+
+    return f"""[center]
+[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=140][b][color=#4C88A8]VAKA RAPORU[/color][/b][/size]
+
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+[/center]
+
+[quote]
+[center][size=125][b][color=#183B56]VAKA BİLGİLERİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Rapor Numarası:[/color][/b]
+{value("rapor_no")}
+{optional_identity}
+
+[b][color=#4C88A8]Hasta Adı ve Soyadı:[/color][/b]
+{value("adsoyad")}
+
+[b][color=#4C88A8]Cinsiyet:[/color][/b]
+{value("cinsiyet")}
+
+[b][color=#4C88A8]Telefon Numarası:[/color][/b]
+{value("telefon", missing)}
+
+[b][color=#4C88A8]Adres Bilgisi:[/color][/b]
+{value("adres", missing)}
+
+[b][color=#4C88A8]Vaka Tarihi ve Saati:[/color][/b]
+{tr_datetime(value("tarih", ""))}
+
+[b][color=#4C88A8]Vaka Yeri:[/color][/b]
+{value("olayyeri")}
+
+[b][color=#4C88A8]Başvuru Şekli:[/color][/b]
+{value("basvuru")}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]VAKA DETAYLARI[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Vaka Açıklaması:[/color][/b]
+{value("vaka_aciklama")}
+
+[b][color=#4C88A8]Muayene Bulguları:[/color][/b]
+{value("muayene")}
+
+[b][color=#4C88A8]Tanı:[/color][/b]
+{value("tani")}
+
+[b][color=#4C88A8]Uygulanan İşlemler:[/color][/b]
+{value("islemler")}
+
+[b][color=#4C88A8]Hasta Sonucu:[/color][/b]
+{value("hasta_sonucu")}
+
+[b][color=#4C88A8]Ekran Görüntüsü:[/color][/b]
+
+[spoiler]
+{value("ekran")}
+[/spoiler]
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]SORUMLU PERSONEL[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Sorumlu Hekim:[/color][/b]
+{doctor_name} — {doctor_rank}
+
+[b][color=#4C88A8]Hemşire:[/color][/b]
+{value("hemsire", "N/A")}
+
+[b][color=#4C88A8]Rapor Tarihi:[/color][/b]
+{tr_datetime(value("rapor_tarihi", ""))}
+
+[b][color=#4C88A8]Dijital İmza:[/color][/b]
+{value("imza")}
+[/quote]
+
+[center]
+[size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=65][i][color=#7A8891]Tıbbi Vaka Kayıt Sistemi[/color][/i][/size]
+[/center]"""
+
+
+def import_alexander_whitmore_legacy_reports() -> dict:
+    """Kullanıcının sağladığı yedi eski Vaka kaydını güvenli ve tekrarsız aktarır."""
+    missing = "Bulunamadı [Eski Sistem]"
+    alexander = User.query.filter(
+        db.func.lower(User.username) == "alexander whitmore"
+    ).first()
+
+    result = {
+        "account_found": bool(alexander),
+        "imported": [],
+        "already_present": [],
+        "conflicts": [],
+    }
+    if not alexander:
+        logger.warning(
+            "LEGACY_REPORT_IMPORT_SKIPPED | username=Alexander Whitmore | "
+            "reason=user_not_found"
+        )
+        return result
+
+    legacy_reports = [
+        {
+            "rapor_no": "CLSMC-VKR-0008",
+            "vaka_adi": "Yüksek Ateş ve Şiddetli Öksürük (ÜSYE Ön Tanısı)",
+            "adsoyad": "Katarina Belrova",
+            "cinsiyet": "",
+            "telefon": missing,
+            "adres": missing,
+            "tarih": "2026-07-20T22:13",
+            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
+            "basvuru": "Ayaktan",
+            "hasta_sonucu": "Müşahede sonrası taburcu",
+            "vaka_aciklama": (
+                "Hasta yüksek ateş ve şiddetli öksürük şikayeti ile başvurdu."
+            ),
+            "muayene": (
+                "Ateş 39.2°C, boğazda kızarıklık ve ödem, şiddetli öksürük "
+                "mevcut. Solunum sesleri hafif hırıltılı. Genel durumu orta."
+            ),
+            "tani": "Üst solunum yolu enfeksiyonu — akut seyir.",
+            "islemler": (
+                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon, solunum).\n"
+                "- Damar yolu açılarak 500 ml izotonik serum başlandı.\n"
+                "- Ateş düşürücü intravenöz uygulandı.\n"
+                "- Öksürük için semptomatik şurup reçete edildi.\n"
+                "- Dinlenme, bol sıvı alımı ve evde takip önerildi.\n"
+                "- Gerekli görülmesi halinde kontrol için tekrar başvurması söylendi."
+            ),
+            "ekran": "https://imgur.com/a/XRvKLja",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-20T22:20",
+            "imza": "A. Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0009",
+            "vaka_adi": "Şiddetli Mide Ağrısı",
+            "adsoyad": "Nadia Rosso",
+            "cinsiyet": "",
+            "telefon": missing,
+            "adres": missing,
+            "tarih": "2026-07-21T00:29",
+            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
+            "basvuru": "Ayaktan",
+            "hasta_sonucu": "Müşahede sonrası taburcu",
+            "vaka_aciklama": (
+                "Hasta şiddetli mide ağrısı şikayeti ile başvurdu."
+            ),
+            "muayene": (
+                "Karın bölgesinde hassasiyet mevcut. Bulantı ve mide krampları "
+                "eşlik ediyor. Genel durumu stabil."
+            ),
+            "tani": "Gastroenterit ön tanısı.",
+            "islemler": (
+                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon).\n"
+                "- Damar yolu açılarak 500 ml izotonik serum başlandı.\n"
+                "- Bulantı için antiemetik ilaç uygulandı.\n"
+                "- Ağrı için analjezik verildi.\n"
+                "- Sıvı alımı ve hafif diyet önerildi."
+            ),
+            "ekran": "https://imgur.com/a/4qtDcpF",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-21T00:35",
+            "imza": "A. Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0010",
+            "vaka_adi": "Hafif Ateş ve Öksürük",
+            "adsoyad": "Ceo Hate",
+            "cinsiyet": "",
+            "telefon": missing,
+            "adres": missing,
+            "tarih": "2026-07-21T22:13",
+            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
+            "basvuru": "Ayaktan",
+            "hasta_sonucu": "Taburcu",
+            "vaka_aciklama": (
+                "Hasta hafif ateş ve öksürük şikayeti ile başvurdu."
+            ),
+            "muayene": (
+                "Ateş 37.8°C, hafif öksürük mevcut. Genel durumu iyi, "
+                "vital bulgular stabil."
+            ),
+            "tani": "Üst solunum yolu enfeksiyonu — hafif seyir.",
+            "islemler": (
+                "- Vital bulgular kontrol edildi.\n"
+                "- Semptomatik tedavi kapsamında ateş düşürücü tablet reçete edildi.\n"
+                "- Hafif öksürük için şurup önerildi.\n"
+                "- Dinlenme ve bol sıvı alımı tavsiye edildi."
+            ),
+            "ekran": "https://imgur.com/a/bpEuKoW",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-21T22:20",
+            "imza": "A. Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0011",
+            "vaka_adi": "Şiddetli Karın Ağrısı — Gıda Zehirlenmesi",
+            "adsoyad": "Zoe Vera",
+            "cinsiyet": "",
+            "telefon": missing,
+            "adres": missing,
+            "tarih": "2026-07-21T00:29",
+            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
+            "basvuru": "Ayaktan",
+            "hasta_sonucu": "Müşahede sonrası taburcu",
+            "vaka_aciklama": (
+                "Hasta şiddetli karın ağrısı, bulantı ve kusma şikayetleri ile "
+                "başvurdu. Son 24 saat içinde dışarıda tüketilen yiyecek sonrası "
+                "şikayetlerin başladığı öğrenildi."
+            ),
+            "muayene": (
+                "Karın bölgesinde yaygın hassasiyet, mide krampları, bulantı ve "
+                "kusma mevcut. Ateş 38.5°C. Genel durumu orta."
+            ),
+            "tani": "Gıda zehirlenmesi ön tanısı.",
+            "islemler": (
+                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon, solunum).\n"
+                "- Damar yolu açılarak 1000 ml izotonik serum başlandı.\n"
+                "- Bulantı için antiemetik ilaç uygulandı.\n"
+                "- Ağrı için analjezik verildi.\n"
+                "- Hafif diyet ve bol sıvı alımı önerildi.\n"
+                "- Müşahede altında kısa süre takip edildi."
+            ),
+            "ekran": "https://imgur.com/a/BtR7u02",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-21T00:35",
+            "imza": "A. Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0012",
+            "vaka_adi": "Hazımsızlık — Karın Ağrısı ve Şişkinlik",
+            "adsoyad": "Roman Bouzfour",
+            "cinsiyet": "",
+            "telefon": missing,
+            "adres": missing,
+            "dogum_tarihi": "02/02/2000",
+            "uyruk": "Amerikan",
+            "tarih": "2026-07-24T22:58",
+            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
+            "basvuru": "Ayaktan",
+            "hasta_sonucu": "Taburcu",
+            "vaka_aciklama": (
+                "Hasta yemek sonrası karın ağrısı, şişkinlik ve gaz şikayeti "
+                "ile başvurdu."
+            ),
+            "muayene": (
+                "Karın bölgesinde hafif hassasiyet, mide bölgesinde dolgunluk "
+                "hissi. Ateş yok, vital bulgular stabil."
+            ),
+            "tani": "Hazımsızlık (Dispepsi) ön tanısı.",
+            "islemler": (
+                "- Vital bulgular kontrol edildi.\n"
+                "- Damar yolu açılarak 500 ml izotonik serum verildi.\n"
+                "- Spazm çözücü ve mide koruyucu ilaç uygulandı.\n"
+                "- Hafif diyet (yağsız, baharatsız) ve bol sıvı alımı önerildi.\n"
+                "- Evde takip ve gerekirse kontrol önerildi."
+            ),
+            "ekran": "https://imgur.com/a/TCL4Prq",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-24T23:05",
+            "imza": "A. Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0021",
+            "vaka_adi": "",
+            "adsoyad": "Carla Santamaria",
+            "cinsiyet": "Kadın",
+            "telefon": "297-257",
+            "adres": "Vespucci Hotel",
+            "tarih": "2026-07-28T21:23",
+            "olayyeri": "Central Los Santos Medical Center",
+            "basvuru": "Acil Giriş",
+            "hasta_sonucu": "Taburcu",
+            "vaka_aciklama": (
+                "Hasta sağ bileğinde kırık olabileceği şüphesiyle geldi yapılan "
+                "inceleme sonucunda kas sıkışması olduğu tespit edildi."
+            ),
+            "muayene": (
+                "İnceleme: MR Tetkiki\n"
+                "Bulgu: İlgili kas grubunda aşırı gerilmeye bağlı kas sıkışması "
+                "saptanmıştır. Kırık veya çatlak izlenmemiştir."
+            ),
+            "tani": "Kas Sıkışması",
+            "islemler": (
+                "Kas gevşetici iğne uygulanıp medikal atel takıldı. Kas gevşetici "
+                "krem yazılıp bol istirahat önerildi."
+            ),
+            "ekran": "https://imgur.com/a/pCR2kqB",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-29T14:37",
+            "imza": "A.Whitmore",
+        },
+        {
+            "rapor_no": "CLSMC-VKR-0022",
+            "vaka_adi": "",
+            "adsoyad": "Darius Blackwell",
+            "cinsiyet": "Erkek",
+            "telefon": "742-244",
+            "adres": "Vespucci Hotel",
+            "tarih": "2026-07-28T21:41",
+            "olayyeri": "Central Los Santos Medical Center — Hasta Odası",
+            "basvuru": "Acil Giriş",
+            "hasta_sonucu": "Taburcu",
+            "vaka_aciklama": (
+                "Hasta orta derecede ateş, boğaz ağrısı ve halsizlik "
+                "şikayetleriyle başvurdu."
+            ),
+            "muayene": (
+                "Yapılan fiziki muayenede boğazda iltihaplanma, hafif ateş ve "
+                "halsizlik saptandı. Akciğer sesleri doğal."
+            ),
+            "tani": "Bakteriyel Solunum Yolu Enfeksiyonu",
+            "islemler": (
+                "Acil serviste tek doz IM antibiyotik enjeksiyonu uygulandı. "
+                "Ağızdan devam etmesi için antibiyotik ve ağrı kesici reçete "
+                "edildi, istirahat önerildi."
+            ),
+            "ekran": "https://imgur.com/a/NtGldLW",
+            "hemsire": "",
+            "rapor_tarihi": "2026-07-29T15:02",
+            "imza": "A.Whitmore",
+        },
+    ]
+
+    doctor_rank = (alexander.rank or "Doctor").strip() or "Doctor"
+
+    for data in legacy_reports:
+        report_number = data["rapor_no"]
+        existing = Report.query.filter_by(
+            report_type="vaka",
+            report_number=report_number,
+        ).first()
+
+        if existing:
+            same_owner = (
+                existing.created_by_user_id == alexander.id
+                or (existing.created_by_username or "").strip().casefold()
+                == alexander.username.casefold()
+            )
+            destination = (
+                result["already_present"] if same_owner else result["conflicts"]
+            )
+            destination.append(report_number)
+            continue
+
+        report_datetime = None
+        try:
+            report_datetime = datetime.fromisoformat(data["rapor_tarihi"]).replace(
+                tzinfo=timezone(timedelta(hours=3))
+            )
+        except (TypeError, ValueError, KeyError):
+            report_datetime = datetime.now(timezone.utc)
+
+        report = Report(
+            report_type="vaka",
+            report_number=report_number,
+            doctor_name=alexander.username,
+            doctor_rank=doctor_rank,
+            report_date=data["rapor_tarihi"],
+            bbcode=build_legacy_vaka_bbcode(
+                data,
+                alexander.username,
+                doctor_rank,
+            ),
+            form_data=json.dumps(data, ensure_ascii=False),
+            created_by_user_id=alexander.id,
+            created_by_username=alexander.username,
+            created_at=report_datetime,
+            updated_at=report_datetime,
+            workflow_status="completed",
+            admin_note=(
+                "Kullanıcı tarafından sağlanan eski sistem kaydından "
+                "V23.7.1 ile otomatik aktarıldı."
+            ),
+            is_favorite=False,
+        )
+        db.session.add(report)
+        db.session.flush()
+        add_report_archive_snapshot(
+            report,
+            "legacy_system_import",
+            archived_by_admin="Sistem",
+            submitted_by_user_id=alexander.id,
+            submitted_by_username=alexander.username,
+        )
+        result["imported"].append(report_number)
+
+    if result["imported"]:
+        db.session.add(
+            UserNotification(
+                user_id=alexander.id,
+                username=alexander.username,
+                title="Eski Vaka Raporları Aktarıldı",
+                message=(
+                    f"{len(result['imported'])} eski Vaka Raporu hesabınıza "
+                    "aktarıldı. Mevcut rapor numaraları tekrar oluşturulmadı."
+                ),
+                category="info",
+                related_type="legacy_report_import",
+                related_id=None,
+            )
+        )
+
+    db.session.add(
+        AppLog(
+            level="INFO" if not result["conflicts"] else "WARNING",
+            event="ALEXANDER_LEGACY_REPORT_IMPORT",
+            message=(
+                f"username={alexander.username}; "
+                f"imported={','.join(result['imported']) or 'none'}; "
+                f"already_present={','.join(result['already_present']) or 'none'}; "
+                f"conflicts={','.join(result['conflicts']) or 'none'}"
+            ),
+        )
+    )
+    db.session.commit()
+
+    logger.info(
+        "ALEXANDER_LEGACY_REPORT_IMPORT | imported=%s | already_present=%s | "
+        "conflicts=%s",
+        len(result["imported"]),
+        len(result["already_present"]),
+        len(result["conflicts"]),
+    )
+    return result
+
+
 def write_log(level: str, event: str, message: str) -> None:
     """Write sanitized logs to both platform logs and the persistent database."""
     log_line = f"{event} | {message}"
@@ -431,6 +1083,34 @@ with app.app_context():
     if "last_login_at" not in user_columns:
         with db.engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP"))
+    if "digital_signature" not in user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN digital_signature VARCHAR(120)"))
+    if "personnel_number" not in user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN personnel_number VARCHAR(80)"))
+    if "default_case_location" not in user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN default_case_location VARCHAR(180)"))
+    if "default_nurse" not in user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN default_nurse VARCHAR(120)"))
+
+    deleted_user_columns = {
+        column["name"] for column in inspect(db.engine).get_columns("deleted_users")
+    }
+    if "digital_signature" not in deleted_user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN digital_signature VARCHAR(120)"))
+    if "personnel_number" not in deleted_user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN personnel_number VARCHAR(80)"))
+    if "default_case_location" not in deleted_user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN default_case_location VARCHAR(180)"))
+    if "default_nurse" not in deleted_user_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN default_nurse VARCHAR(120)"))
 
     # Yeni seçmeli admin rapor düzenleyicisi için form verilerini JSON olarak sakla.
     report_columns = {column["name"] for column in inspect(db.engine).get_columns("reports")}
@@ -588,6 +1268,105 @@ with app.app_context():
         )
         db.session.commit()
 
+    # V23.7.2: Kullanıcı talebi doğrultusunda yalnızca üç eski Vaka
+    # raporunun numarasını düzelt. Başka hiçbir rapor alanına dokunma.
+    legacy_number_updates = {
+        "CLSMC-VKR-0023": ("CLSMC-VKR-0009", "Nadia Rosso"),
+        "CLSMC-VKR-0025": ("CLSMC-VKR-0011", "Zoe Vera"),
+        "CLSMC-VKR-0027": ("CLSMC-VKR-0012", "Roman Bouzfour"),
+    }
+    legacy_number_update_results = []
+    for old_number, (new_number, expected_patient_name) in legacy_number_updates.items():
+        old_report = Report.query.filter_by(
+            report_type="vaka",
+            report_number=old_number,
+        ).first()
+        if not old_report:
+            continue
+
+        is_alexander_report = (
+            (old_report.created_by_username or "").strip().casefold()
+            == "alexander whitmore"
+            or (old_report.doctor_name or "").strip().casefold()
+            == "alexander whitmore"
+        )
+        try:
+            old_form_data = json.loads(old_report.form_data or "{}")
+        except (TypeError, ValueError):
+            old_form_data = {}
+        is_expected_patient = (
+            str(old_form_data.get("adsoyad", "")).strip().casefold()
+            == expected_patient_name.casefold()
+        )
+
+        if not is_alexander_report or not is_expected_patient:
+            legacy_number_update_results.append(
+                f"{old_number}:skipped_identity_mismatch"
+            )
+            continue
+
+        target_report = Report.query.filter_by(
+            report_type="vaka",
+            report_number=new_number,
+        ).first()
+        if target_report:
+            legacy_number_update_results.append(
+                f"{old_number}->{new_number}:skipped_target_exists"
+            )
+            continue
+
+        old_report.report_number = new_number
+
+        # BBCode ve JSON içindeki yalnızca rapor numarası metnini güncelle.
+        old_report.bbcode = (old_report.bbcode or "").replace(
+            old_number,
+            new_number,
+            1,
+        )
+        if old_form_data:
+            old_form_data["rapor_no"] = new_number
+            old_report.form_data = json.dumps(old_form_data, ensure_ascii=False)
+
+        for archive_item in ReportArchive.query.filter_by(
+            source_report_id=old_report.id
+        ).all():
+            archive_item.report_number = new_number
+            archive_item.bbcode = (archive_item.bbcode or "").replace(
+                old_number,
+                new_number,
+                1,
+            )
+            try:
+                archive_form_data = json.loads(archive_item.form_data or "{}")
+            except (TypeError, ValueError):
+                archive_form_data = {}
+            if archive_form_data:
+                archive_form_data["rapor_no"] = new_number
+                archive_item.form_data = json.dumps(
+                    archive_form_data,
+                    ensure_ascii=False,
+                )
+
+        legacy_number_update_results.append(f"{old_number}->{new_number}:updated")
+
+    if legacy_number_update_results:
+        db.session.add(
+            AppLog(
+                level="INFO",
+                event="ALEXANDER_LEGACY_REPORT_NUMBER_UPDATE",
+                message="; ".join(legacy_number_update_results),
+            )
+        )
+        db.session.commit()
+
+    # V23.7.1: Alexander Whitmore hesabına kullanıcı tarafından sağlanan
+    # eski Vaka kayıtlarını aktar. Aynı rapor numarası varsa tekrar ekleme.
+    try:
+        import_alexander_whitmore_legacy_reports()
+    except Exception:
+        db.session.rollback()
+        logger.exception("ALEXANDER_LEGACY_REPORT_IMPORT_FAILED")
+
     # V20.5.8: Sistemde önceden bulunan tüm raporlar ilk kez arşive aktarılır.
     # Aynı aktif rapor için daha önce bir arşiv kaydı varsa tekrar oluşturulmaz.
     archived_source_ids = {
@@ -712,11 +1491,22 @@ def panel():
         )
         return redirect(url_for("settings"))
 
-    initial_report_type = "ems" if "ems" in allowed_report_types else "vaka"
-    ems_report_number = (
-        next_report_number("ems", "CLSMC-EMS")
-        if "ems" in allowed_report_types
-        else "CLSMC-EMS-0001"
+    requested_report_type = request.args.get("report_type", "").strip()
+    initial_report_type = (
+        requested_report_type
+        if requested_report_type in allowed_report_types
+        else ("ems" if "ems" in allowed_report_types else "vaka")
+    )
+    report_number_defaults = {
+        report_type: next_report_number(report_type, REPORT_NUMBER_CONFIG[report_type][1])
+        for report_type in allowed_report_types
+        if report_type in REPORT_NUMBER_CONFIG
+    }
+    ems_report_number = report_number_defaults.get("ems", "CLSMC-EMS-0001")
+    forced_draft_type = (
+        initial_report_type
+        if request.args.get("copy") == "1"
+        else ""
     )
 
     own_filter = db.or_(
@@ -794,6 +1584,35 @@ def panel():
         except (TypeError, ValueError, json.JSONDecodeError):
             draft_payloads[draft.report_type] = {}
 
+    custom_templates = (
+        ReportTemplate.query
+        .filter_by(user_id=user.id)
+        .order_by(ReportTemplate.report_type.asc(), ReportTemplate.name.asc())
+        .all()
+    )
+    custom_template_payloads = []
+    for item in custom_templates:
+        try:
+            parsed = json.loads(item.form_data or "{}")
+            values = parsed if isinstance(parsed, dict) else {}
+        except (TypeError, ValueError, json.JSONDecodeError):
+            values = {}
+        custom_template_payloads.append(
+            {
+                "id": item.id,
+                "name": item.name,
+                "report_type": item.report_type,
+                "values": values,
+            }
+        )
+
+    user_defaults = {
+        "digital_signature": user.digital_signature or "",
+        "personnel_number": user.personnel_number or "",
+        "default_case_location": user.default_case_location or "",
+        "default_nurse": user.default_nurse or "",
+    }
+
     return render_template(
         "panel.html",
         system_name=SYSTEM_NAME,
@@ -817,6 +1636,11 @@ def panel():
         leave_type_labels=LEAVE_TYPE_LABELS,
         drafts=drafts,
         draft_payloads=draft_payloads,
+        built_in_templates=BUILTIN_REPORT_TEMPLATES,
+        custom_templates=custom_template_payloads,
+        user_defaults=user_defaults,
+        report_number_defaults=report_number_defaults,
+        forced_draft_type=forced_draft_type,
     )
 
 
@@ -943,6 +1767,15 @@ def save_report():
 
         is_new = report is None
 
+        if report is not None and not user_owns_report(current_user, report):
+            return {
+                "ok": False,
+                "message": (
+                    "Bu rapor numarası başka bir kullanıcı hesabına ait. "
+                    "Farklı bir rapor numarası kullanın."
+                ),
+            }, 409
+
         if is_new:
             report = Report(
                 report_type=report_type,
@@ -1012,6 +1845,121 @@ def save_report():
         except Exception:
             pass
         return {"ok": False, "message": "Rapor istatistiğe kaydedilemedi."}, 500
+
+
+@app.get("/api/reports/check-number")
+def check_report_number():
+    if not session.get("user_id"):
+        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        session.clear()
+        return {"ok": False, "message": "Kullanıcı hesabı bulunamadı."}, 401
+
+    report_type = request.args.get("type", "").strip()
+    report_number = request.args.get("number", "").strip()
+    if report_type not in allowed_report_types_for_rank(user.rank):
+        return {"ok": False, "message": "Bu rapor türüne erişiminiz yok."}, 403
+    if not report_number:
+        return {"ok": True, "exists": False, "owned": False}, 200
+
+    report = Report.query.filter_by(
+        report_type=report_type,
+        report_number=report_number,
+    ).first()
+    return {
+        "ok": True,
+        "exists": bool(report),
+        "owned": bool(report and user_owns_report(user, report)),
+        "report_id": report.id if report else None,
+    }, 200
+
+
+@app.post("/api/report-templates")
+def save_report_template():
+    if not session.get("user_id"):
+        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        session.clear()
+        return {"ok": False, "message": "Kullanıcı hesabı bulunamadı."}, 401
+
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()
+    report_type = str(data.get("report_type", "")).strip()
+    form_data = data.get("form_data", {})
+
+    if report_type not in allowed_report_types_for_rank(user.rank):
+        return {"ok": False, "message": "Bu rapor türüne erişiminiz yok."}, 403
+    if not name or len(name) > 80:
+        return {"ok": False, "message": "Şablon adı 1-80 karakter olmalıdır."}, 400
+    if not isinstance(form_data, dict):
+        return {"ok": False, "message": "Şablon verisi geçersiz."}, 400
+
+    template = ReportTemplate.query.filter_by(
+        user_id=user.id,
+        report_type=report_type,
+        name=name,
+    ).first()
+    if not template:
+        if ReportTemplate.query.filter_by(user_id=user.id).count() >= 12:
+            return {
+                "ok": False,
+                "message": "En fazla 12 kişisel rapor şablonu kaydedebilirsiniz.",
+            }, 409
+        template = ReportTemplate(
+            user_id=user.id,
+            username=user.username,
+            name=name,
+            report_type=report_type,
+        )
+        db.session.add(template)
+
+    clean_data = sanitize_report_template_form_data(report_type, form_data)
+    if not clean_data:
+        return {
+            "ok": False,
+            "message": "Şablona kaydedilebilecek tekrar kullanılabilir alan bulunamadı.",
+        }, 400
+
+    template.username = user.username
+    template.form_data = json.dumps(clean_data, ensure_ascii=False)
+    template.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    write_log(
+        "INFO",
+        "REPORT_TEMPLATE_SAVED",
+        f"username={user.username}; template_id={template.id}; type={report_type}",
+    )
+    return {
+        "ok": True,
+        "message": "Rapor şablonu kaydedildi.",
+        "template": {
+            "id": template.id,
+            "name": template.name,
+            "report_type": template.report_type,
+            "values": clean_data,
+        },
+    }, 200
+
+
+@app.delete("/api/report-templates/<int:template_id>")
+def delete_report_template(template_id: int):
+    if not session.get("user_id"):
+        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
+    user = db.session.get(User, session["user_id"])
+    template = db.session.get(ReportTemplate, template_id)
+    if not user or not template or template.user_id != user.id:
+        return {"ok": False, "message": "Şablon bulunamadı."}, 404
+    template_name = template.name
+    db.session.delete(template)
+    db.session.commit()
+    write_log(
+        "INFO",
+        "REPORT_TEMPLATE_DELETED",
+        f"username={user.username}; template_id={template_id}; name={template_name}",
+    )
+    return {"ok": True, "message": "Şablon silindi."}, 200
 
 
 @app.route("/api/drafts/<report_type>", methods=["GET", "POST", "DELETE"])
@@ -1167,6 +2115,72 @@ def user_report_version_view(report_id: int, archive_id: int):
         form_data=form_data,
         report_type_labels=REPORT_TYPE_LABELS,
         archive_action_labels=ARCHIVE_ACTION_LABELS,
+    )
+
+
+@app.post("/reports/<int:report_id>/copy")
+def user_report_copy(report_id: int):
+    if not session.get("user_id"):
+        flash("Önce giriş yapmalısınız.", "error")
+        return redirect(url_for("login_page"))
+
+    user = db.session.get(User, session["user_id"])
+    report = db.session.get(Report, report_id)
+    if not user or not report or not user_owns_report(user, report):
+        flash("Rapor bulunamadı veya bu kayda erişiminiz yok.", "error")
+        return redirect(url_for("user_report_center"))
+    if report.report_type not in allowed_report_types_for_rank(user.rank):
+        flash("Rütbeniz bu rapor türünü kopyalamaya uygun değil.", "error")
+        return redirect(url_for("user_report_view", report_id=report.id))
+
+    try:
+        form_data = json.loads(report.form_data or "{}")
+        if not isinstance(form_data, dict):
+            form_data = {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        form_data = {}
+
+    field_name, prefix = REPORT_NUMBER_CONFIG[report.report_type]
+    new_number = next_report_number(report.report_type, prefix)
+    form_data[field_name] = new_number
+    for field in REPORT_COPY_CLEAR_FIELDS.get(report.report_type, set()):
+        form_data[field] = ""
+
+    draft = ReportDraft.query.filter_by(
+        user_id=user.id,
+        report_type=report.report_type,
+    ).first()
+    if not draft:
+        draft = ReportDraft(
+            user_id=user.id,
+            username=user.username,
+            report_type=report.report_type,
+        )
+        db.session.add(draft)
+    draft.username = user.username
+    draft.form_data = json.dumps(form_data, ensure_ascii=False)
+    draft.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    write_log(
+        "INFO",
+        "REPORT_COPIED_TO_NEW_DRAFT",
+        (
+            f"username={user.username}; source_report_id={report.id}; "
+            f"type={report.report_type}; new_number={new_number}"
+        ),
+    )
+    flash(
+        f"{report.report_number}, {new_number} numaralı yeni taslağa kopyalandı. "
+        "Eski tarihler ve ekran görüntüsü temizlendi.",
+        "success",
+    )
+    return redirect(
+        url_for(
+            "panel",
+            report_type=report.report_type,
+            copy="1",
+        ) + "#report-creator"
     )
 
 
@@ -1348,14 +2362,59 @@ def settings():
 
     session["username"] = user.username
 
-    if request.method == "GET":
-        return render_template(
+    def render_settings_page(status_code: int = 200):
+        response = render_template(
             "settings.html",
             username=user.username,
             user_rank=user.rank or "",
             user_created_at=user.created_at,
             last_login_at=user.last_login_at,
+            digital_signature=user.digital_signature or "",
+            personnel_number=user.personnel_number or "",
+            default_case_location=user.default_case_location or "",
+            default_nurse=user.default_nurse or "",
+            template_count=ReportTemplate.query.filter_by(user_id=user.id).count(),
         )
+        return (response, status_code) if status_code != 200 else response
+
+    if request.method == "GET":
+        return render_settings_page()
+
+    settings_action = request.form.get("settings_action", "password").strip()
+
+    if settings_action == "profile":
+        digital_signature = request.form.get("digital_signature", "").strip()
+        personnel_number = request.form.get("personnel_number", "").strip()
+        default_case_location = request.form.get("default_case_location", "").strip()
+        default_nurse = request.form.get("default_nurse", "").strip()
+
+        limits = {
+            "Dijital imza": (digital_signature, 120),
+            "Personel numarası": (personnel_number, 80),
+            "Varsayılan vaka yeri": (default_case_location, 180),
+            "Varsayılan hemşire": (default_nurse, 120),
+        }
+        for label, (value, limit) in limits.items():
+            if len(value) > limit:
+                flash(f"{label} en fazla {limit} karakter olabilir.", "error")
+                return render_settings_page(400)
+
+        user.digital_signature = digital_signature or None
+        user.personnel_number = personnel_number or None
+        user.default_case_location = default_case_location or None
+        user.default_nurse = default_nurse or None
+        db.session.commit()
+        write_log(
+            "INFO",
+            "USER_REPORT_DEFAULTS_UPDATED",
+            f"username={user.username}",
+        )
+        flash("Rapor varsayılanlarınız kaydedildi.", "success")
+        return redirect(url_for("settings"))
+
+    if settings_action != "password":
+        flash("Geçersiz ayar işlemi.", "error")
+        return render_settings_page(400)
 
     old_password = request.form.get("old_password", "")
     new_password = request.form.get("new_password", "")
@@ -1366,36 +2425,27 @@ def settings():
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={session.get('username', '')}; reason=missing_fields",
+            f"username={user.username}; reason=missing_fields",
         )
-        return render_template(
-            "settings.html",
-            username=session.get("username", ""),
-        ), 400
+        return render_settings_page(400)
 
     if len(new_password) < 6:
         flash("Yeni şifre en az 6 karakter olmalıdır.", "error")
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={session.get('username', '')}; reason=short_password",
+            f"username={user.username}; reason=short_password",
         )
-        return render_template(
-            "settings.html",
-            username=session.get("username", ""),
-        ), 400
+        return render_settings_page(400)
 
     if new_password != new_password_repeat:
         flash("Yeni şifre ve yeni şifre tekrarı eşleşmiyor.", "error")
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={session.get('username', '')}; reason=password_mismatch",
+            f"username={user.username}; reason=password_mismatch",
         )
-        return render_template(
-            "settings.html",
-            username=session.get("username", ""),
-        ), 400
+        return render_settings_page(400)
 
     try:
         if not check_password_hash(user.password_hash, old_password):
@@ -1405,10 +2455,7 @@ def settings():
                 "PASSWORD_CHANGE_FAILED",
                 f"username={user.username}; reason=wrong_old_password",
             )
-            return render_template(
-                "settings.html",
-                username=user.username,
-            ), 400
+            return render_settings_page(400)
 
         if check_password_hash(user.password_hash, new_password):
             flash("Yeni şifre eski şifre ile aynı olamaz.", "error")
@@ -1417,40 +2464,27 @@ def settings():
                 "PASSWORD_CHANGE_FAILED",
                 f"username={user.username}; reason=same_as_old_password",
             )
-            return render_template(
-                "settings.html",
-                username=user.username,
-            ), 400
+            return render_settings_page(400)
 
         user.password_hash = generate_password_hash(new_password)
         db.session.commit()
-
-        write_log(
-            "INFO",
-            "PASSWORD_CHANGED",
-            f"username={user.username}",
-        )
-
+        write_log("INFO", "PASSWORD_CHANGED", f"username={user.username}")
         flash("Şifreniz başarıyla güncellendi.", "success")
         return redirect(url_for("settings"))
 
     except Exception as exc:
         db.session.rollback()
-        logger.exception("PASSWORD_CHANGE_ERROR | username=%s", session.get("username", ""))
+        logger.exception("PASSWORD_CHANGE_ERROR | username=%s", user.username)
         try:
             write_log(
                 "ERROR",
                 "PASSWORD_CHANGE_ERROR",
-                f"username={session.get('username', '')}; error={type(exc).__name__}",
+                f"username={user.username}; error={type(exc).__name__}",
             )
         except Exception:
             pass
-
         flash("Şifre güncellenirken bir hata oluştu.", "error")
-        return render_template(
-            "settings.html",
-            username=session.get("username", ""),
-        ), 500
+        return render_settings_page(500)
 
 
 @app.post("/logout")
@@ -1918,6 +2952,27 @@ def admin_hospital_management():
         LeaveRequest.created_at.desc(),
     ).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    announcement_read_stats = {}
+    for announcement in announcements:
+        delivery_rows = (
+            UserNotification.query
+            .filter_by(related_type="announcement", related_id=announcement.id)
+            .order_by(UserNotification.username.asc())
+            .all()
+        )
+        sent_count = len(delivery_rows)
+        read_count = sum(1 for row in delivery_rows if bool(row.is_read))
+        unread_users = sorted(
+            {row.username for row in delivery_rows if not bool(row.is_read)}
+        )
+        announcement_read_stats[announcement.id] = {
+            "sent": sent_count,
+            "read": read_count,
+            "unread": max(sent_count - read_count, 0),
+            "percentage": round((read_count / sent_count) * 100) if sent_count else 0,
+            "unread_users": unread_users,
+        }
+
     users = User.query.order_by(User.username.asc()).all()
     announcement_author_profiles = [
         {"name": name, "rank": rank}
@@ -1933,6 +2988,7 @@ def admin_hospital_management():
         admin_username=session.get("admin_username", ""),
         leave_requests=leave_requests,
         announcements=announcements,
+        announcement_read_stats=announcement_read_stats,
         users=users,
         announcement_author_profiles=announcement_author_profiles,
         rank_counts=rank_counts,
@@ -2216,6 +3272,7 @@ def admin_export_system_data():
     leave_requests = LeaveRequest.query.order_by(LeaveRequest.created_at.desc()).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     notifications = UserNotification.query.order_by(UserNotification.created_at.desc()).all()
+    report_templates = ReportTemplate.query.order_by(ReportTemplate.updated_at.desc()).all()
 
     def iso(value):
         return value.isoformat() if value else None
@@ -2229,7 +3286,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.6.2",
+        "version": "V23.7.2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -2240,12 +3297,17 @@ def admin_export_system_data():
             "leave_requests": len(leave_requests),
             "announcements": len(announcements),
             "notifications": len(notifications),
+            "report_templates": len(report_templates),
         },
         "users": [
             {
                 "id": user.id,
                 "username": user.username,
                 "rank": user.rank,
+                "digital_signature": user.digital_signature,
+                "personnel_number": user.personnel_number,
+                "default_case_location": user.default_case_location,
+                "default_nurse": user.default_nurse,
                 "created_at": iso(user.created_at),
             }
             for user in users
@@ -2353,6 +3415,19 @@ def admin_export_system_data():
                 "created_at": iso(item.created_at),
             }
             for item in notifications
+        ],
+        "report_templates": [
+            {
+                "id": item.id,
+                "user_id": item.user_id,
+                "username": item.username,
+                "name": item.name,
+                "report_type": item.report_type,
+                "form_data": form_data_value(item.form_data),
+                "created_at": iso(item.created_at),
+                "updated_at": iso(item.updated_at),
+            }
+            for item in report_templates
         ],
     }
 
@@ -2882,6 +3957,9 @@ def admin_edit_user(user_id: int):
             ReportDraft.query.filter_by(user_id=user.id).update(
                 {"username": new_username}, synchronize_session=False
             )
+            ReportTemplate.query.filter_by(user_id=user.id).update(
+                {"username": new_username}, synchronize_session=False
+            )
 
         db.session.commit()
 
@@ -2949,6 +4027,10 @@ def admin_delete_user(user_id: int):
             password_hash=user.password_hash,
             rank=user.rank,
             original_created_at=user.created_at,
+            digital_signature=user.digital_signature,
+            personnel_number=user.personnel_number,
+            default_case_location=user.default_case_location,
+            default_nurse=user.default_nurse,
             deleted_by_admin=session.get("admin_username", ""),
         )
         db.session.add(deleted_user)
@@ -2969,6 +4051,7 @@ def admin_delete_user(user_id: int):
         )
         # Taslaklar kalıcı rapor/veri değildir; hesap kapatılırken temizlenir.
         ReportDraft.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+        ReportTemplate.query.filter_by(user_id=user.id).delete(synchronize_session=False)
 
         db.session.delete(user)
         db.session.commit()
@@ -3031,6 +4114,10 @@ def admin_restore_user(deleted_user_id: int):
             username=deleted_user.username,
             password_hash=deleted_user.password_hash,
             rank=deleted_user.rank,
+            digital_signature=deleted_user.digital_signature,
+            personnel_number=deleted_user.personnel_number,
+            default_case_location=deleted_user.default_case_location,
+            default_nurse=deleted_user.default_nurse,
         )
 
         # Mümkünse eski üyelik oluşturma zamanını koru.
@@ -3526,4 +4613,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.6.2"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.7.2"}, 200

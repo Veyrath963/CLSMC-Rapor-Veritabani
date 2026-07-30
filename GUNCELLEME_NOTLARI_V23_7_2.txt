@@ -1,0 +1,34 @@
+CLSMC V23.7.2 — RAPOR NUMARASI DÜZELTMESİ
+================================================
+
+Yalnızca aşağıdaki eski Vaka Raporlarının numaraları güncellendi:
+
+- Nadia Rosso:
+  CLSMC-VKR-0023 → CLSMC-VKR-0009
+
+- Ceo Hate:
+  CLSMC-VKR-0010 olarak aynen bırakıldı.
+
+- Zoe Vera:
+  CLSMC-VKR-0025 → CLSMC-VKR-0011
+
+- Roman Bouzfour:
+  CLSMC-VKR-0027 → CLSMC-VKR-0012
+
+KORUMA KURALLARI
+- CLSMC-VKR biçimi değiştirilmedi.
+- Hasta bilgileri değiştirilmedi.
+- Vaka bilgileri değiştirilmedi.
+- Tarihler değiştirilmedi.
+- Doktor, imza, ekran görüntüsü ve tedavi bilgileri değiştirilmedi.
+- Mevcut arşiv kayıtlarında da yalnızca rapor numarası güncellenir.
+- Hedef rapor numarası başka bir kayıtta doluysa üzerine yazılmaz.
+- Numara değişikliği yalnızca Alexander Whitmore ve doğru hasta adı eşleştiğinde yapılır.
+
+VERİTABANI
+- Yeni tablo veya sütun gerekmez.
+- Canlı Neon veritabanına bu çalışma alanından doğrudan bağlanılmamıştır.
+- Düzeltme Render deploy sırasında mevcut DATABASE_URL üzerinden uygulanır.
+
+Sürüm: V23.7.2
+Developer: Veyrath
