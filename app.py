@@ -219,6 +219,19 @@ class Announcement(db.Model):
     body = db.Column(db.Text, nullable=False)
     target_type = db.Column(db.String(30), nullable=False, default="all", index=True)
     target_value = db.Column(db.String(160), nullable=True)
+
+    # Duyuruyu yayımlayan yönetici ayrı, duyuruyu yapan personel ayrı tutulur.
+    # Ad ve rütbe anlık kullanıcı hesabından alınarak duyuruya kopyalanır;
+    # böylece personelin rütbesi daha sonra değişse bile eski duyuru korunur.
+    author_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+    author_name = db.Column(db.String(120), nullable=True)
+    author_rank = db.Column(db.String(120), nullable=True)
+
     created_by_admin = db.Column(db.String(120), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
     created_at = db.Column(
@@ -302,6 +315,13 @@ LEAVE_TYPE_LABELS = {
     "personal": "Mazeret İzni",
     "training": "Eğitim İzni",
     "other": "Diğer",
+}
+
+# Hastane duyurusunu yapan kişi seçiminde yalnızca bu iki yetkili profil
+# kullanılabilir. Bu liste normal kullanıcı tablosundan oluşturulmaz.
+ANNOUNCEMENT_AUTHOR_PROFILES = {
+    "Adreanna Vetroa": "Psychiatrist",
+    "Darius Blackwell": "Attending Physician",
 }
 
 
@@ -460,6 +480,49 @@ with app.app_context():
         connection.execute(
             text("UPDATE admin_accounts SET is_active=TRUE WHERE is_active IS NULL")
         )
+
+    # V23.6.1: Hastane duyurusunu yapan personelin adı ve rütbesi.
+    announcement_columns = {
+        column["name"] for column in inspect(db.engine).get_columns("announcements")
+    }
+    if "author_user_id" not in announcement_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE announcements ADD COLUMN author_user_id INTEGER")
+            )
+    if "author_name" not in announcement_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE announcements ADD COLUMN author_name VARCHAR(120)")
+            )
+    if "author_rank" not in announcement_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE announcements ADD COLUMN author_rank VARCHAR(120)")
+            )
+
+    # Eski duyuruları boş bırakma. Aynı isimli kullanıcı hesabı bulunursa
+    # personel adı/rütbesiyle, bulunamazsa yönetici adıyla gösterilir.
+    announcement_backfill_changed = False
+    for existing_announcement in Announcement.query.all():
+        if existing_announcement.author_name and existing_announcement.author_rank:
+            continue
+        matching_author = User.query.filter(
+            db.func.lower(User.username)
+            == (existing_announcement.created_by_admin or "").lower()
+        ).first()
+        if matching_author:
+            existing_announcement.author_user_id = matching_author.id
+            existing_announcement.author_name = matching_author.username
+            existing_announcement.author_rank = matching_author.rank or "Rütbe Atanmamış"
+        else:
+            existing_announcement.author_name = (
+                existing_announcement.created_by_admin or "Yönetim"
+            )
+            existing_announcement.author_rank = "Yönetici"
+        announcement_backfill_changed = True
+    if announcement_backfill_changed:
+        db.session.commit()
 
     # V23.5.5: Eski Veyrath admin hesabını kimliği ve parolası korunarak
     # Darius Blackwell adına taşır. Normal kullanıcı tablosundaki aynı isim,
@@ -1856,6 +1919,10 @@ def admin_hospital_management():
     ).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     users = User.query.order_by(User.username.asc()).all()
+    announcement_author_profiles = [
+        {"name": name, "rank": rank}
+        for name, rank in ANNOUNCEMENT_AUTHOR_PROFILES.items()
+    ]
     rank_counts = {}
     for user in users:
         rank = (user.rank or "Atanmadı").strip() or "Atanmadı"
@@ -1867,6 +1934,7 @@ def admin_hospital_management():
         leave_requests=leave_requests,
         announcements=announcements,
         users=users,
+        announcement_author_profiles=announcement_author_profiles,
         rank_counts=rank_counts,
         pending_leave_count=sum(1 for item in leave_requests if item.status == "pending"),
         approved_leave_count=sum(1 for item in leave_requests if item.status == "approved"),
@@ -1981,35 +2049,81 @@ def admin_cancel_leave_request(leave_request_id: int):
 def admin_create_announcement():
     if not admin_required():
         return redirect(url_for("admin_login"))
+
     title = request.form.get("title", "").strip()
     body = request.form.get("body", "").strip()
     target_type = request.form.get("target_type", "all").strip()
     target_value = request.form.get("target_value", "").strip()
+    author_name = request.form.get("author_name", "").strip()
+
     if not title or not body:
         flash("Duyuru başlığı ve içeriği zorunludur.", "error")
         return redirect(url_for("admin_hospital_management") + "#announcements")
+
+    author_rank = ANNOUNCEMENT_AUTHOR_PROFILES.get(author_name)
+    if not author_rank:
+        flash(
+            "Duyuruyu yapan kişi yalnızca Adreanna Vetroa veya "
+            "Darius Blackwell olabilir.",
+            "error",
+        )
+        return redirect(url_for("admin_hospital_management") + "#announcements")
+
     if target_type not in {"all", "medical", "ems", "rank", "user"}:
         target_type = "all"
     if target_type in {"rank", "user"} and not target_value:
         flash("Seçilen duyuru hedefi için değer girilmelidir.", "error")
         return redirect(url_for("admin_hospital_management") + "#announcements")
+
     announcement = Announcement(
         title=title,
         body=body,
         target_type=target_type,
         target_value=target_value or None,
+        author_user_id=None,
+        author_name=author_name,
+        author_rank=author_rank,
         created_by_admin=session.get("admin_username", ""),
     )
     db.session.add(announcement)
     db.session.flush()
+
+    notification_body = (
+        f"Duyuruyu yapan: {author_name} — {author_rank}\n\n{body}"
+    )
     notified = 0
     for user in User.query.all():
         if announcement_matches_user(announcement, user):
-            create_user_notification(user, title, body, "announcement", "announcement", announcement.id)
+            create_user_notification(
+                user,
+                title,
+                notification_body,
+                "announcement",
+                "announcement",
+                announcement.id,
+            )
             notified += 1
+
     db.session.commit()
-    write_log("INFO", "ANNOUNCEMENT_CREATED", f"admin={session.get('admin_username','')}; announcement_id={announcement.id}; notified={notified}")
-    flash(f"Duyuru yayımlandı ve {notified} kullanıcıya bildirim gönderildi.", "success")
+    write_log(
+        "INFO",
+        "ANNOUNCEMENT_CREATED",
+        (
+            f"admin={session.get('admin_username','')}; "
+            f"announcement_id={announcement.id}; "
+            "author_profile=restricted_admin; "
+            f"author={author_name}; "
+            f"author_rank={author_rank}; "
+            f"notified={notified}"
+        ),
+    )
+    flash(
+        (
+            f"Duyuru {author_name} — {author_rank} adına yayımlandı "
+            f"ve {notified} kullanıcıya bildirim gönderildi."
+        ),
+        "success",
+    )
     return redirect(url_for("admin_hospital_management") + "#announcements")
 
 
@@ -2115,7 +2229,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.5.6",
+        "version": "V23.6.2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -2216,6 +2330,9 @@ def admin_export_system_data():
                 "body": item.body,
                 "target_type": item.target_type,
                 "target_value": item.target_value,
+                "author_user_id": item.author_user_id,
+                "author_name": item.author_name,
+                "author_rank": item.author_rank,
                 "created_by_admin": item.created_by_admin,
                 "is_active": bool(item.is_active),
                 "created_at": iso(item.created_at),
@@ -3409,4 +3526,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.6.0"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.6.2"}, 200
