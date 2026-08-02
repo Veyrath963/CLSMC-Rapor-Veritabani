@@ -254,11 +254,6 @@ class LeaveRequest(db.Model):
         index=True,
     )
     reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    is_archived = db.Column(db.Boolean, nullable=False, default=False, index=True)
-    archived_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
-    archived_by_admin = db.Column(db.String(120), nullable=True)
-    archive_reason = db.Column(db.String(40), nullable=True)
-    auto_archive_disabled = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class ReportDraft(db.Model):
@@ -695,75 +690,6 @@ def write_log(level: str, event: str, message: str) -> None:
         logger.exception("DB_LOG_WRITE_FAILED | event=%s", event)
 
 
-def auto_archive_expired_leave_requests() -> int:
-    """Süresi geçmiş onaylı izinleri admin arşivine taşır."""
-    today_iso = datetime.now(timezone.utc).date().isoformat()
-    expired_items = (
-        LeaveRequest.query
-        .filter(
-            LeaveRequest.status == "approved",
-            LeaveRequest.is_archived.is_(False),
-            LeaveRequest.auto_archive_disabled.is_(False),
-            LeaveRequest.end_date < today_iso,
-        )
-        .order_by(LeaveRequest.end_date.asc(), LeaveRequest.id.asc())
-        .all()
-    )
-    if not expired_items:
-        return 0
-
-    archived_at = datetime.now(timezone.utc)
-    archived_ids = []
-    for item in expired_items:
-        item.is_archived = True
-        item.archived_at = archived_at
-        item.archived_by_admin = "Sistem (otomatik)"
-        item.archive_reason = "expired"
-        archived_ids.append(item.id)
-
-    db.session.add(
-        AppLog(
-            level="INFO",
-            event="LEAVE_REQUESTS_AUTO_ARCHIVED",
-            message=(
-                f"count={len(archived_ids)}; "
-                f"ids={','.join(str(item_id) for item_id in archived_ids)}; "
-                f"expired_before={today_iso}"
-            ),
-        )
-    )
-    db.session.commit()
-    logger.info(
-        "LEAVE_REQUESTS_AUTO_ARCHIVED | count=%s | ids=%s",
-        len(archived_ids),
-        archived_ids,
-    )
-    return len(archived_ids)
-
-
-_leave_archive_check_state = {"last_checked_at": None}
-
-
-@app.before_request
-def check_expired_leave_archive_on_activity():
-    """Site kullanıldığında en fazla saatte bir süresi dolan izinleri kontrol eder."""
-    if request.endpoint == "static":
-        return None
-
-    now_utc = datetime.now(timezone.utc)
-    last_checked_at = _leave_archive_check_state.get("last_checked_at")
-    if last_checked_at and now_utc - last_checked_at < timedelta(hours=1):
-        return None
-
-    _leave_archive_check_state["last_checked_at"] = now_utc
-    try:
-        auto_archive_expired_leave_requests()
-    except Exception:
-        db.session.rollback()
-        logger.exception("LEAVE_AUTO_ARCHIVE_CHECK_FAILED")
-    return None
-
-
 with app.app_context():
     db.create_all()
 
@@ -800,46 +726,6 @@ with app.app_context():
             connection.execute(
                 text("ALTER TABLE reports ALTER COLUMN created_by_user_id DROP NOT NULL")
             )
-
-    # V24.1: Personel izin arşivi alanları.
-    leave_columns = {
-        column["name"] for column in inspect(db.engine).get_columns("leave_requests")
-    }
-    if "is_archived" not in leave_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE leave_requests ADD COLUMN is_archived BOOLEAN DEFAULT FALSE")
-            )
-    if "archived_at" not in leave_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE leave_requests ADD COLUMN archived_at TIMESTAMP")
-            )
-    if "archived_by_admin" not in leave_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE leave_requests ADD COLUMN archived_by_admin VARCHAR(120)")
-            )
-    if "archive_reason" not in leave_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE leave_requests ADD COLUMN archive_reason VARCHAR(40)")
-            )
-    if "auto_archive_disabled" not in leave_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE leave_requests ADD COLUMN auto_archive_disabled BOOLEAN DEFAULT FALSE")
-            )
-    with db.engine.begin() as connection:
-        connection.execute(
-            text("UPDATE leave_requests SET is_archived=FALSE WHERE is_archived IS NULL")
-        )
-        connection.execute(
-            text(
-                "UPDATE leave_requests SET auto_archive_disabled=FALSE "
-                "WHERE auto_archive_disabled IS NULL"
-            )
-        )
 
     # V23.1: Birden fazla yönetici hesabı ve hesap durum takibi.
     admin_columns = {
@@ -960,8 +846,6 @@ with app.app_context():
             "REPORT_ARCHIVE_BACKFILL | archived_reports=%s",
             initial_archive_count,
         )
-
-    auto_archive_expired_leave_requests()
 
 
 @app.get("/")
@@ -1126,11 +1010,10 @@ def panel():
     leave_requests = (
         LeaveRequest.query
         .filter(
-            LeaveRequest.is_archived.is_(False),
             db.or_(
                 LeaveRequest.user_id == user.id,
                 db.and_(LeaveRequest.user_id.is_(None), LeaveRequest.username == user.username),
-            ),
+            )
         )
         .order_by(LeaveRequest.created_at.desc(), LeaveRequest.id.desc())
         .limit(8)
@@ -1587,11 +1470,7 @@ def user_create_leave_request():
     if end_value < start_value:
         flash("İzin bitiş tarihi başlangıç tarihinden önce olamaz.", "error")
         return redirect(url_for("panel") + "#leave-center")
-    existing_pending = LeaveRequest.query.filter_by(
-        user_id=user.id,
-        status="pending",
-        is_archived=False,
-    ).first()
+    existing_pending = LeaveRequest.query.filter_by(user_id=user.id, status="pending").first()
     if existing_pending:
         flash("Zaten inceleme bekleyen bir izin talebiniz bulunuyor.", "error")
         return redirect(url_for("panel") + "#leave-center")
@@ -2081,10 +1960,7 @@ def admin_dashboard():
         else db.engine.dialect.name.title()
     )
 
-    pending_leave_count = LeaveRequest.query.filter_by(
-        status="pending",
-        is_archived=False,
-    ).count()
+    pending_leave_count = LeaveRequest.query.filter_by(status="pending").count()
     active_announcement_count = Announcement.query.filter_by(is_active=True).count()
     latest_backup = BackupRecord.query.order_by(BackupRecord.created_at.desc()).first()
     latest_backup_at = normalized_utc(latest_backup.created_at) if latest_backup else None
@@ -2323,27 +2199,10 @@ def admin_hospital_management():
     if not admin_required("hospital_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
-
-    auto_archived_count = auto_archive_expired_leave_requests()
-    leave_requests = (
-        LeaveRequest.query
-        .filter(LeaveRequest.is_archived.is_(False))
-        .order_by(
-            text("CASE WHEN status='pending' THEN 0 ELSE 1 END"),
-            LeaveRequest.created_at.desc(),
-        )
-        .all()
-    )
-    archived_leave_requests = (
-        LeaveRequest.query
-        .filter(LeaveRequest.is_archived.is_(True))
-        .order_by(
-            LeaveRequest.archived_at.desc(),
-            LeaveRequest.end_date.desc(),
-            LeaveRequest.id.desc(),
-        )
-        .all()
-    )
+    leave_requests = LeaveRequest.query.order_by(
+        text("CASE WHEN status='pending' THEN 0 ELSE 1 END"),
+        LeaveRequest.created_at.desc(),
+    ).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     users = User.query.order_by(User.username.asc()).all()
     rank_counts = {}
@@ -2368,20 +2227,13 @@ def admin_hospital_management():
         system_name=SYSTEM_NAME,
         admin_username=session.get("admin_username", ""),
         leave_requests=leave_requests,
-        archived_leave_requests=archived_leave_requests,
         announcements=announcements,
         users=users,
         rank_counts=rank_counts,
         pending_leave_count=sum(1 for item in leave_requests if item.status == "pending"),
         approved_leave_count=sum(1 for item in leave_requests if item.status == "approved"),
-        archived_leave_count=len(archived_leave_requests),
-        auto_archived_count=auto_archived_count,
         leave_status_labels=LEAVE_STATUS_LABELS,
         leave_type_labels=LEAVE_TYPE_LABELS,
-        leave_archive_reason_labels={
-            "expired": "Süresi dolduğu için otomatik",
-            "manual": "Yönetici tarafından manuel",
-        },
         allowed_user_ranks=sorted(ALLOWED_USER_RANKS),
         announcement_stats=announcement_stats,
     )
@@ -2486,124 +2338,6 @@ def admin_cancel_leave_request(leave_request_id: int):
     )
     flash("Onaylanmış izin iptal edildi ve kullanıcıya bildirim gönderildi.", "success")
     return redirect(url_for("admin_hospital_management") + "#leave-requests")
-
-
-@app.post("/admin/leave-requests/<int:leave_request_id>/archive")
-def admin_archive_leave_request(leave_request_id: int):
-    if not admin_required("hospital_management"):
-        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
-        return redirect(url_for("admin_login"))
-
-    leave_request = db.session.get(LeaveRequest, leave_request_id)
-    if not leave_request:
-        flash("İzin kaydı bulunamadı.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-requests")
-    if leave_request.is_archived:
-        flash("Bu izin kaydı zaten arşivde.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-archive")
-
-    leave_request.is_archived = True
-    leave_request.archived_at = datetime.now(timezone.utc)
-    leave_request.archived_by_admin = session.get("admin_username", "")
-    leave_request.archive_reason = "manual"
-    db.session.commit()
-
-    write_log(
-        "INFO",
-        "LEAVE_REQUEST_MANUALLY_ARCHIVED",
-        (
-            f"admin={session.get('admin_username','')}; "
-            f"leave_request_id={leave_request.id}; username={leave_request.username}"
-        ),
-    )
-    flash("İzin kaydı admin arşivine eklendi.", "success")
-    return redirect(url_for("admin_hospital_management") + "#leave-archive")
-
-
-@app.post("/admin/leave-requests/<int:leave_request_id>/restore")
-def admin_restore_leave_request(leave_request_id: int):
-    if not admin_required("hospital_management"):
-        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
-        return redirect(url_for("admin_login"))
-
-    leave_request = db.session.get(LeaveRequest, leave_request_id)
-    if not leave_request:
-        flash("Arşivlenmiş izin kaydı bulunamadı.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-archive")
-    if not leave_request.is_archived:
-        flash("Bu izin kaydı arşivde değil.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-requests")
-
-    expired_approved_leave = False
-    try:
-        expired_approved_leave = (
-            leave_request.status == "approved"
-            and date.fromisoformat(leave_request.end_date)
-            < datetime.now(timezone.utc).date()
-        )
-    except (TypeError, ValueError):
-        expired_approved_leave = False
-
-    leave_request.is_archived = False
-    leave_request.archived_at = None
-    leave_request.archived_by_admin = None
-    leave_request.archive_reason = None
-    leave_request.auto_archive_disabled = expired_approved_leave
-    db.session.commit()
-
-    write_log(
-        "INFO",
-        "LEAVE_REQUEST_RESTORED_FROM_ARCHIVE",
-        (
-            f"admin={session.get('admin_username','')}; "
-            f"leave_request_id={leave_request.id}; username={leave_request.username}; "
-            f"auto_archive_disabled={expired_approved_leave}"
-        ),
-    )
-    flash("İzin kaydı arşivden çıkarılarak aktif admin listesine taşındı.", "success")
-    return redirect(url_for("admin_hospital_management") + "#leave-requests")
-
-
-@app.post("/admin/leave-requests/<int:leave_request_id>/delete")
-def admin_delete_archived_leave_request(leave_request_id: int):
-    if not admin_required("hospital_management"):
-        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
-        return redirect(url_for("admin_login"))
-
-    leave_request = db.session.get(LeaveRequest, leave_request_id)
-    if not leave_request:
-        flash("Arşivlenmiş izin kaydı bulunamadı.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-archive")
-    if not leave_request.is_archived:
-        flash("Kalıcı silme yalnızca admin arşivindeki izinlerde kullanılabilir.", "error")
-        return redirect(url_for("admin_hospital_management") + "#leave-requests")
-
-    deleted_id = leave_request.id
-    deleted_username = leave_request.username
-    removed_notifications = UserNotification.query.filter_by(
-        related_type="leave_request",
-        related_id=leave_request.id,
-    ).delete(synchronize_session=False)
-
-    db.session.delete(leave_request)
-    db.session.commit()
-
-    write_log(
-        "WARNING",
-        "ARCHIVED_LEAVE_REQUEST_PERMANENTLY_DELETED",
-        (
-            f"admin={session.get('admin_username','')}; leave_request_id={deleted_id}; "
-            f"username={deleted_username}; removed_notifications={removed_notifications}"
-        ),
-    )
-    flash(
-        (
-            "Arşivlenmiş izin kaydı kalıcı olarak silindi. "
-            f"{removed_notifications} bağlı bildirim kaldırıldı."
-        ),
-        "success",
-    )
-    return redirect(url_for("admin_hospital_management") + "#leave-archive")
 
 
 @app.post("/admin/announcements")
@@ -2749,7 +2483,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V24.1",
+        "version": "V24.0",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -2758,7 +2492,6 @@ def admin_export_system_data():
             "reports": len(reports),
             "report_archives": len(archives),
             "leave_requests": len(leave_requests),
-            "archived_leave_requests": sum(1 for item in leave_requests if item.is_archived),
             "announcements": len(announcements),
             "notifications": len(notifications),
             "patient_files": len(patient_files),
@@ -2845,11 +2578,6 @@ def admin_export_system_data():
                 "reviewed_by": item.reviewed_by,
                 "created_at": iso(item.created_at),
                 "reviewed_at": iso(item.reviewed_at),
-                "is_archived": bool(item.is_archived),
-                "archived_at": iso(item.archived_at),
-                "archived_by_admin": item.archived_by_admin,
-                "archive_reason": item.archive_reason,
-                "auto_archive_disabled": bool(item.auto_archive_disabled),
             }
             for item in leave_requests
         ],
@@ -4366,10 +4094,7 @@ def admin_leave_calendar():
     except (ValueError, TypeError):
         selected = datetime.now(timezone.utc).date().replace(day=1)
     month_days = calendar.Calendar(firstweekday=0).monthdatescalendar(selected.year, selected.month)
-    approved = LeaveRequest.query.filter_by(
-        status="approved",
-        is_archived=False,
-    ).order_by(LeaveRequest.start_date.asc()).all()
+    approved = LeaveRequest.query.filter_by(status="approved").order_by(LeaveRequest.start_date.asc()).all()
     events_by_day = {}
     for item in approved:
         try:
@@ -4431,4 +4156,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.0"}, 200

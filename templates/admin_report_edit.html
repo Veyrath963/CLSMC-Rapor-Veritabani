@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLSMC Merkezi Takip ve Raporlama Sistemi — {% if create_mode|default(false) %}Kullanıcı Adına Rapor Oluşturma{% else %}Seçmeli Rapor Düzenleme{% endif %}</title>
+<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Seçmeli Rapor Düzenleme</title>
 <style>
 :root{
   --bg:#0b1020;--panel:#121a2f;--panel2:#17213b;--line:#2a3657;
@@ -256,7 +256,7 @@ input:focus,select:focus,textarea:focus{
 <body>
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
-    <strong>CLSMC Yönetim Merkezi • {% if create_mode|default(false) %}Kullanıcı Adına Rapor Oluşturma{% else %}Rapor Düzenleme{% endif %}</strong><br>
+    <strong>CLSMC Yönetim Merkezi • Rapor Düzenleme</strong><br>
     <small style="color:var(--muted)">Yönetici: {{ admin_username }}</small>
   </div></div>
   <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
@@ -264,23 +264,13 @@ input:focus,select:focus,textarea:focus{
 
 <main class="shell">
   <section class="hero">
-    {% if create_mode|default(false) %}
-      <h1>Kullanıcı Adına Rapor Oluştur</h1>
-      <p>Tıbbi personeli seç, Vaka veya Adli Rapor formunu doldur. Kayıt seçilen kullanıcının hesabına ve aynı Neon veritabanına yazılır.</p>
-      <div class="meta">
-        <span class="chip">Rapor sahibi: Seçilen kullanıcı</span>
-        <span class="chip">İşlemi yapan: {{ admin_username }}</span>
-        <span class="chip">Desteklenen türler: Vaka ve Adli</span>
-      </div>
-    {% else %}
-      <h1>{{ report.report_number }}</h1>
-      <p>Raporu kullanıcı panelindeki gibi alanlardan ve seçim menülerinden düzenle. BBCode anlık olarak yeniden oluşturulur.</p>
-      <div class="meta">
-        <span class="chip">Kaydeden hesap: {{ report.created_by_username }}</span>
-        <span class="chip">Oluşturma: {{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</span>
-        <span class="chip">Son Güncelleme: {{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</span>
-      </div>
-    {% endif %}
+    <h1>{{ report.report_number }}</h1>
+    <p>Raporu kullanıcı panelindeki gibi alanlardan ve seçim menülerinden düzenle. BBCode anlık olarak yeniden oluşturulur.</p>
+    <div class="meta">
+      <span class="chip">Kaydeden hesap: {{ report.created_by_username }}</span>
+      <span class="chip">Oluşturma: {{ report.created_at.strftime("%d.%m.%Y %H:%M") if report.created_at else "—" }}</span>
+      <span class="chip">Son Güncelleme: {{ report.updated_at.strftime("%d.%m.%Y %H:%M") if report.updated_at else "—" }}</span>
+    </div>
   </section>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -297,7 +287,7 @@ input:focus,select:focus,textarea:focus{
     </div>
   {% endif %}
 
-  <form id="reportEditForm" method="post" action="{% if create_mode|default(false) %}{{ url_for('admin_create_report_for_user') }}{% else %}{{ url_for('admin_edit_report', report_id=report.id) }}{% endif %}" onsubmit="return prepareSubmit();">
+  <form id="reportEditForm" method="post" action="{{ url_for('admin_edit_report', report_id=report.id) }}" onsubmit="return prepareSubmit();">
     <input type="hidden" name="report_type" id="submitReportType">
     <input type="hidden" name="report_number" id="submitReportNumber">
     <input type="hidden" name="doctor_name" id="submitDoctorName">
@@ -305,20 +295,19 @@ input:focus,select:focus,textarea:focus{
     <input type="hidden" name="report_date" id="submitReportDate">
     <input type="hidden" name="bbcode" id="submitBBCode">
     <input type="hidden" name="form_data" id="submitFormData">
-    <input type="hidden" name="target_user_id" id="submitTargetUserId">
 
     <section class="doctor-box">
       <div class="field" style="margin:0">
-        <label>{% if create_mode|default(false) %}Raporun Yazılacağı Kullanıcı{% else %}Raporlayan Personel{% endif %}</label>
+        <label>Raporlayan Personel</label>
         <select id="doctorSelect" onchange="changeDoctor()" required>
           {% set active_names = users|map(attribute='username')|list %}
           {% if report.doctor_name not in active_names %}
-            <option value="{{ report.doctor_name }}" data-rank="{{ report.doctor_rank or '' }}" data-user-id="{{ report.created_by_user_id or '' }}" selected>
+            <option value="{{ report.doctor_name }}" data-rank="{{ report.doctor_rank or '' }}" selected>
               {{ report.doctor_name }} — {{ report.doctor_rank or "Rütbe Atanmadı" }} (Geçmiş Kayıt)
             </option>
           {% endif %}
           {% for user in users %}
-            <option value="{{ user.username }}" data-rank="{{ user.rank or '' }}" data-user-id="{{ user.id }}"
+            <option value="{{ user.username }}" data-rank="{{ user.rank or '' }}"
               {% if report.doctor_name == user.username %}selected{% endif %}>
               {{ user.username }} — {{ user.rank or "Rütbe Atanmadı" }}
             </option>
@@ -338,7 +327,6 @@ input:focus,select:focus,textarea:focus{
       <div class="card" data-type="adli" onclick="setReportType('adli', this)">
         <div class="icon">⚖️</div><h3>Adli Vaka Raporu</h3><p>Adli vaka, bildirim, delil ve teslim bilgileri.</p>
       </div>
-      {% if not create_mode|default(false) %}
       <div class="card" data-type="otopsi" onclick="setReportType('otopsi', this)">
         <div class="icon">🔬</div><h3>Otopsi Raporu</h3><p>Otopsi bulguları, ölüm nedeni ve materyaller.</p>
       </div>
@@ -348,20 +336,19 @@ input:focus,select:focus,textarea:focus{
       <div class="card" data-type="ems" onclick="setReportType('ems', this)">
         <div class="icon">🚑</div><h3>EMS Saha Raporu</h3><p>Saha müdahalesi, hasta değerlendirmesi ve nakil bilgileri.</p>
       </div>
-      {% endif %}
     </section>
 
     <section class="workspace">
       <div class="panel">
         <div class="panel-head">
-          <h3 id="formTitle">{% if create_mode|default(false) %}Rapor Oluşturma Formu{% else %}Rapor Düzenleme Formu{% endif %}</h3>
-          <span class="badge">{% if create_mode|default(false) %}Kullanıcı Adına Kayıt{% else %}Seçmeli Düzenleme{% endif %}</span>
+          <h3 id="formTitle">Rapor Düzenleme Formu</h3>
+          <span class="badge">Seçmeli Düzenleme</span>
         </div>
         <div class="panel-body">
           <div id="dynamicFields"></div>
           <div class="actions">
             <button class="btn btn-primary" type="button" onclick="renderBBCode()">BBCode'u Yenile</button>
-            <button class="btn btn-secondary" type="button" onclick="restoreOriginalData()">{% if create_mode|default(false) %}Formu Temizle{% else %}Kayıtlı Veriyi Geri Yükle{% endif %}</button>
+            <button class="btn btn-secondary" type="button" onclick="restoreOriginalData()">Kayıtlı Veriyi Geri Yükle</button>
           </div>
           <div class="footer-note">
             Seçim ve metin alanlarındaki değişiklikler sağdaki BBCode önizlemesine anlık yansır.
@@ -377,18 +364,16 @@ input:focus,select:focus,textarea:focus{
         <div class="panel-body">
           <div id="bbcodePreview" class="bbcode"></div>
           <div class="actions">
-            <button class="btn btn-good" type="submit">{% if create_mode|default(false) %}Kullanıcı Adına Kaydet{% else %}Değişiklikleri Kaydet{% endif %}</button>
+            <button class="btn btn-good" type="submit">Değişiklikleri Kaydet</button>
           </div>
         </div>
       </div>
     </section>
 
-    {% if not create_mode|default(false) %}
     <details class="legacy">
       <summary>Eski BBCode Referansı</summary>
       <div class="legacy-code">{{ report.bbcode }}</div>
     </details>
-    {% endif %}
   </form>
 </main>
 
@@ -399,26 +384,11 @@ const INITIAL_TYPE = {{ report.report_type|tojson }};
 const INITIAL_FORM_DATA = {{ report_form_data|tojson }};
 const ORIGINAL_FORM_DATA = JSON.parse(JSON.stringify(INITIAL_FORM_DATA));
 const PREVIEW_MODE = {{ preview_mode|default(false)|tojson }};
-const CREATE_MODE = {{ create_mode|default(false)|tojson }};
-const CREATE_REPORT_NUMBERS = {{ create_report_numbers|default({})|tojson }};
 
 let currentType = INITIAL_TYPE;
 let CURRENT_DOCTOR_NAME = {{ report.doctor_name|tojson }};
 let CURRENT_DOCTOR_RANK = {{ (report.doctor_rank or '')|tojson }};
-let CURRENT_TARGET_USER_ID = {{ (report.created_by_user_id or '')|tojson }};
-
-const CREATE_FORM_STATE = {
-  vaka: INITIAL_TYPE === 'vaka'
-    ? JSON.parse(JSON.stringify(INITIAL_FORM_DATA))
-    : {rapor_no: CREATE_REPORT_NUMBERS.vaka || 'CLSMC-VKR-0001'},
-  adli: INITIAL_TYPE === 'adli'
-    ? JSON.parse(JSON.stringify(INITIAL_FORM_DATA))
-    : {adli_rapor_no: CREATE_REPORT_NUMBERS.adli || 'CLSMC-ADL-0001'}
-};
-
-let formState = CREATE_MODE
-  ? JSON.parse(JSON.stringify(CREATE_FORM_STATE))
-  : {[INITIAL_TYPE]: JSON.parse(JSON.stringify(INITIAL_FORM_DATA))};
+let formState = {[INITIAL_TYPE]: JSON.parse(JSON.stringify(INITIAL_FORM_DATA))};
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -482,7 +452,6 @@ const reportConfig = {
           <label>Başvuru Şekli</label>
           <select data-field="basvuru" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
-            <option>Ayaktan</option>
             <option>Acil Giriş</option>
             <option>Randevu</option>
             <option>Ambulans</option>
@@ -493,7 +462,6 @@ const reportConfig = {
           <select data-field="hasta_sonucu" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
             <option>Taburcu</option>
-            <option>Müşahede sonrası taburcu</option>
             <option>Müşahede</option>
             <option>Servise Yatış</option>
             <option>Ameliyat</option>
@@ -1065,14 +1033,11 @@ const reportConfig = {
 
 
 function setReportType(type, el){
-  if(document.querySelector('#dynamicFields [data-field]')){
-    captureCurrentForm();
-  }
+  captureCurrentForm();
   currentType = type;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
   if(el) el.classList.add('active');
-  document.getElementById('formTitle').textContent =
-    reportConfig[type].title + (CREATE_MODE ? ' Oluşturma Formu' : ' Düzenleme Formu');
+  document.getElementById('formTitle').textContent = reportConfig[type].title + ' Düzenleme Formu';
   document.getElementById('dynamicFields').innerHTML = reportConfig[type].fields;
   restoreCurrentForm();
   if(type === 'adli') toggleAdliOther();
@@ -1632,7 +1597,6 @@ function changeDoctor(){
   const option = select.options[select.selectedIndex];
   CURRENT_DOCTOR_NAME = option ? option.value : '';
   CURRENT_DOCTOR_RANK = option ? (option.dataset.rank || '') : '';
-  CURRENT_TARGET_USER_ID = option ? (option.dataset.userId || '') : '';
   document.getElementById('doctorRankDisplay').value = CURRENT_DOCTOR_RANK;
   refreshDoctorIdentity();
   renderBBCode();
@@ -1681,10 +1645,6 @@ function prepareSubmit(){
     alert('Seçilen hekimin rütbesi bulunmuyor.');
     return false;
   }
-  if(CREATE_MODE && !CURRENT_TARGET_USER_ID){
-    alert('Raporun yazılacağı kullanıcı seçilmelidir.');
-    return false;
-  }
 
   document.getElementById('submitReportType').value = currentType;
   document.getElementById('submitReportNumber').value = meta.report_number;
@@ -1693,7 +1653,6 @@ function prepareSubmit(){
   document.getElementById('submitReportDate').value = meta.report_date || '';
   document.getElementById('submitBBCode').value = document.getElementById('bbcodePreview').textContent;
   document.getElementById('submitFormData').value = JSON.stringify(formState[currentType] || {});
-  document.getElementById('submitTargetUserId').value = CURRENT_TARGET_USER_ID || '';
 
   if(PREVIEW_MODE){
     alert('Önizleme modu: Seçmeli rapor düzenleme formu başarıyla hazırlandı. Gerçek veritabanına kayıt yapılmadı.');
@@ -1703,18 +1662,9 @@ function prepareSubmit(){
 }
 
 function restoreOriginalData(){
-  formState = CREATE_MODE
-    ? JSON.parse(JSON.stringify({
-        vaka: {rapor_no: CREATE_REPORT_NUMBERS.vaka || 'CLSMC-VKR-0001'},
-        adli: {adli_rapor_no: CREATE_REPORT_NUMBERS.adli || 'CLSMC-ADL-0001'}
-      }))
-    : {[INITIAL_TYPE]: JSON.parse(JSON.stringify(ORIGINAL_FORM_DATA))};
-
-  const resetType = CREATE_MODE ? 'vaka' : INITIAL_TYPE;
-  currentType = resetType;
-  document.getElementById('dynamicFields').innerHTML = '';
-  const card = document.querySelector(`.card[data-type="${resetType}"]`);
-  setReportType(resetType, card);
+  formState = {[INITIAL_TYPE]: JSON.parse(JSON.stringify(ORIGINAL_FORM_DATA))};
+  const card = document.querySelector(`.card[data-type="${INITIAL_TYPE}"]`);
+  setReportType(INITIAL_TYPE, card);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

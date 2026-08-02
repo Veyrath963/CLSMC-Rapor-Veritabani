@@ -379,25 +379,21 @@ input:focus,select:focus,textarea:focus{
     </div>
 
     <nav class="admin-header-nav" aria-label="Yönetim kısayolları">
-      <a class="btn admin-nav-button" href="{{ url_for('admin_hospital_management') }}">
+      {% if 'hospital_management' in admin_permissions %}<a class="btn admin-nav-button" href="{{ url_for('admin_hospital_management') }}">
         <span aria-hidden="true">⚕</span>
         <span>Hastane Yöneticisi</span>
         {% if pending_leave_count %}
           <span class="v23-notification-count">{{ pending_leave_count }}</span>
         {% endif %}
-      </a>
+      </a>{% endif %}
       <a class="btn admin-nav-button" href="{{ url_for('admin_archive') }}">
         <span aria-hidden="true">🗄️</span><span>Veri Arşivi</span>
       </a>
       <a class="btn admin-nav-button" href="{{ url_for('admin_user_statistics') }}">
         <span aria-hidden="true">◫</span><span>İstatistikler</span>
       </a>
-      <a class="btn admin-nav-button" href="{{ url_for('admin_accounts') }}">
-        <span aria-hidden="true">🛡</span><span>Admin Hesapları</span>
-      </a>
-      <a class="btn btn-primary admin-nav-button" href="{{ url_for('admin_create_user') }}">
-        <span aria-hidden="true">＋</span><span>Yeni Üyelik</span>
-      </a>
+      {% if 'admin_accounts' in admin_permissions %}<a class="btn admin-nav-button" href="{{ url_for('admin_accounts') }}"><span aria-hidden="true">🛡</span><span>Admin Hesapları</span></a>{% endif %}
+      {% if 'staff_management' in admin_permissions %}<a class="btn btn-primary admin-nav-button" href="{{ url_for('admin_create_user') }}"><span aria-hidden="true">＋</span><span>Yeni Üyelik</span></a>{% endif %}
     </nav>
 
     <div class="admin-header-tools">
@@ -437,6 +433,8 @@ input:focus,select:focus,textarea:focus{
     {% for category, message in messages %}<div class="flash {{ category }}" style="margin:14px 0;padding:13px 15px">{{ message }}</div>{% endfor %}
   {% endwith %}
 
+  {% if backup_warning %}<div class="notice warning" style="margin:14px 0;padding:14px 16px"><strong>Haricî yedek hatırlatması:</strong> {% if latest_backup %}Son yedek {{ backup_age_days }} gün önce {{ latest_backup.admin_username }} tarafından alındı.{% else %}Henüz kayıtlı haricî yedek bulunmuyor.{% endif %} Sistem Yöneticisi, Hızlı İşlemler alanındaki Haricî Yedek bağlantısını kullanabilir.</div>{% endif %}
+
   <section class="metrics v22-metrics">
     <div class="metric"><div class="v22-metric-icon">👤</div><span>Aktif Kullanıcı</span><strong>{{ users|length }}</strong><small class="v22-metric-foot">{{ deleted_users|length }} silinen üyelik kaydı</small></div>
     <div class="metric"><div class="v22-metric-icon">▤</div><span>Toplam Rapor</span><strong>{{ reports|length }}</strong><small class="v22-metric-foot">Son 30 gün: {{ reports_last_30_days }}</small></div>
@@ -459,8 +457,9 @@ input:focus,select:focus,textarea:focus{
         <div class="v22-panel-head"><div><h3>Hızlı İşlemler</h3><div class="sub">En sık kullanılan yönetim araçları</div></div><span class="v22-panel-badge">Kısayollar</span></div>
         <div class="v22-quick-grid">
           <a class="v22-quick-card" href="{{ url_for('admin_hospital_management') }}"><span class="v22-quick-icon">⚕</span><div><strong>Hastane yöneticisi</strong><small>İzin talepleri, personel ve duyurular</small></div></a>
+          <a class="v22-quick-card" href="{{ url_for('admin_clinical_center') }}"><span class="v22-quick-icon">🩺</span><div><strong>Klinik operasyonlar</strong><small>Görev, hasta dosyası ve teslim zinciri</small></div></a>
+          <a class="v22-quick-card" href="{{ url_for('admin_audit_log') }}"><span class="v22-quick-icon">⌕</span><div><strong>İşlem geçmişi</strong><small>Filtrelenebilir yönetici ve sistem kayıtları</small></div></a>
           <a class="v22-quick-card" href="{{ url_for('admin_create_user') }}"><span class="v22-quick-icon">＋</span><div><strong>Yeni üyelik</strong><small>Doktor veya EMS hesabı oluştur</small></div></a>
-          <a class="v22-quick-card" href="{{ url_for('admin_create_report_for_user') }}"><span class="v22-quick-icon">✚</span><div><strong>Kullanıcı adına rapor</strong><small>Yetkili panelinden Vaka veya Adli Rapor oluştur</small></div></a>
           <a class="v22-quick-card" href="{{ url_for('admin_accounts') }}"><span class="v22-quick-icon">🛡</span><div><strong>Admin hesapları</strong><small>Yönetici oluştur, şifre yenile ve erişimi yönet</small></div></a>
           <a class="v22-quick-card" href="{{ url_for('admin_user_statistics') }}"><span class="v22-quick-icon">◫</span><div><strong>Kullanıcı analizi</strong><small>Rapor sayılarını kullanıcıya göre incele</small></div></a>
           <a class="v22-quick-card" href="{{ url_for('admin_archive') }}"><span class="v22-quick-icon">🗄</span><div><strong>Veri arşivi</strong><small>Değişmez rapor kopyalarını görüntüle</small></div></a>
@@ -542,7 +541,7 @@ input:focus,select:focus,textarea:focus{
 
   <section id="panel-reports" class="v22-tab-panel" role="tabpanel" aria-labelledby="tab-reports" data-panel="reports" hidden>
     <article class="panel">
-      <div class="v22-panel-head"><div><h3>Tüm Rapor Kayıtları</h3><div class="sub">Rapor numarası, tür, personel veya kullanıcı hesabına göre anlık arama</div></div><div class="v22-row-actions"><a class="btn btn-primary" href="{{ url_for('admin_create_report_for_user') }}">✚ Kullanıcı Adına Rapor</a><a class="btn" href="{{ url_for('admin_archive') }}">Arşiv Kopyalarını Aç</a></div></div>
+      <div class="v22-panel-head"><div><h3>Tüm Rapor Kayıtları</h3><div class="sub">Rapor numarası, tür, personel veya kullanıcı hesabına göre anlık arama</div></div><a class="btn" href="{{ url_for('admin_archive') }}">Arşiv Kopyalarını Aç</a></div>
       <div class="v22-table-tools"><div class="v22-search"><input type="search" placeholder="Rapor no, tür, personel veya hesap ara" data-table-search="reportsTable"></div><span class="v22-table-count">{{ reports|length }} rapor</span></div>
       {% if reports %}<div class="table-wrap"><table id="reportsTable"><thead><tr><th>Rapor No</th><th>Tür</th><th>Raporlayan Personel</th><th>Rütbe</th><th>Kaydeden Hesap</th><th>Rapor Tarihi</th><th>Son Güncelleme</th><th>İşlem</th></tr></thead><tbody>{% for report in reports %}<tr><td><span class="badge">{{ report.report_number }}</span></td><td>{{ report_type_labels.get(report.report_type, report.report_type) }}</td><td>{{ report.doctor_name }}</td><td>{{ report.doctor_rank or '—' }}</td><td>{{ report.created_by_username }}</td><td>{{ report.report_date or '—' }}</td><td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td><td><div class="v22-row-actions"><a class="edit" href="{{ url_for('admin_view_report', report_id=report.id) }}">Görüntüle</a><a class="edit" href="{{ url_for('admin_edit_report', report_id=report.id) }}">Düzenle</a></div></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="v22-empty">Henüz rapor kaydı bulunmuyor.</div>{% endif %}
     </article>

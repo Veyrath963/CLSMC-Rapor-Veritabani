@@ -28,12 +28,7 @@ body{
     var(--bg);
 }
 a{text-decoration:none;color:inherit}
-button,input,select,textarea{font:inherit}
-select,textarea{width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 13px;outline:none}
-textarea{min-height:92px;resize:vertical}
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.settings-grid .wide{grid-column:1/-1}
-@media(max-width:650px){.settings-grid{grid-template-columns:1fr}.settings-grid .wide{grid-column:auto}}
+button,input{font:inherit}
 .topbar{
   position:sticky;top:0;z-index:5;
   display:flex;justify-content:space-between;align-items:center;
@@ -325,7 +320,7 @@ input:focus,select:focus,textarea:focus{
     <a class="btn" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
   </div>
 </header>
-{% include "_user_category_nav.html" %}
+
 <main class="shell">
   <section class="hero">
     <h2>Ayarlar</h2>
@@ -345,27 +340,10 @@ input:focus,select:focus,textarea:focus{
   </section>
 
   <section class="panel">
-    <h3>Rapor Varsayılanları</h3>
-    <div class="subtitle">Bu bilgiler yeni rapor formlarındaki boş alanlara otomatik uygulanır. Hasta bilgilerini etkilemez.</div>
-    <form method="post" action="{{ url_for('settings') }}">
-      <input type="hidden" name="settings_action" value="profile">
-      <div class="settings-grid">
-        <div class="field"><label>Dijital İmza</label><input name="digital_signature" maxlength="120" value="{{ digital_signature }}" placeholder="Örn. D. Blackwell"></div>
-        <div class="field"><label>Personel Numarası</label><input name="personnel_number" maxlength="80" value="{{ personnel_number }}" placeholder="İsteğe bağlı"></div>
-        <div class="field wide"><label>Sık Kullanılan Vaka Yeri</label><input name="default_case_location" maxlength="180" value="{{ default_case_location }}" placeholder="Örn. Central Los Santos Medical Center — Acil Servis"></div>
-        <div class="field wide"><label>Sık Kullanılan Hemşire Adı</label><input name="default_nurse" maxlength="120" value="{{ default_nurse }}" placeholder="İsteğe bağlı"></div>
-      </div>
-      <button class="btn btn-primary" type="submit">Rapor Varsayılanlarını Kaydet</button>
-    </form>
-    <div class="note">Kişisel rapor şablonları Rapor Oluştur ekranından kaydedilir. Şu anda {{ template_count }} kişisel şablonunuz bulunuyor; üst sınır 12'dir.</div>
-  </section>
-
-  <section class="panel">
     <h3>Şifreyi Değiştir</h3>
     <div class="subtitle">Mevcut şifrenizi doğrulayarak yeni bir şifre belirleyin.</div>
 
     <form method="post" action="{{ url_for('settings') }}">
-      <input type="hidden" name="settings_action" value="password">
       <div class="field">
         <label>Eski Şifre</label>
         <input
