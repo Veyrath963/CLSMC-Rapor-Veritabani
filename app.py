@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import calendar
 import json
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
-
-from legacy_darius_reports import DARIUS_LEGACY_REPORTS
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-me")
@@ -66,12 +65,6 @@ class User(db.Model):
     )
     last_login_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    # V23.7.0: Doktorun rapor formunda otomatik kullanılabilen kişisel bilgiler.
-    digital_signature = db.Column(db.String(120), nullable=True)
-    personnel_number = db.Column(db.String(80), nullable=True)
-    default_case_location = db.Column(db.String(180), nullable=True)
-    default_nurse = db.Column(db.String(120), nullable=True)
-
 
 
 class DeletedUser(db.Model):
@@ -83,10 +76,6 @@ class DeletedUser(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     rank = db.Column(db.String(120), nullable=True)
     original_created_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    digital_signature = db.Column(db.String(120), nullable=True)
-    personnel_number = db.Column(db.String(80), nullable=True)
-    default_case_location = db.Column(db.String(180), nullable=True)
-    default_nurse = db.Column(db.String(120), nullable=True)
     deleted_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
@@ -118,6 +107,9 @@ class AdminAccount(db.Model):
     username = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    permission_level = db.Column(
+        db.String(40), nullable=False, default="system_admin", index=True
+    )
     created_by_admin = db.Column(db.String(120), nullable=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -231,19 +223,6 @@ class Announcement(db.Model):
     body = db.Column(db.Text, nullable=False)
     target_type = db.Column(db.String(30), nullable=False, default="all", index=True)
     target_value = db.Column(db.String(160), nullable=True)
-
-    # Duyuruyu yayımlayan yönetici ayrı, duyuruyu yapan personel ayrı tutulur.
-    # Ad ve rütbe anlık kullanıcı hesabından alınarak duyuruya kopyalanır;
-    # böylece personelin rütbesi daha sonra değişse bile eski duyuru korunur.
-    author_user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("users.id"),
-        nullable=True,
-        index=True,
-    )
-    author_name = db.Column(db.String(120), nullable=True)
-    author_rank = db.Column(db.String(120), nullable=True)
-
     created_by_admin = db.Column(db.String(120), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
     created_at = db.Column(
@@ -275,34 +254,11 @@ class LeaveRequest(db.Model):
         index=True,
     )
     reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
-
-
-class ReportTemplate(db.Model):
-    __tablename__ = "report_templates"
-    __table_args__ = (
-        db.UniqueConstraint(
-            "user_id", "report_type", "name",
-            name="uq_report_template_user_type_name",
-        ),
-    )
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    username = db.Column(db.String(120), nullable=False, index=True)
-    name = db.Column(db.String(80), nullable=False)
-    report_type = db.Column(db.String(30), nullable=False, index=True)
-    form_data = db.Column(db.Text, nullable=False, default="{}")
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
+    is_archived = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    archived_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+    archived_by_admin = db.Column(db.String(120), nullable=True)
+    archive_reason = db.Column(db.String(40), nullable=True)
+    auto_archive_disabled = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class ReportDraft(db.Model):
@@ -325,12 +281,163 @@ class ReportDraft(db.Model):
     )
 
 
+class BackupRecord(db.Model):
+    __tablename__ = "backup_records"
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_username = db.Column(db.String(120), nullable=False, index=True)
+    file_name = db.Column(db.String(220), nullable=False)
+    record_count = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+
+class PatientFile(db.Model):
+    __tablename__ = "patient_files"
+
+    id = db.Column(db.Integer, primary_key=True)
+    patient_number = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    full_name = db.Column(db.String(180), nullable=False, index=True)
+    identity_number = db.Column(db.String(80), nullable=True, index=True)
+    date_of_birth = db.Column(db.String(10), nullable=True)
+    gender = db.Column(db.String(30), nullable=True)
+    phone = db.Column(db.String(80), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    blood_type = db.Column(db.String(20), nullable=True)
+    allergies = db.Column(db.Text, nullable=True)
+    chronic_conditions = db.Column(db.Text, nullable=True)
+    current_medications = db.Column(db.Text, nullable=True)
+    surgical_history = db.Column(db.Text, nullable=True)
+    family_history = db.Column(db.Text, nullable=True)
+    medical_history = db.Column(db.Text, nullable=True)
+    emergency_contact = db.Column(db.String(180), nullable=True)
+    emergency_phone = db.Column(db.String(80), nullable=True)
+    risk_notes = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(30), nullable=False, default="active", index=True)
+    created_by_username = db.Column(db.String(120), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc), index=True
+    )
+
+
+class PatientClinicalEntry(db.Model):
+    __tablename__ = "patient_clinical_entries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    patient_file_id = db.Column(
+        db.Integer, db.ForeignKey("patient_files.id"), nullable=False, index=True
+    )
+    entry_type = db.Column(db.String(50), nullable=False, index=True)
+    title = db.Column(db.String(180), nullable=False)
+    clinical_note = db.Column(db.Text, nullable=False)
+    diagnosis = db.Column(db.Text, nullable=True)
+    treatment = db.Column(db.Text, nullable=True)
+    medication = db.Column(db.Text, nullable=True)
+    vitals_json = db.Column(db.Text, nullable=True, default="{}")
+    linked_report_id = db.Column(db.Integer, db.ForeignKey("reports.id"), nullable=True, index=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_by_username = db.Column(db.String(120), nullable=False, index=True)
+    created_by_rank = db.Column(db.String(120), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+
+class ClinicalTask(db.Model):
+    __tablename__ = "clinical_tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(180), nullable=False, index=True)
+    category = db.Column(db.String(60), nullable=False, default="general", index=True)
+    priority = db.Column(db.String(30), nullable=False, default="normal", index=True)
+    status = db.Column(db.String(30), nullable=False, default="assigned", index=True)
+    description = db.Column(db.Text, nullable=False)
+    instructions = db.Column(db.Text, nullable=True)
+    checklist_json = db.Column(db.Text, nullable=False, default="[]")
+    assigned_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+    assigned_username = db.Column(db.String(120), nullable=False, index=True)
+    assigned_rank = db.Column(db.String(120), nullable=True)
+    patient_file_id = db.Column(db.Integer, db.ForeignKey("patient_files.id"), nullable=True, index=True)
+    created_by_admin = db.Column(db.String(120), nullable=False)
+    due_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+    progress_percent = db.Column(db.Integer, nullable=False, default=0)
+    result_note = db.Column(db.Text, nullable=True)
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc), index=True
+    )
+
+
+class ClinicalTaskUpdate(db.Model):
+    __tablename__ = "clinical_task_updates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("clinical_tasks.id"), nullable=False, index=True)
+    actor_username = db.Column(db.String(120), nullable=False, index=True)
+    actor_type = db.Column(db.String(30), nullable=False)
+    action = db.Column(db.String(60), nullable=False)
+    old_status = db.Column(db.String(30), nullable=True)
+    new_status = db.Column(db.String(30), nullable=True)
+    progress_percent = db.Column(db.Integer, nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+
+
+class PatientHandoff(db.Model):
+    __tablename__ = "patient_handoffs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    patient_file_id = db.Column(
+        db.Integer, db.ForeignKey("patient_files.id"), nullable=False, index=True
+    )
+    from_unit = db.Column(db.String(160), nullable=False)
+    to_unit = db.Column(db.String(160), nullable=False)
+    from_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+    from_username = db.Column(db.String(120), nullable=False, index=True)
+    from_rank = db.Column(db.String(120), nullable=True)
+    to_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+    to_username = db.Column(db.String(120), nullable=False, index=True)
+    to_rank = db.Column(db.String(120), nullable=True)
+    reason = db.Column(db.Text, nullable=False)
+    condition_summary = db.Column(db.Text, nullable=False)
+    risks = db.Column(db.Text, nullable=True)
+    active_treatments = db.Column(db.Text, nullable=True)
+    pending_actions = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(30), nullable=False, default="pending", index=True)
+    response_note = db.Column(db.Text, nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True
+    )
+    responded_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    responded_by = db.Column(db.String(120), nullable=True)
+    cancelled_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    cancelled_by = db.Column(db.String(120), nullable=True)
+
+
 ARCHIVE_ACTION_LABELS = {
     "initial_backup": "İlk arşiv aktarımı",
     "created": "Kullanıcı tarafından oluşturuldu",
     "updated": "Kullanıcı tarafından güncellendi",
     "admin_updated": "Yönetici tarafından güncellendi",
-    "copied_to_draft": "Yeni rapor taslağına kopyalandı",
     "deleted_by_admin": "Aktif kayıttan silinmeden önce yedeklendi",
 }
 
@@ -358,160 +465,71 @@ LEAVE_TYPE_LABELS = {
     "other": "Diğer",
 }
 
-# Hastane duyurusunu yapan kişi seçiminde yalnızca bu iki yetkili profil
-# kullanılabilir. Bu liste normal kullanıcı tablosundan oluşturulmaz.
-ANNOUNCEMENT_AUTHOR_PROFILES = {
-    "Adreanna Vetroa": "Psychiatrist",
-    "Darius Blackwell": "Attending Physician",
+
+ADMIN_ROLE_LABELS = {
+    "system_admin": "Sistem Yöneticisi",
+    "hospital_manager": "Hastane Yöneticisi",
+    "report_auditor": "Rapor Denetçisi",
 }
 
-REPORT_NUMBER_CONFIG = {
-    "vaka": ("rapor_no", "CLSMC-VKR"),
-    "adli": ("adli_rapor_no", "CLSMC-ADL"),
-    "otopsi": ("otp_rapor_no", "CLSMC-OTP"),
-    "ex": ("ex_rapor_no", "CLSMC-EX"),
-    "ems": ("ems_rapor_no", "CLSMC-EMS"),
-}
-
-REPORT_COPY_CLEAR_FIELDS = {
-    "vaka": {"tarih", "rapor_tarihi", "ekran"},
-    "adli": {"adli_tarih", "adli_bildirim_tarih", "adli_ekran"},
-    "otopsi": {"otp_olum_tarih", "otp_otopsi_tarih", "otp_ekran"},
-    "ex": {"ex_kabul_tarih", "ex_olum_tarih", "ex_ekran"},
-    "ems": {"ems_vaka_tarih", "ems_ekran"},
-}
-
-REPORT_TEMPLATE_EXCLUDED_FIELDS = {
-    "vaka": {
-        "rapor_no", "adsoyad", "cinsiyet", "telefon", "adres", "tarih",
-        "ekran", "hemsire", "rapor_tarihi", "imza",
+ADMIN_ROLE_PERMISSIONS = {
+    "system_admin": {
+        "admin_accounts", "staff_management", "hospital_management",
+        "report_management", "reports_read", "clinical_management",
+        "clinical_read", "system_export", "audit_read",
     },
-    "adli": {
-        "adli_rapor_no", "adli_adsoyad", "adli_cinsiyet", "adli_telefon",
-        "adli_adres", "adli_tarih", "adli_bildirim_tarih",
-        "adli_teslim_yetkili", "adli_imza", "adli_ekran",
+    "hospital_manager": {
+        "staff_management", "hospital_management", "reports_read",
+        "clinical_management", "clinical_read", "audit_read",
     },
-    "otopsi": {
-        "otp_rapor_no", "otp_adsoyad", "otp_cinsiyet", "otp_yas",
-        "otp_olum_tarih", "otp_otopsi_tarih", "otp_dosya_no",
-        "otp_teslim_yetkili", "otp_imza", "otp_ekran",
-    },
-    "ex": {
-        "ex_rapor_no", "ex_adsoyad", "ex_cinsiyet", "ex_yas",
-        "ex_kabul_tarih", "ex_olum_tarih", "ex_yakin_bilgi",
-        "ex_cenaze", "ex_imza", "ex_ekran",
-    },
-    "ems": {
-        "ems_rapor_no", "ems_vaka_tarih", "ems_konum", "ems_adsoyad",
-        "ems_teslim", "ems_ekip", "ems_ambulans", "ems_imza", "ems_ekran",
+    "report_auditor": {
+        "report_management", "reports_read", "clinical_read", "audit_read",
     },
 }
 
-BUILTIN_REPORT_TEMPLATES = {
-    "vaka": [
-        {
-            "id": "builtin-vaka-acil",
-            "name": "Acil Servis Muayenesi",
-            "values": {
-                "basvuru": "Acil Giriş",
-                "hasta_sonucu": "Taburcu",
-                "vaka_aciklama": "Hasta mevcut şikâyetleri nedeniyle acil servise başvurdu. Hastanın öyküsü alınarak genel değerlendirmesi yapıldı.",
-                "muayene": "Hastanın bilinci açık, iletişimi uyumlu ve genel durumu stabil olarak değerlendirildi. Şikâyete yönelik fizik muayene gerçekleştirildi.",
-                "islemler": "Gerekli klinik değerlendirme ve semptomlara yönelik müdahale uygulandı. Hastaya kontrol önerileri anlatıldı.",
-            },
-        },
-        {
-            "id": "builtin-vaka-enfeksiyon",
-            "name": "Enfeksiyon Değerlendirmesi",
-            "values": {
-                "basvuru": "Acil Giriş",
-                "hasta_sonucu": "Taburcu",
-                "vaka_aciklama": "Hasta ateş, halsizlik ve enfeksiyonla uyumlu şikâyetler nedeniyle başvurdu.",
-                "muayene": "Genel durum, solunum sistemi ve ilgili şikâyet bölgesi değerlendirildi. Enfeksiyon bulguları açısından muayene gerçekleştirildi.",
-                "tani": "Enfeksiyon şüphesi / klinik bulgularla uyumlu enfeksiyon tablosu.",
-                "islemler": "Semptomatik destek sağlandı, takip ve yeniden başvuru koşulları hastaya anlatıldı.",
-            },
-        },
-        {
-            "id": "builtin-vaka-kirik",
-            "name": "Kırık veya Çıkık Şüphesi",
-            "values": {
-                "basvuru": "Acil Giriş",
-                "hasta_sonucu": "Taburcu",
-                "vaka_aciklama": "Hasta travma sonrası ağrı, hassasiyet ve hareket kısıtlılığı şikâyetiyle başvurdu.",
-                "muayene": "İlgili ekstremitede deformite, hassasiyet, dolaşım ve hareket durumu değerlendirildi.",
-                "tani": "Kırık / çıkık şüphesi.",
-                "islemler": "İlgili bölge sabitlendi, gerekli görüntüleme değerlendirmesi yapıldı ve kontrol önerildi.",
-            },
-        },
-        {
-            "id": "builtin-vaka-kontrol",
-            "name": "Kontrol Muayenesi",
-            "values": {
-                "basvuru": "Randevu",
-                "hasta_sonucu": "Taburcu",
-                "vaka_aciklama": "Hasta daha önce uygulanan tedavinin kontrolü amacıyla yeniden başvurdu.",
-                "muayene": "Tedavi edilen bölge ve hastanın güncel şikâyetleri değerlendirildi. İyileşme süreci kontrol edildi.",
-                "islemler": "Kontrol muayenesi tamamlandı ve güncel bakım önerileri hastaya aktarıldı.",
-            },
-        },
-    ],
-    "adli": [
-        {
-            "id": "builtin-adli-darp",
-            "name": "Darp Vakası",
-            "values": {
-                "adli_vaka_turu": "Darp",
-                "adli_durum": "Stabil",
-                "adli_delil": "Bulunmuyor",
-                "adli_olay": "Hasta darp iddiası sonrasında adli değerlendirme amacıyla muayene edildi.",
-                "adli_yaralanmalar": "Gözle görülen travmatik bulgular anatomik bölgeleriyle birlikte değerlendirildi ve kayıt altına alındı.",
-                "adli_islemler": "Yaralanmalara yönelik gerekli tıbbi değerlendirme ve müdahale uygulandı.",
-                "adli_bildirim_birim": "LSPD",
-            },
-        },
-        {
-            "id": "builtin-adli-atesli",
-            "name": "Ateşli Silah Yaralanması",
-            "values": {
-                "adli_vaka_turu": "Ateşli Silah",
-                "adli_durum": "Ciddi",
-                "adli_delil": "Muhafaza altına alındı",
-                "adli_olay": "Hasta ateşli silah yaralanması şüphesiyle acil değerlendirmeye alındı.",
-                "adli_yaralanmalar": "Giriş ve varsa çıkış yarası, kanama durumu ve eşlik eden travmatik bulgular değerlendirildi.",
-                "adli_islemler": "Kanama kontrolü, stabilizasyon ve yaralanmanın gerektirdiği tıbbi müdahaleler uygulandı.",
-                "adli_bildirim_birim": "LSPD",
-            },
-        },
-    ],
-    "ems": [
-        {
-            "id": "builtin-ems-trafik",
-            "name": "Trafik Kazası",
-            "values": {
-                "ems_vaka_turu": "Trafik Kazası",
-                "ems_bilinc": "Açık",
-                "ems_genel_durum": "Stabil",
-                "ems_olay_degerlendirme": "Olay yeri güvenliği sağlandı ve travma mekanizması değerlendirildi.",
-                "ems_mudahale": "Primer değerlendirme yapıldı, gerekli stabilizasyon ve saha müdahalesi uygulandı.",
-                "ems_nakil_durumu": "CLSMC’ye Nakledildi",
-                "ems_nakil_sirasinda": "Stabil",
-            },
-        },
-    ],
+TASK_STATUS_LABELS = {
+    "assigned": "Atandı",
+    "in_progress": "Devam Ediyor",
+    "waiting": "Beklemede",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal Edildi",
 }
-
-def sanitize_report_template_form_data(report_type: str, form_data: dict) -> dict:
-    excluded = REPORT_TEMPLATE_EXCLUDED_FIELDS.get(report_type, set())
-    clean = {}
-    for key, value in form_data.items():
-        if key in excluded:
-            continue
-        if not isinstance(key, str) or len(key) > 80:
-            continue
-        if isinstance(value, (str, int, float, bool)) or value is None:
-            clean[key] = value
-    return clean
+TASK_PRIORITY_LABELS = {
+    "low": "Düşük", "normal": "Normal", "high": "Yüksek", "urgent": "Acil"
+}
+TASK_CATEGORY_LABELS = {
+    "general": "Genel Görev",
+    "patient_care": "Hasta Bakımı",
+    "documentation": "Dokümantasyon",
+    "follow_up": "Kontrol / Takip",
+    "procedure": "Tıbbi İşlem",
+    "coordination": "Koordinasyon",
+}
+PATIENT_STATUS_LABELS = {
+    "active": "Aktif Dosya",
+    "observation": "Gözlemde",
+    "discharged": "Taburcu",
+    "archived": "Arşivlendi",
+    "deceased": "Ex",
+}
+CLINICAL_ENTRY_LABELS = {
+    "examination": "Muayene",
+    "diagnosis": "Tanı",
+    "treatment": "Tedavi",
+    "medication": "İlaç Uygulaması",
+    "procedure": "Tıbbi İşlem",
+    "observation": "Gözlem Notu",
+    "surgery": "Ameliyat Notu",
+    "discharge": "Taburcu Notu",
+    "lab": "Tetkik / Laboratuvar",
+    "other": "Diğer Klinik Kayıt",
+}
+HANDOFF_STATUS_LABELS = {
+    "pending": "Teslim Bekliyor",
+    "accepted": "Teslim Alındı",
+    "rejected": "Reddedildi",
+    "cancelled": "İptal Edildi",
+}
 
 
 def create_user_notification(
@@ -597,746 +615,72 @@ def add_report_archive_snapshot(
     return archive
 
 
-def build_legacy_vaka_bbcode(
-    data: dict,
-    doctor_name: str,
-    doctor_rank: str,
-) -> str:
-    """Eski sistem Vaka kayıtlarını güncel görünümle BBCode'a dönüştürür."""
-    missing = "Bulunamadı [Eski Sistem]"
-
-    def value(key: str, fallback: str = "—") -> str:
-        result = str(data.get(key, "") or "").strip()
-        return result or fallback
-
-    def tr_datetime(iso_value: str) -> str:
-        text_value = (iso_value or "").strip()
-        try:
-            parsed = datetime.fromisoformat(text_value)
-            return parsed.strftime("%d.%m.%Y - %H.%M")
-        except (TypeError, ValueError):
-            return text_value or "—"
-
-    optional_identity_lines = []
-    if value("vaka_adi", ""):
-        optional_identity_lines.append(
-            f"\n[b][color=#4C88A8]Vaka Adı:[/color][/b]\n{value('vaka_adi')}"
-        )
-    if value("dogum_tarihi", ""):
-        optional_identity_lines.append(
-            f"\n[b][color=#4C88A8]Doğum Tarihi:[/color][/b]\n{value('dogum_tarihi')}"
-        )
-    if value("uyruk", ""):
-        optional_identity_lines.append(
-            f"\n[b][color=#4C88A8]Uyruk:[/color][/b]\n{value('uyruk')}"
-        )
-    optional_identity = "\n".join(optional_identity_lines)
-
-    return f"""[center]
-[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
-[size=140][b][color=#4C88A8]VAKA RAPORU[/color][/b][/size]
-
-[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
-[/center]
-
-[quote]
-[center][size=125][b][color=#183B56]VAKA BİLGİLERİ[/color][/b][/size][/center]
-
-[b][color=#4C88A8]Rapor Numarası:[/color][/b]
-{value("rapor_no")}
-{optional_identity}
-
-[b][color=#4C88A8]Hasta Adı ve Soyadı:[/color][/b]
-{value("adsoyad")}
-
-[b][color=#4C88A8]Cinsiyet:[/color][/b]
-{value("cinsiyet")}
-
-[b][color=#4C88A8]Telefon Numarası:[/color][/b]
-{value("telefon", missing)}
-
-[b][color=#4C88A8]Adres Bilgisi:[/color][/b]
-{value("adres", missing)}
-
-[b][color=#4C88A8]Vaka Tarihi ve Saati:[/color][/b]
-{tr_datetime(value("tarih", ""))}
-
-[b][color=#4C88A8]Vaka Yeri:[/color][/b]
-{value("olayyeri")}
-
-[b][color=#4C88A8]Başvuru Şekli:[/color][/b]
-{value("basvuru")}
-[/quote]
-
-[quote]
-[center][size=125][b][color=#183B56]VAKA DETAYLARI[/color][/b][/size][/center]
-
-[b][color=#4C88A8]Vaka Açıklaması:[/color][/b]
-{value("vaka_aciklama")}
-
-[b][color=#4C88A8]Muayene Bulguları:[/color][/b]
-{value("muayene")}
-
-[b][color=#4C88A8]Tanı:[/color][/b]
-{value("tani")}
-
-[b][color=#4C88A8]Uygulanan İşlemler:[/color][/b]
-{value("islemler")}
-
-[b][color=#4C88A8]Hasta Sonucu:[/color][/b]
-{value("hasta_sonucu")}
-
-[b][color=#4C88A8]Ekran Görüntüsü:[/color][/b]
-
-[spoiler]
-{value("ekran")}
-[/spoiler]
-[/quote]
-
-[quote]
-[center][size=125][b][color=#183B56]SORUMLU PERSONEL[/color][/b][/size][/center]
-
-[b][color=#4C88A8]Sorumlu Hekim:[/color][/b]
-{doctor_name} — {doctor_rank}
-
-[b][color=#4C88A8]Hemşire:[/color][/b]
-{value("hemsire", "N/A")}
-
-[b][color=#4C88A8]Rapor Tarihi:[/color][/b]
-{tr_datetime(value("rapor_tarihi", ""))}
-
-[b][color=#4C88A8]Dijital İmza:[/color][/b]
-{value("imza")}
-[/quote]
-
-[center]
-[size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
-[size=65][i][color=#7A8891]Tıbbi Vaka Kayıt Sistemi[/color][/i][/size]
-[/center]"""
+def parse_datetime_local(value: str | None) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except ValueError:
+        return None
 
 
-def import_alexander_whitmore_legacy_reports() -> dict:
-    """Kullanıcının sağladığı yedi eski Vaka kaydını güvenli ve tekrarsız aktarır."""
-    missing = "Bulunamadı [Eski Sistem]"
-    alexander = User.query.filter(
-        db.func.lower(User.username) == "alexander whitmore"
-    ).first()
-
-    result = {
-        "account_found": bool(alexander),
-        "imported": [],
-        "already_present": [],
-        "conflicts": [],
-    }
-    if not alexander:
-        logger.warning(
-            "LEGACY_REPORT_IMPORT_SKIPPED | username=Alexander Whitmore | "
-            "reason=user_not_found"
-        )
-        return result
-
-    legacy_reports = [
-        {
-            "rapor_no": "CLSMC-VKR-0008",
-            "vaka_adi": "Yüksek Ateş ve Şiddetli Öksürük (ÜSYE Ön Tanısı)",
-            "adsoyad": "Katarina Belrova",
-            "cinsiyet": "",
-            "telefon": missing,
-            "adres": missing,
-            "tarih": "2026-07-20T22:13",
-            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
-            "basvuru": "Ayaktan",
-            "hasta_sonucu": "Müşahede sonrası taburcu",
-            "vaka_aciklama": (
-                "Hasta yüksek ateş ve şiddetli öksürük şikayeti ile başvurdu."
-            ),
-            "muayene": (
-                "Ateş 39.2°C, boğazda kızarıklık ve ödem, şiddetli öksürük "
-                "mevcut. Solunum sesleri hafif hırıltılı. Genel durumu orta."
-            ),
-            "tani": "Üst solunum yolu enfeksiyonu — akut seyir.",
-            "islemler": (
-                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon, solunum).\n"
-                "- Damar yolu açılarak 500 ml izotonik serum başlandı.\n"
-                "- Ateş düşürücü intravenöz uygulandı.\n"
-                "- Öksürük için semptomatik şurup reçete edildi.\n"
-                "- Dinlenme, bol sıvı alımı ve evde takip önerildi.\n"
-                "- Gerekli görülmesi halinde kontrol için tekrar başvurması söylendi."
-            ),
-            "ekran": "https://imgur.com/a/XRvKLja",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-20T22:20",
-            "imza": "A. Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0009",
-            "vaka_adi": "Şiddetli Mide Ağrısı",
-            "adsoyad": "Nadia Rosso",
-            "cinsiyet": "",
-            "telefon": missing,
-            "adres": missing,
-            "tarih": "2026-07-21T00:29",
-            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
-            "basvuru": "Ayaktan",
-            "hasta_sonucu": "Müşahede sonrası taburcu",
-            "vaka_aciklama": (
-                "Hasta şiddetli mide ağrısı şikayeti ile başvurdu."
-            ),
-            "muayene": (
-                "Karın bölgesinde hassasiyet mevcut. Bulantı ve mide krampları "
-                "eşlik ediyor. Genel durumu stabil."
-            ),
-            "tani": "Gastroenterit ön tanısı.",
-            "islemler": (
-                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon).\n"
-                "- Damar yolu açılarak 500 ml izotonik serum başlandı.\n"
-                "- Bulantı için antiemetik ilaç uygulandı.\n"
-                "- Ağrı için analjezik verildi.\n"
-                "- Sıvı alımı ve hafif diyet önerildi."
-            ),
-            "ekran": "https://imgur.com/a/4qtDcpF",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-21T00:35",
-            "imza": "A. Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0010",
-            "vaka_adi": "Hafif Ateş ve Öksürük",
-            "adsoyad": "Ceo Hate",
-            "cinsiyet": "",
-            "telefon": missing,
-            "adres": missing,
-            "tarih": "2026-07-21T22:13",
-            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
-            "basvuru": "Ayaktan",
-            "hasta_sonucu": "Taburcu",
-            "vaka_aciklama": (
-                "Hasta hafif ateş ve öksürük şikayeti ile başvurdu."
-            ),
-            "muayene": (
-                "Ateş 37.8°C, hafif öksürük mevcut. Genel durumu iyi, "
-                "vital bulgular stabil."
-            ),
-            "tani": "Üst solunum yolu enfeksiyonu — hafif seyir.",
-            "islemler": (
-                "- Vital bulgular kontrol edildi.\n"
-                "- Semptomatik tedavi kapsamında ateş düşürücü tablet reçete edildi.\n"
-                "- Hafif öksürük için şurup önerildi.\n"
-                "- Dinlenme ve bol sıvı alımı tavsiye edildi."
-            ),
-            "ekran": "https://imgur.com/a/bpEuKoW",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-21T22:20",
-            "imza": "A. Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0011",
-            "vaka_adi": "Şiddetli Karın Ağrısı — Gıda Zehirlenmesi",
-            "adsoyad": "Zoe Vera",
-            "cinsiyet": "",
-            "telefon": missing,
-            "adres": missing,
-            "tarih": "2026-07-21T00:29",
-            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
-            "basvuru": "Ayaktan",
-            "hasta_sonucu": "Müşahede sonrası taburcu",
-            "vaka_aciklama": (
-                "Hasta şiddetli karın ağrısı, bulantı ve kusma şikayetleri ile "
-                "başvurdu. Son 24 saat içinde dışarıda tüketilen yiyecek sonrası "
-                "şikayetlerin başladığı öğrenildi."
-            ),
-            "muayene": (
-                "Karın bölgesinde yaygın hassasiyet, mide krampları, bulantı ve "
-                "kusma mevcut. Ateş 38.5°C. Genel durumu orta."
-            ),
-            "tani": "Gıda zehirlenmesi ön tanısı.",
-            "islemler": (
-                "- Vital bulgular kontrol edildi (ateş, nabız, tansiyon, solunum).\n"
-                "- Damar yolu açılarak 1000 ml izotonik serum başlandı.\n"
-                "- Bulantı için antiemetik ilaç uygulandı.\n"
-                "- Ağrı için analjezik verildi.\n"
-                "- Hafif diyet ve bol sıvı alımı önerildi.\n"
-                "- Müşahede altında kısa süre takip edildi."
-            ),
-            "ekran": "https://imgur.com/a/BtR7u02",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-21T00:35",
-            "imza": "A. Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0012",
-            "vaka_adi": "Hazımsızlık — Karın Ağrısı ve Şişkinlik",
-            "adsoyad": "Roman Bouzfour",
-            "cinsiyet": "",
-            "telefon": missing,
-            "adres": missing,
-            "dogum_tarihi": "02/02/2000",
-            "uyruk": "Amerikan",
-            "tarih": "2026-07-24T22:58",
-            "olayyeri": "Central Los Santos Medical Center — Acil Servis",
-            "basvuru": "Ayaktan",
-            "hasta_sonucu": "Taburcu",
-            "vaka_aciklama": (
-                "Hasta yemek sonrası karın ağrısı, şişkinlik ve gaz şikayeti "
-                "ile başvurdu."
-            ),
-            "muayene": (
-                "Karın bölgesinde hafif hassasiyet, mide bölgesinde dolgunluk "
-                "hissi. Ateş yok, vital bulgular stabil."
-            ),
-            "tani": "Hazımsızlık (Dispepsi) ön tanısı.",
-            "islemler": (
-                "- Vital bulgular kontrol edildi.\n"
-                "- Damar yolu açılarak 500 ml izotonik serum verildi.\n"
-                "- Spazm çözücü ve mide koruyucu ilaç uygulandı.\n"
-                "- Hafif diyet (yağsız, baharatsız) ve bol sıvı alımı önerildi.\n"
-                "- Evde takip ve gerekirse kontrol önerildi."
-            ),
-            "ekran": "https://imgur.com/a/TCL4Prq",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-24T23:05",
-            "imza": "A. Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0021",
-            "vaka_adi": "",
-            "adsoyad": "Carla Santamaria",
-            "cinsiyet": "Kadın",
-            "telefon": "297-257",
-            "adres": "Vespucci Hotel",
-            "tarih": "2026-07-28T21:23",
-            "olayyeri": "Central Los Santos Medical Center",
-            "basvuru": "Acil Giriş",
-            "hasta_sonucu": "Taburcu",
-            "vaka_aciklama": (
-                "Hasta sağ bileğinde kırık olabileceği şüphesiyle geldi yapılan "
-                "inceleme sonucunda kas sıkışması olduğu tespit edildi."
-            ),
-            "muayene": (
-                "İnceleme: MR Tetkiki\n"
-                "Bulgu: İlgili kas grubunda aşırı gerilmeye bağlı kas sıkışması "
-                "saptanmıştır. Kırık veya çatlak izlenmemiştir."
-            ),
-            "tani": "Kas Sıkışması",
-            "islemler": (
-                "Kas gevşetici iğne uygulanıp medikal atel takıldı. Kas gevşetici "
-                "krem yazılıp bol istirahat önerildi."
-            ),
-            "ekran": "https://imgur.com/a/pCR2kqB",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-29T14:37",
-            "imza": "A.Whitmore",
-        },
-        {
-            "rapor_no": "CLSMC-VKR-0022",
-            "vaka_adi": "",
-            "adsoyad": "Darius Blackwell",
-            "cinsiyet": "Erkek",
-            "telefon": "742-244",
-            "adres": "Vespucci Hotel",
-            "tarih": "2026-07-28T21:41",
-            "olayyeri": "Central Los Santos Medical Center — Hasta Odası",
-            "basvuru": "Acil Giriş",
-            "hasta_sonucu": "Taburcu",
-            "vaka_aciklama": (
-                "Hasta orta derecede ateş, boğaz ağrısı ve halsizlik "
-                "şikayetleriyle başvurdu."
-            ),
-            "muayene": (
-                "Yapılan fiziki muayenede boğazda iltihaplanma, hafif ateş ve "
-                "halsizlik saptandı. Akciğer sesleri doğal."
-            ),
-            "tani": "Bakteriyel Solunum Yolu Enfeksiyonu",
-            "islemler": (
-                "Acil serviste tek doz IM antibiyotik enjeksiyonu uygulandı. "
-                "Ağızdan devam etmesi için antibiyotik ve ağrı kesici reçete "
-                "edildi, istirahat önerildi."
-            ),
-            "ekran": "https://imgur.com/a/NtGldLW",
-            "hemsire": "",
-            "rapor_tarihi": "2026-07-29T15:02",
-            "imza": "A.Whitmore",
-        },
-    ]
-
-    doctor_rank = (alexander.rank or "Doctor").strip() or "Doctor"
-
-    for data in legacy_reports:
-        report_number = data["rapor_no"]
-        existing = Report.query.filter_by(
-            report_type="vaka",
-            report_number=report_number,
-        ).first()
-
-        if existing:
-            same_owner = (
-                existing.created_by_user_id == alexander.id
-                or (existing.created_by_username or "").strip().casefold()
-                == alexander.username.casefold()
-            )
-            destination = (
-                result["already_present"] if same_owner else result["conflicts"]
-            )
-            destination.append(report_number)
+def next_patient_number() -> str:
+    highest = 0
+    for (number,) in db.session.query(PatientFile.patient_number).all():
+        value = (number or "").strip()
+        if not value.startswith("CLSMC-HST-"):
             continue
+        suffix = value.rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return f"CLSMC-HST-{highest + 1:04d}"
 
-        report_datetime = None
-        try:
-            report_datetime = datetime.fromisoformat(data["rapor_tarihi"]).replace(
-                tzinfo=timezone(timedelta(hours=3))
-            )
-        except (TypeError, ValueError, KeyError):
-            report_datetime = datetime.now(timezone.utc)
 
-        report = Report(
-            report_type="vaka",
-            report_number=report_number,
-            doctor_name=alexander.username,
-            doctor_rank=doctor_rank,
-            report_date=data["rapor_tarihi"],
-            bbcode=build_legacy_vaka_bbcode(
-                data,
-                alexander.username,
-                doctor_rank,
-            ),
-            form_data=json.dumps(data, ensure_ascii=False),
-            created_by_user_id=alexander.id,
-            created_by_username=alexander.username,
-            created_at=report_datetime,
-            updated_at=report_datetime,
-            workflow_status="completed",
-            admin_note=(
-                "Kullanıcı tarafından sağlanan eski sistem kaydından "
-                "V23.7.1 ile otomatik aktarıldı."
-            ),
-            is_favorite=False,
-        )
-        db.session.add(report)
-        db.session.flush()
-        add_report_archive_snapshot(
-            report,
-            "legacy_system_import",
-            archived_by_admin="Sistem",
-            submitted_by_user_id=alexander.id,
-            submitted_by_username=alexander.username,
-        )
-        result["imported"].append(report_number)
+def current_user_account() -> User | None:
+    user_id = session.get("user_id")
+    return db.session.get(User, user_id) if user_id else None
 
-    if result["imported"]:
-        db.session.add(
-            UserNotification(
-                user_id=alexander.id,
-                username=alexander.username,
-                title="Eski Vaka Raporları Aktarıldı",
-                message=(
-                    f"{len(result['imported'])} eski Vaka Raporu hesabınıza "
-                    "aktarıldı. Mevcut rapor numaraları tekrar oluşturulmadı."
-                ),
-                category="info",
-                related_type="legacy_report_import",
-                related_id=None,
-            )
-        )
 
-    db.session.add(
-        AppLog(
-            level="INFO" if not result["conflicts"] else "WARNING",
-            event="ALEXANDER_LEGACY_REPORT_IMPORT",
-            message=(
-                f"username={alexander.username}; "
-                f"imported={','.join(result['imported']) or 'none'}; "
-                f"already_present={','.join(result['already_present']) or 'none'}; "
-                f"conflicts={','.join(result['conflicts']) or 'none'}"
-            ),
-        )
-    )
-    db.session.commit()
+def current_admin_account() -> AdminAccount | None:
+    admin_id = session.get("admin_id")
+    return db.session.get(AdminAccount, admin_id) if admin_id else None
 
-    logger.info(
-        "ALEXANDER_LEGACY_REPORT_IMPORT | imported=%s | already_present=%s | "
-        "conflicts=%s",
-        len(result["imported"]),
-        len(result["already_present"]),
-        len(result["conflicts"]),
-    )
+
+def current_admin_permissions() -> set[str]:
+    admin = current_admin_account()
+    level = (admin.permission_level if admin else "") or "system_admin"
+    return set(ADMIN_ROLE_PERMISSIONS.get(level, set()))
+
+
+def admin_has_permission(permission: str) -> bool:
+    return permission in current_admin_permissions()
+
+
+def task_checklist_value(raw: str | None) -> list[dict]:
+    try:
+        value = json.loads(raw or "[]")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    result = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict) and (item.get("text") or "").strip():
+                result.append({"text": str(item.get("text")).strip(), "done": bool(item.get("done"))})
+            elif isinstance(item, str) and item.strip():
+                result.append({"text": item.strip(), "done": False})
     return result
 
 
-def import_darius_blackwell_legacy_reports() -> dict:
-    """Darius Blackwell hesabına 12 Vaka ve 1 Adli eski kaydı tekrarsız aktarır."""
-    darius = User.query.filter(
-        db.func.lower(User.username) == "darius blackwell"
-    ).first()
-    result = {
-        "account_found": bool(darius),
-        "imported": [],
-        "already_present": [],
-        "conflicts": [],
-    }
-    if not darius:
-        logger.warning(
-            "DARIUS_LEGACY_REPORT_IMPORT_SKIPPED | username=Darius Blackwell | "
-            "reason=user_not_found"
-        )
-        return result
-
-    doctor_rank = (darius.rank or "Attending Physician").strip() or "Attending Physician"
-    local_timezone = timezone(timedelta(hours=3))
-
-    for data in DARIUS_LEGACY_REPORTS:
-        report_type = str(data["report_type"]).strip()
-        report_number = str(data["report_number"]).strip()
-        existing = Report.query.filter_by(
-            report_type=report_type,
-            report_number=report_number,
-        ).first()
-        if existing:
-            same_owner = (
-                existing.created_by_user_id == darius.id
-                or (existing.created_by_username or "").strip().casefold()
-                == darius.username.casefold()
-            )
-            destination = (
-                result["already_present"] if same_owner else result["conflicts"]
-            )
-            destination.append(f"{report_type}:{report_number}")
-            continue
-
-        try:
-            report_datetime = datetime.fromisoformat(
-                str(data.get("created_at", ""))
-            )
-            if report_datetime.tzinfo is None:
-                report_datetime = report_datetime.replace(tzinfo=local_timezone)
-        except (TypeError, ValueError):
-            report_datetime = datetime.now(timezone.utc)
-
-        report = Report(
-            report_type=report_type,
-            report_number=report_number,
-            doctor_name=darius.username,
-            doctor_rank=doctor_rank,
-            report_date=str(data.get("report_date", "") or ""),
-            bbcode=str(data["bbcode"]),
-            form_data=json.dumps(data.get("form_data", {}), ensure_ascii=False),
-            created_by_user_id=darius.id,
-            created_by_username=darius.username,
-            created_at=report_datetime,
-            updated_at=report_datetime,
-            workflow_status="completed",
-            admin_note=(
-                "Kullanıcı tarafından sağlanan eski sistem kaydından "
-                "V23.7.4 ile otomatik aktarıldı. BBCode içeriği korunmuştur."
-            ),
-            is_favorite=False,
-        )
-        db.session.add(report)
-        db.session.flush()
-        add_report_archive_snapshot(
-            report,
-            "legacy_system_import",
-            archived_by_admin="Sistem",
-            submitted_by_user_id=darius.id,
-            submitted_by_username=darius.username,
-        )
-        result["imported"].append(f"{report_type}:{report_number}")
-
-    if result["imported"]:
-        vaka_count = sum(item.startswith("vaka:") for item in result["imported"])
-        adli_count = sum(item.startswith("adli:") for item in result["imported"])
-        db.session.add(
-            UserNotification(
-                user_id=darius.id,
-                username=darius.username,
-                title="Eski Raporlar Aktarıldı",
-                message=(
-                    f"Hesabınıza {vaka_count} Vaka ve {adli_count} Adli Vaka "
-                    "Raporu aktarıldı. Mevcut rapor numaraları tekrar oluşturulmadı."
-                ),
-                category="info",
-                related_type="legacy_report_import",
-                related_id=None,
-            )
-        )
-
-    db.session.add(
-        AppLog(
-            level="INFO" if not result["conflicts"] else "WARNING",
-            event="DARIUS_LEGACY_REPORT_IMPORT",
-            message=(
-                f"username={darius.username}; "
-                f"imported={','.join(result['imported']) or 'none'}; "
-                f"already_present={','.join(result['already_present']) or 'none'}; "
-                f"conflicts={','.join(result['conflicts']) or 'none'}"
-            ),
-        )
-    )
-    db.session.commit()
-    logger.info(
-        "DARIUS_LEGACY_REPORT_IMPORT | imported=%s | already_present=%s | conflicts=%s",
-        len(result["imported"]),
-        len(result["already_present"]),
-        len(result["conflicts"]),
-    )
-    return result
-
-
-def apply_darius_legacy_report_corrections() -> dict:
-    """V23.7.4 için yalnızca üç kullanıcı onaylı eski rapor düzeltmesini uygular."""
-    corrections = {
-        "CLSMC-VKR-0001": {
-            "patient": "Lamar Hate",
-            "bbcode_replacements": [
-                (
-                    "Lucius Blackwell - Attending Physician",
-                    "Darius Blackwell - Attending Physician",
-                )
-            ],
-            "form_replacements": {},
-        },
-        "CLSMC-VKR-0003": {
-            "patient": "Michael Anderson",
-            "bbcode_replacements": [
-                (
-                    "Michael Blackwood - Attending Physician",
-                    "Darius Blackwell - Attending Physician",
-                )
-            ],
-            "form_replacements": {},
-        },
-        "CLSMC-VKR-0018": {
-            "patient": "Luna Evergreen",
-            "bbcode_replacements": [
-                (
-                    "27.07.2027 tarihinde rutin muayeneye gelmiştir.",
-                    "27.07.2026 tarihinde rutin muayeneye gelmiştir.",
-                )
-            ],
-            "form_replacements": {
-                "vaka_aciklama": [
-                    (
-                        "27.07.2027 tarihinde rutin muayeneye gelmiştir.",
-                        "27.07.2026 tarihinde rutin muayeneye gelmiştir.",
-                    )
-                ]
-            },
-        },
-    }
-
-    result = {"updated": [], "already_correct": [], "skipped": []}
-
-    for report_number, correction in corrections.items():
-        report = Report.query.filter_by(
-            report_type="vaka",
-            report_number=report_number,
-        ).first()
-        if not report:
-            result["skipped"].append(f"{report_number}:not_found")
-            continue
-
-        is_darius_report = (
-            (report.created_by_username or "").strip().casefold()
-            == "darius blackwell"
-            or (report.doctor_name or "").strip().casefold()
-            == "darius blackwell"
-        )
-
-        try:
-            form_data = json.loads(report.form_data or "{}")
-        except (TypeError, ValueError):
-            form_data = {}
-
-        patient_name = str(form_data.get("adsoyad", "") or "").strip()
-        if (
-            not is_darius_report
-            or patient_name.casefold() != correction["patient"].casefold()
-        ):
-            result["skipped"].append(f"{report_number}:identity_mismatch")
-            continue
-
-        changed = False
-        updated_bbcode = report.bbcode or ""
-        for old_text, new_text in correction["bbcode_replacements"]:
-            if old_text in updated_bbcode:
-                updated_bbcode = updated_bbcode.replace(old_text, new_text, 1)
-                changed = True
-        report.bbcode = updated_bbcode
-
-        for field_name, replacements in correction["form_replacements"].items():
-            field_value = str(form_data.get(field_name, "") or "")
-            updated_value = field_value
-            for old_text, new_text in replacements:
-                if old_text in updated_value:
-                    updated_value = updated_value.replace(old_text, new_text, 1)
-                    changed = True
-            form_data[field_name] = updated_value
-
-        if correction["form_replacements"]:
-            report.form_data = json.dumps(form_data, ensure_ascii=False)
-
-        for archive_item in ReportArchive.query.filter_by(
-            source_report_id=report.id
-        ).all():
-            archive_changed = False
-            archive_bbcode = archive_item.bbcode or ""
-            for old_text, new_text in correction["bbcode_replacements"]:
-                if old_text in archive_bbcode:
-                    archive_bbcode = archive_bbcode.replace(old_text, new_text, 1)
-                    archive_changed = True
-            archive_item.bbcode = archive_bbcode
-
-            if correction["form_replacements"]:
-                try:
-                    archive_form = json.loads(archive_item.form_data or "{}")
-                except (TypeError, ValueError):
-                    archive_form = {}
-                for field_name, replacements in correction["form_replacements"].items():
-                    archive_value = str(archive_form.get(field_name, "") or "")
-                    updated_archive_value = archive_value
-                    for old_text, new_text in replacements:
-                        if old_text in updated_archive_value:
-                            updated_archive_value = updated_archive_value.replace(
-                                old_text,
-                                new_text,
-                                1,
-                            )
-                            archive_changed = True
-                    archive_form[field_name] = updated_archive_value
-                archive_item.form_data = json.dumps(
-                    archive_form,
-                    ensure_ascii=False,
-                )
-
-            if archive_changed:
-                changed = True
-
-        if changed:
-            result["updated"].append(report_number)
-        else:
-            result["already_correct"].append(report_number)
-
-    if result["updated"] or result["already_correct"] or result["skipped"]:
-        db.session.add(
-            AppLog(
-                level="INFO",
-                event="DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4",
-                message=(
-                    f"updated={','.join(result['updated']) or 'none'}; "
-                    f"already_correct={','.join(result['already_correct']) or 'none'}; "
-                    f"skipped={','.join(result['skipped']) or 'none'}"
-                ),
-            )
-        )
-        db.session.commit()
-
-    logger.info(
-        "DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4 | updated=%s | "
-        "already_correct=%s | skipped=%s",
-        len(result["updated"]),
-        len(result["already_correct"]),
-        len(result["skipped"]),
-    )
-    return result
+def patient_vitals_value(raw: str | None) -> dict:
+    try:
+        value = json.loads(raw or "{}")
+        return value if isinstance(value, dict) else {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
 
 
 def write_log(level: str, event: str, message: str) -> None:
@@ -1351,6 +695,75 @@ def write_log(level: str, event: str, message: str) -> None:
         logger.exception("DB_LOG_WRITE_FAILED | event=%s", event)
 
 
+def auto_archive_expired_leave_requests() -> int:
+    """Süresi geçmiş onaylı izinleri admin arşivine taşır."""
+    today_iso = datetime.now(timezone.utc).date().isoformat()
+    expired_items = (
+        LeaveRequest.query
+        .filter(
+            LeaveRequest.status == "approved",
+            LeaveRequest.is_archived.is_(False),
+            LeaveRequest.auto_archive_disabled.is_(False),
+            LeaveRequest.end_date < today_iso,
+        )
+        .order_by(LeaveRequest.end_date.asc(), LeaveRequest.id.asc())
+        .all()
+    )
+    if not expired_items:
+        return 0
+
+    archived_at = datetime.now(timezone.utc)
+    archived_ids = []
+    for item in expired_items:
+        item.is_archived = True
+        item.archived_at = archived_at
+        item.archived_by_admin = "Sistem (otomatik)"
+        item.archive_reason = "expired"
+        archived_ids.append(item.id)
+
+    db.session.add(
+        AppLog(
+            level="INFO",
+            event="LEAVE_REQUESTS_AUTO_ARCHIVED",
+            message=(
+                f"count={len(archived_ids)}; "
+                f"ids={','.join(str(item_id) for item_id in archived_ids)}; "
+                f"expired_before={today_iso}"
+            ),
+        )
+    )
+    db.session.commit()
+    logger.info(
+        "LEAVE_REQUESTS_AUTO_ARCHIVED | count=%s | ids=%s",
+        len(archived_ids),
+        archived_ids,
+    )
+    return len(archived_ids)
+
+
+_leave_archive_check_state = {"last_checked_at": None}
+
+
+@app.before_request
+def check_expired_leave_archive_on_activity():
+    """Site kullanıldığında en fazla saatte bir süresi dolan izinleri kontrol eder."""
+    if request.endpoint == "static":
+        return None
+
+    now_utc = datetime.now(timezone.utc)
+    last_checked_at = _leave_archive_check_state.get("last_checked_at")
+    if last_checked_at and now_utc - last_checked_at < timedelta(hours=1):
+        return None
+
+    _leave_archive_check_state["last_checked_at"] = now_utc
+    try:
+        auto_archive_expired_leave_requests()
+    except Exception:
+        db.session.rollback()
+        logger.exception("LEAVE_AUTO_ARCHIVE_CHECK_FAILED")
+    return None
+
+
 with app.app_context():
     db.create_all()
 
@@ -1362,34 +775,6 @@ with app.app_context():
     if "last_login_at" not in user_columns:
         with db.engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP"))
-    if "digital_signature" not in user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE users ADD COLUMN digital_signature VARCHAR(120)"))
-    if "personnel_number" not in user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE users ADD COLUMN personnel_number VARCHAR(80)"))
-    if "default_case_location" not in user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE users ADD COLUMN default_case_location VARCHAR(180)"))
-    if "default_nurse" not in user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE users ADD COLUMN default_nurse VARCHAR(120)"))
-
-    deleted_user_columns = {
-        column["name"] for column in inspect(db.engine).get_columns("deleted_users")
-    }
-    if "digital_signature" not in deleted_user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN digital_signature VARCHAR(120)"))
-    if "personnel_number" not in deleted_user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN personnel_number VARCHAR(80)"))
-    if "default_case_location" not in deleted_user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN default_case_location VARCHAR(180)"))
-    if "default_nurse" not in deleted_user_columns:
-        with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE deleted_users ADD COLUMN default_nurse VARCHAR(120)"))
 
     # Yeni seçmeli admin rapor düzenleyicisi için form verilerini JSON olarak sakla.
     report_columns = {column["name"] for column in inspect(db.engine).get_columns("reports")}
@@ -1416,6 +801,46 @@ with app.app_context():
                 text("ALTER TABLE reports ALTER COLUMN created_by_user_id DROP NOT NULL")
             )
 
+    # V24.1: Personel izin arşivi alanları.
+    leave_columns = {
+        column["name"] for column in inspect(db.engine).get_columns("leave_requests")
+    }
+    if "is_archived" not in leave_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE leave_requests ADD COLUMN is_archived BOOLEAN DEFAULT FALSE")
+            )
+    if "archived_at" not in leave_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE leave_requests ADD COLUMN archived_at TIMESTAMP")
+            )
+    if "archived_by_admin" not in leave_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE leave_requests ADD COLUMN archived_by_admin VARCHAR(120)")
+            )
+    if "archive_reason" not in leave_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE leave_requests ADD COLUMN archive_reason VARCHAR(40)")
+            )
+    if "auto_archive_disabled" not in leave_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE leave_requests ADD COLUMN auto_archive_disabled BOOLEAN DEFAULT FALSE")
+            )
+    with db.engine.begin() as connection:
+        connection.execute(
+            text("UPDATE leave_requests SET is_archived=FALSE WHERE is_archived IS NULL")
+        )
+        connection.execute(
+            text(
+                "UPDATE leave_requests SET auto_archive_disabled=FALSE "
+                "WHERE auto_archive_disabled IS NULL"
+            )
+        )
+
     # V23.1: Birden fazla yönetici hesabı ve hesap durum takibi.
     admin_columns = {
         column["name"] for column in inspect(db.engine).get_columns("admin_accounts")
@@ -1435,53 +860,18 @@ with app.app_context():
             connection.execute(
                 text("ALTER TABLE admin_accounts ADD COLUMN last_login_at TIMESTAMP")
             )
+    if "permission_level" not in admin_columns:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE admin_accounts ADD COLUMN permission_level VARCHAR(40) DEFAULT 'system_admin'")
+            )
     with db.engine.begin() as connection:
         connection.execute(
             text("UPDATE admin_accounts SET is_active=TRUE WHERE is_active IS NULL")
         )
-
-    # V23.6.1: Hastane duyurusunu yapan personelin adı ve rütbesi.
-    announcement_columns = {
-        column["name"] for column in inspect(db.engine).get_columns("announcements")
-    }
-    if "author_user_id" not in announcement_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE announcements ADD COLUMN author_user_id INTEGER")
-            )
-    if "author_name" not in announcement_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE announcements ADD COLUMN author_name VARCHAR(120)")
-            )
-    if "author_rank" not in announcement_columns:
-        with db.engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE announcements ADD COLUMN author_rank VARCHAR(120)")
-            )
-
-    # Eski duyuruları boş bırakma. Aynı isimli kullanıcı hesabı bulunursa
-    # personel adı/rütbesiyle, bulunamazsa yönetici adıyla gösterilir.
-    announcement_backfill_changed = False
-    for existing_announcement in Announcement.query.all():
-        if existing_announcement.author_name and existing_announcement.author_rank:
-            continue
-        matching_author = User.query.filter(
-            db.func.lower(User.username)
-            == (existing_announcement.created_by_admin or "").lower()
-        ).first()
-        if matching_author:
-            existing_announcement.author_user_id = matching_author.id
-            existing_announcement.author_name = matching_author.username
-            existing_announcement.author_rank = matching_author.rank or "Rütbe Atanmamış"
-        else:
-            existing_announcement.author_name = (
-                existing_announcement.created_by_admin or "Yönetim"
-            )
-            existing_announcement.author_rank = "Yönetici"
-        announcement_backfill_changed = True
-    if announcement_backfill_changed:
-        db.session.commit()
+        connection.execute(
+            text("UPDATE admin_accounts SET permission_level='system_admin' WHERE permission_level IS NULL OR permission_level=''")
+        )
 
     # V23.5.5: Eski Veyrath admin hesabını kimliği ve parolası korunarak
     # Darius Blackwell adına taşır. Normal kullanıcı tablosundaki aynı isim,
@@ -1547,120 +937,6 @@ with app.app_context():
         )
         db.session.commit()
 
-    # V23.7.2: Kullanıcı talebi doğrultusunda yalnızca üç eski Vaka
-    # raporunun numarasını düzelt. Başka hiçbir rapor alanına dokunma.
-    legacy_number_updates = {
-        "CLSMC-VKR-0023": ("CLSMC-VKR-0009", "Nadia Rosso"),
-        "CLSMC-VKR-0025": ("CLSMC-VKR-0011", "Zoe Vera"),
-        "CLSMC-VKR-0027": ("CLSMC-VKR-0012", "Roman Bouzfour"),
-    }
-    legacy_number_update_results = []
-    for old_number, (new_number, expected_patient_name) in legacy_number_updates.items():
-        old_report = Report.query.filter_by(
-            report_type="vaka",
-            report_number=old_number,
-        ).first()
-        if not old_report:
-            continue
-
-        is_alexander_report = (
-            (old_report.created_by_username or "").strip().casefold()
-            == "alexander whitmore"
-            or (old_report.doctor_name or "").strip().casefold()
-            == "alexander whitmore"
-        )
-        try:
-            old_form_data = json.loads(old_report.form_data or "{}")
-        except (TypeError, ValueError):
-            old_form_data = {}
-        is_expected_patient = (
-            str(old_form_data.get("adsoyad", "")).strip().casefold()
-            == expected_patient_name.casefold()
-        )
-
-        if not is_alexander_report or not is_expected_patient:
-            legacy_number_update_results.append(
-                f"{old_number}:skipped_identity_mismatch"
-            )
-            continue
-
-        target_report = Report.query.filter_by(
-            report_type="vaka",
-            report_number=new_number,
-        ).first()
-        if target_report:
-            legacy_number_update_results.append(
-                f"{old_number}->{new_number}:skipped_target_exists"
-            )
-            continue
-
-        old_report.report_number = new_number
-
-        # BBCode ve JSON içindeki yalnızca rapor numarası metnini güncelle.
-        old_report.bbcode = (old_report.bbcode or "").replace(
-            old_number,
-            new_number,
-            1,
-        )
-        if old_form_data:
-            old_form_data["rapor_no"] = new_number
-            old_report.form_data = json.dumps(old_form_data, ensure_ascii=False)
-
-        for archive_item in ReportArchive.query.filter_by(
-            source_report_id=old_report.id
-        ).all():
-            archive_item.report_number = new_number
-            archive_item.bbcode = (archive_item.bbcode or "").replace(
-                old_number,
-                new_number,
-                1,
-            )
-            try:
-                archive_form_data = json.loads(archive_item.form_data or "{}")
-            except (TypeError, ValueError):
-                archive_form_data = {}
-            if archive_form_data:
-                archive_form_data["rapor_no"] = new_number
-                archive_item.form_data = json.dumps(
-                    archive_form_data,
-                    ensure_ascii=False,
-                )
-
-        legacy_number_update_results.append(f"{old_number}->{new_number}:updated")
-
-    if legacy_number_update_results:
-        db.session.add(
-            AppLog(
-                level="INFO",
-                event="ALEXANDER_LEGACY_REPORT_NUMBER_UPDATE",
-                message="; ".join(legacy_number_update_results),
-            )
-        )
-        db.session.commit()
-
-    # V23.7.1: Alexander Whitmore hesabına kullanıcı tarafından sağlanan
-    # eski Vaka kayıtlarını aktar. Aynı rapor numarası varsa tekrar ekleme.
-    try:
-        import_alexander_whitmore_legacy_reports()
-    except Exception:
-        db.session.rollback()
-        logger.exception("ALEXANDER_LEGACY_REPORT_IMPORT_FAILED")
-
-    # V23.7.3: Darius Blackwell hesabına kullanıcı tarafından sağlanan
-    # 12 Vaka ve 1 Adli Vaka kaydını aktar. Aynı tür ve numara varsa atla.
-    try:
-        import_darius_blackwell_legacy_reports()
-    except Exception:
-        db.session.rollback()
-        logger.exception("DARIUS_LEGACY_REPORT_IMPORT_FAILED")
-
-    # V23.7.4: Darius eski raporlarındaki üç kullanıcı onaylı metin düzeltmesi.
-    try:
-        apply_darius_legacy_report_corrections()
-    except Exception:
-        db.session.rollback()
-        logger.exception("DARIUS_LEGACY_REPORT_CORRECTIONS_V23_7_4_FAILED")
-
     # V20.5.8: Sistemde önceden bulunan tüm raporlar ilk kez arşive aktarılır.
     # Aynı aktif rapor için daha önce bir arşiv kaydı varsa tekrar oluşturulmaz.
     archived_source_ids = {
@@ -1684,6 +960,8 @@ with app.app_context():
             "REPORT_ARCHIVE_BACKFILL | archived_reports=%s",
             initial_archive_count,
         )
+
+    auto_archive_expired_leave_requests()
 
 
 @app.get("/")
@@ -1766,30 +1044,6 @@ def register():
 
 @app.get("/panel")
 def panel():
-    return render_user_panel("dashboard")
-
-
-@app.get("/reports/new")
-def user_report_create():
-    return render_user_panel("report_create")
-
-
-@app.get("/workspace/notifications")
-def user_communications():
-    return render_user_panel("communications")
-
-
-@app.get("/workspace/drafts")
-def user_drafts():
-    return render_user_panel("drafts")
-
-
-@app.get("/workspace/leave")
-def user_leave_center():
-    return render_user_panel("leave")
-
-
-def render_user_panel(page_mode: str = "dashboard"):
     if not session.get("user_id"):
         flash("Önce giriş yapmalısınız.", "error")
         return redirect(url_for("login_page"))
@@ -1809,22 +1063,11 @@ def render_user_panel(page_mode: str = "dashboard"):
         )
         return redirect(url_for("settings"))
 
-    requested_report_type = request.args.get("report_type", "").strip()
-    initial_report_type = (
-        requested_report_type
-        if requested_report_type in allowed_report_types
-        else ("ems" if "ems" in allowed_report_types else "vaka")
-    )
-    report_number_defaults = {
-        report_type: next_report_number(report_type, REPORT_NUMBER_CONFIG[report_type][1])
-        for report_type in allowed_report_types
-        if report_type in REPORT_NUMBER_CONFIG
-    }
-    ems_report_number = report_number_defaults.get("ems", "CLSMC-EMS-0001")
-    forced_draft_type = (
-        initial_report_type
-        if request.args.get("copy") == "1"
-        else ""
+    initial_report_type = "ems" if "ems" in allowed_report_types else "vaka"
+    ems_report_number = (
+        next_report_number("ems", "CLSMC-EMS")
+        if "ems" in allowed_report_types
+        else "CLSMC-EMS-0001"
     )
 
     own_filter = db.or_(
@@ -1883,10 +1126,11 @@ def render_user_panel(page_mode: str = "dashboard"):
     leave_requests = (
         LeaveRequest.query
         .filter(
+            LeaveRequest.is_archived.is_(False),
             db.or_(
                 LeaveRequest.user_id == user.id,
                 db.and_(LeaveRequest.user_id.is_(None), LeaveRequest.username == user.username),
-            )
+            ),
         )
         .order_by(LeaveRequest.created_at.desc(), LeaveRequest.id.desc())
         .limit(8)
@@ -1902,39 +1146,9 @@ def render_user_panel(page_mode: str = "dashboard"):
         except (TypeError, ValueError, json.JSONDecodeError):
             draft_payloads[draft.report_type] = {}
 
-    custom_templates = (
-        ReportTemplate.query
-        .filter_by(user_id=user.id)
-        .order_by(ReportTemplate.report_type.asc(), ReportTemplate.name.asc())
-        .all()
-    )
-    custom_template_payloads = []
-    for item in custom_templates:
-        try:
-            parsed = json.loads(item.form_data or "{}")
-            values = parsed if isinstance(parsed, dict) else {}
-        except (TypeError, ValueError, json.JSONDecodeError):
-            values = {}
-        custom_template_payloads.append(
-            {
-                "id": item.id,
-                "name": item.name,
-                "report_type": item.report_type,
-                "values": values,
-            }
-        )
-
-    user_defaults = {
-        "digital_signature": user.digital_signature or "",
-        "personnel_number": user.personnel_number or "",
-        "default_case_location": user.default_case_location or "",
-        "default_nurse": user.default_nurse or "",
-    }
-
     return render_template(
         "panel.html",
         system_name=SYSTEM_NAME,
-        page_mode=page_mode,
         username=user.username,
         user_rank=user.rank or "",
         user_created_at=user.created_at,
@@ -1955,11 +1169,6 @@ def render_user_panel(page_mode: str = "dashboard"):
         leave_type_labels=LEAVE_TYPE_LABELS,
         drafts=drafts,
         draft_payloads=draft_payloads,
-        built_in_templates=BUILTIN_REPORT_TEMPLATES,
-        custom_templates=custom_template_payloads,
-        user_defaults=user_defaults,
-        report_number_defaults=report_number_defaults,
-        forced_draft_type=forced_draft_type,
     )
 
 
@@ -1982,10 +1191,6 @@ ALLOWED_USER_RANKS = MEDICAL_USER_RANKS | EMS_USER_RANKS
 
 MEDICAL_REPORT_TYPES = {"vaka", "adli", "otopsi", "ex"}
 EMS_REPORT_TYPES = {"ems"}
-
-# Yönetici kullanıcı adına yalnızca sunucuda kullanılan temel tıbbi raporları
-# oluşturabilir. Diğer raporlar mevcut kullanıcı akışından oluşturulmaya devam eder.
-ADMIN_PROXY_REPORT_TYPES = {"vaka", "adli"}
 
 
 def allowed_report_types_for_rank(rank: str | None) -> set[str]:
@@ -2086,15 +1291,6 @@ def save_report():
 
         is_new = report is None
 
-        if report is not None and not user_owns_report(current_user, report):
-            return {
-                "ok": False,
-                "message": (
-                    "Bu rapor numarası başka bir kullanıcı hesabına ait. "
-                    "Farklı bir rapor numarası kullanın."
-                ),
-            }, 409
-
         if is_new:
             report = Report(
                 report_type=report_type,
@@ -2164,121 +1360,6 @@ def save_report():
         except Exception:
             pass
         return {"ok": False, "message": "Rapor istatistiğe kaydedilemedi."}, 500
-
-
-@app.get("/api/reports/check-number")
-def check_report_number():
-    if not session.get("user_id"):
-        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
-    user = db.session.get(User, session["user_id"])
-    if not user:
-        session.clear()
-        return {"ok": False, "message": "Kullanıcı hesabı bulunamadı."}, 401
-
-    report_type = request.args.get("type", "").strip()
-    report_number = request.args.get("number", "").strip()
-    if report_type not in allowed_report_types_for_rank(user.rank):
-        return {"ok": False, "message": "Bu rapor türüne erişiminiz yok."}, 403
-    if not report_number:
-        return {"ok": True, "exists": False, "owned": False}, 200
-
-    report = Report.query.filter_by(
-        report_type=report_type,
-        report_number=report_number,
-    ).first()
-    return {
-        "ok": True,
-        "exists": bool(report),
-        "owned": bool(report and user_owns_report(user, report)),
-        "report_id": report.id if report else None,
-    }, 200
-
-
-@app.post("/api/report-templates")
-def save_report_template():
-    if not session.get("user_id"):
-        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
-    user = db.session.get(User, session["user_id"])
-    if not user:
-        session.clear()
-        return {"ok": False, "message": "Kullanıcı hesabı bulunamadı."}, 401
-
-    data = request.get_json(silent=True) or {}
-    name = str(data.get("name", "")).strip()
-    report_type = str(data.get("report_type", "")).strip()
-    form_data = data.get("form_data", {})
-
-    if report_type not in allowed_report_types_for_rank(user.rank):
-        return {"ok": False, "message": "Bu rapor türüne erişiminiz yok."}, 403
-    if not name or len(name) > 80:
-        return {"ok": False, "message": "Şablon adı 1-80 karakter olmalıdır."}, 400
-    if not isinstance(form_data, dict):
-        return {"ok": False, "message": "Şablon verisi geçersiz."}, 400
-
-    template = ReportTemplate.query.filter_by(
-        user_id=user.id,
-        report_type=report_type,
-        name=name,
-    ).first()
-    if not template:
-        if ReportTemplate.query.filter_by(user_id=user.id).count() >= 12:
-            return {
-                "ok": False,
-                "message": "En fazla 12 kişisel rapor şablonu kaydedebilirsiniz.",
-            }, 409
-        template = ReportTemplate(
-            user_id=user.id,
-            username=user.username,
-            name=name,
-            report_type=report_type,
-        )
-        db.session.add(template)
-
-    clean_data = sanitize_report_template_form_data(report_type, form_data)
-    if not clean_data:
-        return {
-            "ok": False,
-            "message": "Şablona kaydedilebilecek tekrar kullanılabilir alan bulunamadı.",
-        }, 400
-
-    template.username = user.username
-    template.form_data = json.dumps(clean_data, ensure_ascii=False)
-    template.updated_at = datetime.now(timezone.utc)
-    db.session.commit()
-    write_log(
-        "INFO",
-        "REPORT_TEMPLATE_SAVED",
-        f"username={user.username}; template_id={template.id}; type={report_type}",
-    )
-    return {
-        "ok": True,
-        "message": "Rapor şablonu kaydedildi.",
-        "template": {
-            "id": template.id,
-            "name": template.name,
-            "report_type": template.report_type,
-            "values": clean_data,
-        },
-    }, 200
-
-
-@app.delete("/api/report-templates/<int:template_id>")
-def delete_report_template(template_id: int):
-    if not session.get("user_id"):
-        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
-    user = db.session.get(User, session["user_id"])
-    template = db.session.get(ReportTemplate, template_id)
-    if not user or not template or template.user_id != user.id:
-        return {"ok": False, "message": "Şablon bulunamadı."}, 404
-    template_name = template.name
-    db.session.delete(template)
-    db.session.commit()
-    write_log(
-        "INFO",
-        "REPORT_TEMPLATE_DELETED",
-        f"username={user.username}; template_id={template_id}; name={template_name}",
-    )
-    return {"ok": True, "message": "Şablon silindi."}, 200
 
 
 @app.route("/api/drafts/<report_type>", methods=["GET", "POST", "DELETE"])
@@ -2437,72 +1518,6 @@ def user_report_version_view(report_id: int, archive_id: int):
     )
 
 
-@app.post("/reports/<int:report_id>/copy")
-def user_report_copy(report_id: int):
-    if not session.get("user_id"):
-        flash("Önce giriş yapmalısınız.", "error")
-        return redirect(url_for("login_page"))
-
-    user = db.session.get(User, session["user_id"])
-    report = db.session.get(Report, report_id)
-    if not user or not report or not user_owns_report(user, report):
-        flash("Rapor bulunamadı veya bu kayda erişiminiz yok.", "error")
-        return redirect(url_for("user_report_center"))
-    if report.report_type not in allowed_report_types_for_rank(user.rank):
-        flash("Rütbeniz bu rapor türünü kopyalamaya uygun değil.", "error")
-        return redirect(url_for("user_report_view", report_id=report.id))
-
-    try:
-        form_data = json.loads(report.form_data or "{}")
-        if not isinstance(form_data, dict):
-            form_data = {}
-    except (TypeError, ValueError, json.JSONDecodeError):
-        form_data = {}
-
-    field_name, prefix = REPORT_NUMBER_CONFIG[report.report_type]
-    new_number = next_report_number(report.report_type, prefix)
-    form_data[field_name] = new_number
-    for field in REPORT_COPY_CLEAR_FIELDS.get(report.report_type, set()):
-        form_data[field] = ""
-
-    draft = ReportDraft.query.filter_by(
-        user_id=user.id,
-        report_type=report.report_type,
-    ).first()
-    if not draft:
-        draft = ReportDraft(
-            user_id=user.id,
-            username=user.username,
-            report_type=report.report_type,
-        )
-        db.session.add(draft)
-    draft.username = user.username
-    draft.form_data = json.dumps(form_data, ensure_ascii=False)
-    draft.updated_at = datetime.now(timezone.utc)
-    db.session.commit()
-
-    write_log(
-        "INFO",
-        "REPORT_COPIED_TO_NEW_DRAFT",
-        (
-            f"username={user.username}; source_report_id={report.id}; "
-            f"type={report.report_type}; new_number={new_number}"
-        ),
-    )
-    flash(
-        f"{report.report_number}, {new_number} numaralı yeni taslağa kopyalandı. "
-        "Eski tarihler ve ekran görüntüsü temizlendi.",
-        "success",
-    )
-    return redirect(
-        url_for(
-            "user_report_create",
-            report_type=report.report_type,
-            copy="1",
-        )
-    )
-
-
 @app.post("/reports/<int:report_id>/favorite")
 def user_report_favorite(report_id: int):
     if not session.get("user_id"):
@@ -2527,7 +1542,7 @@ def user_notification_read(notification_id: int):
     if user and notification and (notification.user_id == user.id or (notification.user_id is None and notification.username == user.username)):
         notification.is_read = True
         db.session.commit()
-    return redirect(url_for("user_communications"))
+    return redirect(url_for("panel") + "#notifications")
 
 
 @app.post("/notifications/read-all")
@@ -2544,7 +1559,7 @@ def user_notifications_read_all():
             UserNotification.is_read.is_(False),
         ).update({"is_read": True}, synchronize_session=False)
         db.session.commit()
-    return redirect(url_for("user_communications"))
+    return redirect(url_for("panel") + "#notifications")
 
 
 @app.post("/leave-requests")
@@ -2562,20 +1577,24 @@ def user_create_leave_request():
     reason = request.form.get("reason", "").strip()
     if leave_type not in LEAVE_TYPE_LABELS or not start_date or not end_date or not reason:
         flash("İzin türü, tarih aralığı ve açıklama zorunludur.", "error")
-        return redirect(url_for("user_leave_center"))
+        return redirect(url_for("panel") + "#leave-center")
     try:
         start_value = datetime.strptime(start_date, "%Y-%m-%d").date()
         end_value = datetime.strptime(end_date, "%Y-%m-%d").date()
     except ValueError:
         flash("İzin tarihleri geçersiz.", "error")
-        return redirect(url_for("user_leave_center"))
+        return redirect(url_for("panel") + "#leave-center")
     if end_value < start_value:
         flash("İzin bitiş tarihi başlangıç tarihinden önce olamaz.", "error")
-        return redirect(url_for("user_leave_center"))
-    existing_pending = LeaveRequest.query.filter_by(user_id=user.id, status="pending").first()
+        return redirect(url_for("panel") + "#leave-center")
+    existing_pending = LeaveRequest.query.filter_by(
+        user_id=user.id,
+        status="pending",
+        is_archived=False,
+    ).first()
     if existing_pending:
         flash("Zaten inceleme bekleyen bir izin talebiniz bulunuyor.", "error")
-        return redirect(url_for("user_leave_center"))
+        return redirect(url_for("panel") + "#leave-center")
     leave_request = LeaveRequest(
         user_id=user.id,
         username=user.username,
@@ -2590,7 +1609,7 @@ def user_create_leave_request():
     db.session.commit()
     write_log("INFO", "LEAVE_REQUEST_CREATED", f"username={user.username}; leave_request_id={leave_request.id}")
     flash("İzin talebiniz Hastane Yöneticisi paneline iletildi.", "success")
-    return redirect(url_for("user_leave_center"))
+    return redirect(url_for("panel") + "#leave-center")
 
 
 @app.post("/leave-requests/<int:leave_request_id>/cancel")
@@ -2601,14 +1620,14 @@ def user_cancel_leave_request(leave_request_id: int):
     leave_request = db.session.get(LeaveRequest, leave_request_id)
     if not user or not leave_request or leave_request.user_id != user.id:
         flash("İzin talebi bulunamadı.", "error")
-        return redirect(url_for("user_leave_center"))
+        return redirect(url_for("panel") + "#leave-center")
     if leave_request.status != "pending":
         flash("Yalnızca inceleme bekleyen izin talebi iptal edilebilir.", "error")
-        return redirect(url_for("user_leave_center"))
+        return redirect(url_for("panel") + "#leave-center")
     leave_request.status = "cancelled"
     db.session.commit()
     flash("İzin talebiniz iptal edildi.", "success")
-    return redirect(url_for("user_leave_center"))
+    return redirect(url_for("panel") + "#leave-center")
 
 
 @app.get("/statistics")
@@ -2681,59 +1700,14 @@ def settings():
 
     session["username"] = user.username
 
-    def render_settings_page(status_code: int = 200):
-        response = render_template(
+    if request.method == "GET":
+        return render_template(
             "settings.html",
             username=user.username,
             user_rank=user.rank or "",
             user_created_at=user.created_at,
             last_login_at=user.last_login_at,
-            digital_signature=user.digital_signature or "",
-            personnel_number=user.personnel_number or "",
-            default_case_location=user.default_case_location or "",
-            default_nurse=user.default_nurse or "",
-            template_count=ReportTemplate.query.filter_by(user_id=user.id).count(),
         )
-        return (response, status_code) if status_code != 200 else response
-
-    if request.method == "GET":
-        return render_settings_page()
-
-    settings_action = request.form.get("settings_action", "password").strip()
-
-    if settings_action == "profile":
-        digital_signature = request.form.get("digital_signature", "").strip()
-        personnel_number = request.form.get("personnel_number", "").strip()
-        default_case_location = request.form.get("default_case_location", "").strip()
-        default_nurse = request.form.get("default_nurse", "").strip()
-
-        limits = {
-            "Dijital imza": (digital_signature, 120),
-            "Personel numarası": (personnel_number, 80),
-            "Varsayılan vaka yeri": (default_case_location, 180),
-            "Varsayılan hemşire": (default_nurse, 120),
-        }
-        for label, (value, limit) in limits.items():
-            if len(value) > limit:
-                flash(f"{label} en fazla {limit} karakter olabilir.", "error")
-                return render_settings_page(400)
-
-        user.digital_signature = digital_signature or None
-        user.personnel_number = personnel_number or None
-        user.default_case_location = default_case_location or None
-        user.default_nurse = default_nurse or None
-        db.session.commit()
-        write_log(
-            "INFO",
-            "USER_REPORT_DEFAULTS_UPDATED",
-            f"username={user.username}",
-        )
-        flash("Rapor varsayılanlarınız kaydedildi.", "success")
-        return redirect(url_for("settings"))
-
-    if settings_action != "password":
-        flash("Geçersiz ayar işlemi.", "error")
-        return render_settings_page(400)
 
     old_password = request.form.get("old_password", "")
     new_password = request.form.get("new_password", "")
@@ -2744,27 +1718,36 @@ def settings():
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={user.username}; reason=missing_fields",
+            f"username={session.get('username', '')}; reason=missing_fields",
         )
-        return render_settings_page(400)
+        return render_template(
+            "settings.html",
+            username=session.get("username", ""),
+        ), 400
 
     if len(new_password) < 6:
         flash("Yeni şifre en az 6 karakter olmalıdır.", "error")
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={user.username}; reason=short_password",
+            f"username={session.get('username', '')}; reason=short_password",
         )
-        return render_settings_page(400)
+        return render_template(
+            "settings.html",
+            username=session.get("username", ""),
+        ), 400
 
     if new_password != new_password_repeat:
         flash("Yeni şifre ve yeni şifre tekrarı eşleşmiyor.", "error")
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
-            f"username={user.username}; reason=password_mismatch",
+            f"username={session.get('username', '')}; reason=password_mismatch",
         )
-        return render_settings_page(400)
+        return render_template(
+            "settings.html",
+            username=session.get("username", ""),
+        ), 400
 
     try:
         if not check_password_hash(user.password_hash, old_password):
@@ -2774,7 +1757,10 @@ def settings():
                 "PASSWORD_CHANGE_FAILED",
                 f"username={user.username}; reason=wrong_old_password",
             )
-            return render_settings_page(400)
+            return render_template(
+                "settings.html",
+                username=user.username,
+            ), 400
 
         if check_password_hash(user.password_hash, new_password):
             flash("Yeni şifre eski şifre ile aynı olamaz.", "error")
@@ -2783,27 +1769,40 @@ def settings():
                 "PASSWORD_CHANGE_FAILED",
                 f"username={user.username}; reason=same_as_old_password",
             )
-            return render_settings_page(400)
+            return render_template(
+                "settings.html",
+                username=user.username,
+            ), 400
 
         user.password_hash = generate_password_hash(new_password)
         db.session.commit()
-        write_log("INFO", "PASSWORD_CHANGED", f"username={user.username}")
+
+        write_log(
+            "INFO",
+            "PASSWORD_CHANGED",
+            f"username={user.username}",
+        )
+
         flash("Şifreniz başarıyla güncellendi.", "success")
         return redirect(url_for("settings"))
 
     except Exception as exc:
         db.session.rollback()
-        logger.exception("PASSWORD_CHANGE_ERROR | username=%s", user.username)
+        logger.exception("PASSWORD_CHANGE_ERROR | username=%s", session.get("username", ""))
         try:
             write_log(
                 "ERROR",
                 "PASSWORD_CHANGE_ERROR",
-                f"username={user.username}; error={type(exc).__name__}",
+                f"username={session.get('username', '')}; error={type(exc).__name__}",
             )
         except Exception:
             pass
+
         flash("Şifre güncellenirken bir hata oluştu.", "error")
-        return render_settings_page(500)
+        return render_template(
+            "settings.html",
+            username=session.get("username", ""),
+        ), 500
 
 
 @app.post("/logout")
@@ -2817,7 +1816,7 @@ def logout():
     return redirect(url_for("login_page"))
 
 
-def admin_required():
+def admin_required(permission: str | None = None):
     admin_id = session.get("admin_id")
     if not admin_id:
         return False
@@ -2827,11 +1826,25 @@ def admin_required():
         session.clear()
         return False
 
-    # Admin adı veritabanında değiştirildiyse açık oturumu da anında günceller.
     if session.get("admin_username") != admin.username:
         session["admin_username"] = admin.username
 
+    if permission and permission not in ADMIN_ROLE_PERMISSIONS.get(
+        admin.permission_level or "system_admin", set()
+    ):
+        return False
     return True
+
+
+@app.context_processor
+def inject_access_context():
+    admin = current_admin_account()
+    permissions = current_admin_permissions() if admin and admin.is_active else set()
+    return {
+        "admin_permissions": permissions,
+        "admin_role_labels": ADMIN_ROLE_LABELS,
+        "current_admin_role": (admin.permission_level if admin else None),
+    }
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -3068,8 +2081,15 @@ def admin_dashboard():
         else db.engine.dialect.name.title()
     )
 
-    pending_leave_count = LeaveRequest.query.filter_by(status="pending").count()
+    pending_leave_count = LeaveRequest.query.filter_by(
+        status="pending",
+        is_archived=False,
+    ).count()
     active_announcement_count = Announcement.query.filter_by(is_active=True).count()
+    latest_backup = BackupRecord.query.order_by(BackupRecord.created_at.desc()).first()
+    latest_backup_at = normalized_utc(latest_backup.created_at) if latest_backup else None
+    backup_age_days = (now_utc - latest_backup_at).days if latest_backup_at else None
+    backup_warning = latest_backup is None or (backup_age_days is not None and backup_age_days >= 7)
 
     return render_template(
         "admin_dashboard.html",
@@ -3101,12 +2121,15 @@ def admin_dashboard():
         generated_at=now_utc,
         pending_leave_count=pending_leave_count,
         active_announcement_count=active_announcement_count,
+        latest_backup=latest_backup,
+        backup_age_days=backup_age_days,
+        backup_warning=backup_warning,
     )
 
 
 @app.route("/admin/accounts", methods=["GET", "POST"])
 def admin_accounts():
-    if not admin_required():
+    if not admin_required("admin_accounts"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -3114,6 +2137,10 @@ def admin_accounts():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         password_confirm = request.form.get("password_confirm", "")
+        permission_level = request.form.get("permission_level", "hospital_manager").strip()
+
+        if permission_level not in ADMIN_ROLE_LABELS:
+            permission_level = "hospital_manager"
 
         if len(username) < 3 or len(username) > 120:
             flash("Admin kullanıcı adı 3 ile 120 karakter arasında olmalıdır.", "error")
@@ -3131,6 +2158,7 @@ def admin_accounts():
                     username=username,
                     password_hash=generate_password_hash(password),
                     is_active=True,
+                    permission_level=permission_level,
                     created_by_admin=session.get("admin_username", ""),
                 )
                 db.session.add(account)
@@ -3164,12 +2192,41 @@ def admin_accounts():
         current_admin_id=session.get("admin_id"),
         accounts=accounts,
         active_admin_count=active_admin_count,
+        admin_role_labels=ADMIN_ROLE_LABELS,
     )
+
+
+@app.post("/admin/accounts/<int:admin_id>/role")
+def admin_change_account_role(admin_id: int):
+    if not admin_required("admin_accounts"):
+        flash("Bu işlem için Sistem Yöneticisi yetkisi gereklidir.", "error")
+        return redirect(url_for("admin_dashboard"))
+    account = db.session.get(AdminAccount, admin_id)
+    permission_level = request.form.get("permission_level", "").strip()
+    if not account or permission_level not in ADMIN_ROLE_LABELS:
+        flash("Geçersiz yönetici hesabı veya yetki seviyesi.", "error")
+        return redirect(url_for("admin_accounts"))
+    if account.id == session.get("admin_id") and permission_level != "system_admin":
+        system_admin_count = AdminAccount.query.filter_by(
+            is_active=True, permission_level="system_admin"
+        ).count()
+        if system_admin_count <= 1:
+            flash("Sistemde en az bir aktif Sistem Yöneticisi bulunmalıdır.", "error")
+            return redirect(url_for("admin_accounts"))
+    old_level = account.permission_level or "system_admin"
+    account.permission_level = permission_level
+    db.session.commit()
+    write_log(
+        "WARNING", "ADMIN_ROLE_CHANGED",
+        f"admin={session.get('admin_username','')}; target={account.username}; old={old_level}; new={permission_level}",
+    )
+    flash(f"{account.username} yetkisi {ADMIN_ROLE_LABELS[permission_level]} olarak güncellendi.", "success")
+    return redirect(url_for("admin_accounts"))
 
 
 @app.post("/admin/accounts/<int:admin_id>/reset-password")
 def admin_reset_account_password(admin_id: int):
-    if not admin_required():
+    if not admin_required("admin_accounts"):
         return redirect(url_for("admin_login"))
 
     account = db.session.get(AdminAccount, admin_id)
@@ -3202,7 +2259,7 @@ def admin_reset_account_password(admin_id: int):
 
 @app.post("/admin/accounts/<int:admin_id>/toggle")
 def admin_toggle_account(admin_id: int):
-    if not admin_required():
+    if not admin_required("admin_accounts"):
         return redirect(url_for("admin_login"))
 
     account = db.session.get(AdminAccount, admin_id)
@@ -3235,7 +2292,7 @@ def admin_toggle_account(admin_id: int):
 
 @app.post("/admin/accounts/<int:admin_id>/delete")
 def admin_delete_account(admin_id: int):
-    if not admin_required():
+    if not admin_required("admin_accounts"):
         return redirect(url_for("admin_login"))
 
     account = db.session.get(AdminAccount, admin_id)
@@ -3263,65 +2320,76 @@ def admin_delete_account(admin_id: int):
 
 @app.get("/admin/hospital-management")
 def admin_hospital_management():
-    if not admin_required():
+    if not admin_required("hospital_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
-    leave_requests = LeaveRequest.query.order_by(
-        text("CASE WHEN status='pending' THEN 0 ELSE 1 END"),
-        LeaveRequest.created_at.desc(),
-    ).all()
-    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
-    announcement_read_stats = {}
-    for announcement in announcements:
-        delivery_rows = (
-            UserNotification.query
-            .filter_by(related_type="announcement", related_id=announcement.id)
-            .order_by(UserNotification.username.asc())
-            .all()
-        )
-        sent_count = len(delivery_rows)
-        read_count = sum(1 for row in delivery_rows if bool(row.is_read))
-        unread_users = sorted(
-            {row.username for row in delivery_rows if not bool(row.is_read)}
-        )
-        announcement_read_stats[announcement.id] = {
-            "sent": sent_count,
-            "read": read_count,
-            "unread": max(sent_count - read_count, 0),
-            "percentage": round((read_count / sent_count) * 100) if sent_count else 0,
-            "unread_users": unread_users,
-        }
 
+    auto_archived_count = auto_archive_expired_leave_requests()
+    leave_requests = (
+        LeaveRequest.query
+        .filter(LeaveRequest.is_archived.is_(False))
+        .order_by(
+            text("CASE WHEN status='pending' THEN 0 ELSE 1 END"),
+            LeaveRequest.created_at.desc(),
+        )
+        .all()
+    )
+    archived_leave_requests = (
+        LeaveRequest.query
+        .filter(LeaveRequest.is_archived.is_(True))
+        .order_by(
+            LeaveRequest.archived_at.desc(),
+            LeaveRequest.end_date.desc(),
+            LeaveRequest.id.desc(),
+        )
+        .all()
+    )
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     users = User.query.order_by(User.username.asc()).all()
-    announcement_author_profiles = [
-        {"name": name, "rank": rank}
-        for name, rank in ANNOUNCEMENT_AUTHOR_PROFILES.items()
-    ]
     rank_counts = {}
     for user in users:
         rank = (user.rank or "Atanmadı").strip() or "Atanmadı"
         rank_counts[rank] = rank_counts.get(rank, 0) + 1
+
+    announcement_stats = {}
+    for announcement in announcements:
+        total = UserNotification.query.filter_by(
+            related_type="announcement", related_id=announcement.id
+        ).count()
+        read_count = UserNotification.query.filter_by(
+            related_type="announcement", related_id=announcement.id, is_read=True
+        ).count()
+        announcement_stats[announcement.id] = {
+            "total": total, "read": read_count, "unread": max(total - read_count, 0),
+            "percent": round((read_count / total) * 100) if total else 0,
+        }
     return render_template(
         "admin_hospital_management.html",
         system_name=SYSTEM_NAME,
         admin_username=session.get("admin_username", ""),
         leave_requests=leave_requests,
+        archived_leave_requests=archived_leave_requests,
         announcements=announcements,
-        announcement_read_stats=announcement_read_stats,
         users=users,
-        announcement_author_profiles=announcement_author_profiles,
         rank_counts=rank_counts,
         pending_leave_count=sum(1 for item in leave_requests if item.status == "pending"),
         approved_leave_count=sum(1 for item in leave_requests if item.status == "approved"),
+        archived_leave_count=len(archived_leave_requests),
+        auto_archived_count=auto_archived_count,
         leave_status_labels=LEAVE_STATUS_LABELS,
         leave_type_labels=LEAVE_TYPE_LABELS,
+        leave_archive_reason_labels={
+            "expired": "Süresi dolduğu için otomatik",
+            "manual": "Yönetici tarafından manuel",
+        },
         allowed_user_ranks=sorted(ALLOWED_USER_RANKS),
+        announcement_stats=announcement_stats,
     )
 
 
 @app.post("/admin/leave-requests/<int:leave_request_id>/review")
 def admin_review_leave_request(leave_request_id: int):
-    if not admin_required():
+    if not admin_required("hospital_management"):
         return redirect(url_for("admin_login"))
     leave_request = db.session.get(LeaveRequest, leave_request_id)
     if not leave_request:
@@ -3364,7 +2432,7 @@ def admin_review_leave_request(leave_request_id: int):
 
 @app.post("/admin/leave-requests/<int:leave_request_id>/cancel")
 def admin_cancel_leave_request(leave_request_id: int):
-    if not admin_required():
+    if not admin_required("hospital_management"):
         return redirect(url_for("admin_login"))
 
     leave_request = db.session.get(LeaveRequest, leave_request_id)
@@ -3420,91 +2488,163 @@ def admin_cancel_leave_request(leave_request_id: int):
     return redirect(url_for("admin_hospital_management") + "#leave-requests")
 
 
-@app.post("/admin/announcements")
-def admin_create_announcement():
-    if not admin_required():
+@app.post("/admin/leave-requests/<int:leave_request_id>/archive")
+def admin_archive_leave_request(leave_request_id: int):
+    if not admin_required("hospital_management"):
+        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
         return redirect(url_for("admin_login"))
 
+    leave_request = db.session.get(LeaveRequest, leave_request_id)
+    if not leave_request:
+        flash("İzin kaydı bulunamadı.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-requests")
+    if leave_request.is_archived:
+        flash("Bu izin kaydı zaten arşivde.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-archive")
+
+    leave_request.is_archived = True
+    leave_request.archived_at = datetime.now(timezone.utc)
+    leave_request.archived_by_admin = session.get("admin_username", "")
+    leave_request.archive_reason = "manual"
+    db.session.commit()
+
+    write_log(
+        "INFO",
+        "LEAVE_REQUEST_MANUALLY_ARCHIVED",
+        (
+            f"admin={session.get('admin_username','')}; "
+            f"leave_request_id={leave_request.id}; username={leave_request.username}"
+        ),
+    )
+    flash("İzin kaydı admin arşivine eklendi.", "success")
+    return redirect(url_for("admin_hospital_management") + "#leave-archive")
+
+
+@app.post("/admin/leave-requests/<int:leave_request_id>/restore")
+def admin_restore_leave_request(leave_request_id: int):
+    if not admin_required("hospital_management"):
+        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_login"))
+
+    leave_request = db.session.get(LeaveRequest, leave_request_id)
+    if not leave_request:
+        flash("Arşivlenmiş izin kaydı bulunamadı.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-archive")
+    if not leave_request.is_archived:
+        flash("Bu izin kaydı arşivde değil.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+    expired_approved_leave = False
+    try:
+        expired_approved_leave = (
+            leave_request.status == "approved"
+            and date.fromisoformat(leave_request.end_date)
+            < datetime.now(timezone.utc).date()
+        )
+    except (TypeError, ValueError):
+        expired_approved_leave = False
+
+    leave_request.is_archived = False
+    leave_request.archived_at = None
+    leave_request.archived_by_admin = None
+    leave_request.archive_reason = None
+    leave_request.auto_archive_disabled = expired_approved_leave
+    db.session.commit()
+
+    write_log(
+        "INFO",
+        "LEAVE_REQUEST_RESTORED_FROM_ARCHIVE",
+        (
+            f"admin={session.get('admin_username','')}; "
+            f"leave_request_id={leave_request.id}; username={leave_request.username}; "
+            f"auto_archive_disabled={expired_approved_leave}"
+        ),
+    )
+    flash("İzin kaydı arşivden çıkarılarak aktif admin listesine taşındı.", "success")
+    return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+
+@app.post("/admin/leave-requests/<int:leave_request_id>/delete")
+def admin_delete_archived_leave_request(leave_request_id: int):
+    if not admin_required("hospital_management"):
+        flash("İzin arşivi yönetme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_login"))
+
+    leave_request = db.session.get(LeaveRequest, leave_request_id)
+    if not leave_request:
+        flash("Arşivlenmiş izin kaydı bulunamadı.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-archive")
+    if not leave_request.is_archived:
+        flash("Kalıcı silme yalnızca admin arşivindeki izinlerde kullanılabilir.", "error")
+        return redirect(url_for("admin_hospital_management") + "#leave-requests")
+
+    deleted_id = leave_request.id
+    deleted_username = leave_request.username
+    removed_notifications = UserNotification.query.filter_by(
+        related_type="leave_request",
+        related_id=leave_request.id,
+    ).delete(synchronize_session=False)
+
+    db.session.delete(leave_request)
+    db.session.commit()
+
+    write_log(
+        "WARNING",
+        "ARCHIVED_LEAVE_REQUEST_PERMANENTLY_DELETED",
+        (
+            f"admin={session.get('admin_username','')}; leave_request_id={deleted_id}; "
+            f"username={deleted_username}; removed_notifications={removed_notifications}"
+        ),
+    )
+    flash(
+        (
+            "Arşivlenmiş izin kaydı kalıcı olarak silindi. "
+            f"{removed_notifications} bağlı bildirim kaldırıldı."
+        ),
+        "success",
+    )
+    return redirect(url_for("admin_hospital_management") + "#leave-archive")
+
+
+@app.post("/admin/announcements")
+def admin_create_announcement():
+    if not admin_required("hospital_management"):
+        return redirect(url_for("admin_login"))
     title = request.form.get("title", "").strip()
     body = request.form.get("body", "").strip()
     target_type = request.form.get("target_type", "all").strip()
     target_value = request.form.get("target_value", "").strip()
-    author_name = request.form.get("author_name", "").strip()
-
     if not title or not body:
         flash("Duyuru başlığı ve içeriği zorunludur.", "error")
         return redirect(url_for("admin_hospital_management") + "#announcements")
-
-    author_rank = ANNOUNCEMENT_AUTHOR_PROFILES.get(author_name)
-    if not author_rank:
-        flash(
-            "Duyuruyu yapan kişi yalnızca Adreanna Vetroa veya "
-            "Darius Blackwell olabilir.",
-            "error",
-        )
-        return redirect(url_for("admin_hospital_management") + "#announcements")
-
     if target_type not in {"all", "medical", "ems", "rank", "user"}:
         target_type = "all"
     if target_type in {"rank", "user"} and not target_value:
         flash("Seçilen duyuru hedefi için değer girilmelidir.", "error")
         return redirect(url_for("admin_hospital_management") + "#announcements")
-
     announcement = Announcement(
         title=title,
         body=body,
         target_type=target_type,
         target_value=target_value or None,
-        author_user_id=None,
-        author_name=author_name,
-        author_rank=author_rank,
         created_by_admin=session.get("admin_username", ""),
     )
     db.session.add(announcement)
     db.session.flush()
-
-    notification_body = (
-        f"Duyuruyu yapan: {author_name} — {author_rank}\n\n{body}"
-    )
     notified = 0
     for user in User.query.all():
         if announcement_matches_user(announcement, user):
-            create_user_notification(
-                user,
-                title,
-                notification_body,
-                "announcement",
-                "announcement",
-                announcement.id,
-            )
+            create_user_notification(user, title, body, "announcement", "announcement", announcement.id)
             notified += 1
-
     db.session.commit()
-    write_log(
-        "INFO",
-        "ANNOUNCEMENT_CREATED",
-        (
-            f"admin={session.get('admin_username','')}; "
-            f"announcement_id={announcement.id}; "
-            "author_profile=restricted_admin; "
-            f"author={author_name}; "
-            f"author_rank={author_rank}; "
-            f"notified={notified}"
-        ),
-    )
-    flash(
-        (
-            f"Duyuru {author_name} — {author_rank} adına yayımlandı "
-            f"ve {notified} kullanıcıya bildirim gönderildi."
-        ),
-        "success",
-    )
+    write_log("INFO", "ANNOUNCEMENT_CREATED", f"admin={session.get('admin_username','')}; announcement_id={announcement.id}; notified={notified}")
+    flash(f"Duyuru yayımlandı ve {notified} kullanıcıya bildirim gönderildi.", "success")
     return redirect(url_for("admin_hospital_management") + "#announcements")
 
 
 @app.post("/admin/announcements/<int:announcement_id>/toggle")
 def admin_toggle_announcement(announcement_id: int):
-    if not admin_required():
+    if not admin_required("hospital_management"):
         return redirect(url_for("admin_login"))
     announcement = db.session.get(Announcement, announcement_id)
     if not announcement:
@@ -3518,7 +2658,7 @@ def admin_toggle_announcement(announcement_id: int):
 
 @app.post("/admin/announcements/<int:announcement_id>/delete")
 def admin_delete_announcement(announcement_id: int):
-    if not admin_required():
+    if not admin_required("hospital_management"):
         return redirect(url_for("admin_login"))
 
     announcement = db.session.get(Announcement, announcement_id)
@@ -3554,7 +2694,7 @@ def admin_delete_announcement(announcement_id: int):
 
 @app.post("/admin/reports/<int:report_id>/workflow")
 def admin_update_report_workflow(report_id: int):
-    if not admin_required():
+    if not admin_required("report_management"):
         return redirect(url_for("admin_login"))
     report = db.session.get(Report, report_id)
     if not report:
@@ -3580,7 +2720,7 @@ def admin_update_report_workflow(report_id: int):
 
 @app.get("/admin/export/system-data.json")
 def admin_export_system_data():
-    if not admin_required():
+    if not admin_required("system_export"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -3591,7 +2731,11 @@ def admin_export_system_data():
     leave_requests = LeaveRequest.query.order_by(LeaveRequest.created_at.desc()).all()
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     notifications = UserNotification.query.order_by(UserNotification.created_at.desc()).all()
-    report_templates = ReportTemplate.query.order_by(ReportTemplate.updated_at.desc()).all()
+    patient_files = PatientFile.query.order_by(PatientFile.updated_at.desc()).all()
+    clinical_entries = PatientClinicalEntry.query.order_by(PatientClinicalEntry.created_at.desc()).all()
+    clinical_tasks = ClinicalTask.query.order_by(ClinicalTask.updated_at.desc()).all()
+    task_updates = ClinicalTaskUpdate.query.order_by(ClinicalTaskUpdate.created_at.desc()).all()
+    handoffs = PatientHandoff.query.order_by(PatientHandoff.created_at.desc()).all()
 
     def iso(value):
         return value.isoformat() if value else None
@@ -3605,7 +2749,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V23.8.0",
+        "version": "V24.1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -3614,19 +2758,19 @@ def admin_export_system_data():
             "reports": len(reports),
             "report_archives": len(archives),
             "leave_requests": len(leave_requests),
+            "archived_leave_requests": sum(1 for item in leave_requests if item.is_archived),
             "announcements": len(announcements),
             "notifications": len(notifications),
-            "report_templates": len(report_templates),
+            "patient_files": len(patient_files),
+            "clinical_entries": len(clinical_entries),
+            "clinical_tasks": len(clinical_tasks),
+            "patient_handoffs": len(handoffs),
         },
         "users": [
             {
                 "id": user.id,
                 "username": user.username,
                 "rank": user.rank,
-                "digital_signature": user.digital_signature,
-                "personnel_number": user.personnel_number,
-                "default_case_location": user.default_case_location,
-                "default_nurse": user.default_nurse,
                 "created_at": iso(user.created_at),
             }
             for user in users
@@ -3701,6 +2845,11 @@ def admin_export_system_data():
                 "reviewed_by": item.reviewed_by,
                 "created_at": iso(item.created_at),
                 "reviewed_at": iso(item.reviewed_at),
+                "is_archived": bool(item.is_archived),
+                "archived_at": iso(item.archived_at),
+                "archived_by_admin": item.archived_by_admin,
+                "archive_reason": item.archive_reason,
+                "auto_archive_disabled": bool(item.auto_archive_disabled),
             }
             for item in leave_requests
         ],
@@ -3711,9 +2860,6 @@ def admin_export_system_data():
                 "body": item.body,
                 "target_type": item.target_type,
                 "target_value": item.target_value,
-                "author_user_id": item.author_user_id,
-                "author_name": item.author_name,
-                "author_rank": item.author_rank,
                 "created_by_admin": item.created_by_admin,
                 "is_active": bool(item.is_active),
                 "created_at": iso(item.created_at),
@@ -3722,36 +2868,93 @@ def admin_export_system_data():
         ],
         "notifications": [
             {
-                "id": item.id,
-                "user_id": item.user_id,
-                "username": item.username,
-                "title": item.title,
-                "message": item.message,
-                "category": item.category,
-                "related_type": item.related_type,
-                "related_id": item.related_id,
-                "is_read": bool(item.is_read),
-                "created_at": iso(item.created_at),
-            }
-            for item in notifications
+                "id": item.id, "user_id": item.user_id, "username": item.username,
+                "title": item.title, "message": item.message, "category": item.category,
+                "related_type": item.related_type, "related_id": item.related_id,
+                "is_read": bool(item.is_read), "created_at": iso(item.created_at),
+            } for item in notifications
         ],
-        "report_templates": [
+        "patient_files": [
             {
-                "id": item.id,
-                "user_id": item.user_id,
-                "username": item.username,
-                "name": item.name,
-                "report_type": item.report_type,
-                "form_data": form_data_value(item.form_data),
+                "id": item.id, "patient_number": item.patient_number, "full_name": item.full_name,
+                "identity_number": item.identity_number, "date_of_birth": item.date_of_birth,
+                "gender": item.gender, "phone": item.phone, "address": item.address,
+                "blood_type": item.blood_type, "allergies": item.allergies,
+                "chronic_conditions": item.chronic_conditions,
+                "current_medications": item.current_medications,
+                "surgical_history": item.surgical_history, "family_history": item.family_history,
+                "medical_history": item.medical_history,
+                "emergency_contact": item.emergency_contact, "emergency_phone": item.emergency_phone,
+                "risk_notes": item.risk_notes, "status": item.status,
+                "created_by_username": item.created_by_username,
+                "created_at": iso(item.created_at), "updated_at": iso(item.updated_at),
+            } for item in patient_files
+        ],
+        "clinical_entries": [
+            {
+                "id": item.id, "patient_file_id": item.patient_file_id,
+                "entry_type": item.entry_type, "title": item.title,
+                "clinical_note": item.clinical_note, "diagnosis": item.diagnosis,
+                "treatment": item.treatment, "medication": item.medication,
+                "vitals": patient_vitals_value(item.vitals_json),
+                "linked_report_id": item.linked_report_id,
+                "created_by_username": item.created_by_username,
+                "created_by_rank": item.created_by_rank, "created_at": iso(item.created_at),
+            } for item in clinical_entries
+        ],
+        "clinical_tasks": [
+            {
+                "id": item.id, "title": item.title, "category": item.category,
+                "priority": item.priority, "status": item.status,
+                "description": item.description, "instructions": item.instructions,
+                "checklist": task_checklist_value(item.checklist_json),
+                "assigned_username": item.assigned_username,
+                "patient_file_id": item.patient_file_id,
+                "created_by_admin": item.created_by_admin, "due_at": iso(item.due_at),
+                "progress_percent": item.progress_percent, "result_note": item.result_note,
+                "created_at": iso(item.created_at), "updated_at": iso(item.updated_at),
+                "completed_at": iso(item.completed_at),
+            } for item in clinical_tasks
+        ],
+        "clinical_task_updates": [
+            {
+                "id": item.id, "task_id": item.task_id, "actor_username": item.actor_username,
+                "actor_type": item.actor_type, "action": item.action,
+                "old_status": item.old_status, "new_status": item.new_status,
+                "progress_percent": item.progress_percent, "note": item.note,
                 "created_at": iso(item.created_at),
-                "updated_at": iso(item.updated_at),
-            }
-            for item in report_templates
+            } for item in task_updates
+        ],
+        "patient_handoffs": [
+            {
+                "id": item.id, "patient_file_id": item.patient_file_id,
+                "from_unit": item.from_unit, "to_unit": item.to_unit,
+                "from_username": item.from_username, "to_username": item.to_username,
+                "reason": item.reason, "condition_summary": item.condition_summary,
+                "risks": item.risks, "active_treatments": item.active_treatments,
+                "pending_actions": item.pending_actions, "status": item.status,
+                "response_note": item.response_note, "created_at": iso(item.created_at),
+                "responded_at": iso(item.responded_at), "responded_by": item.responded_by,
+                "cancelled_at": iso(item.cancelled_at), "cancelled_by": item.cancelled_by,
+            } for item in handoffs
         ],
     }
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     filename = f"clsmc_merkezi_takip_yedegi_{timestamp}.json"
+    try:
+        db.session.add(BackupRecord(
+            admin_username=session.get("admin_username", ""),
+            file_name=filename,
+            record_count=(
+                len(users) + len(reports) + len(archives) + len(patient_files)
+                + len(clinical_entries) + len(clinical_tasks) + len(handoffs)
+            ),
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("BACKUP_RECORD_WRITE_FAILED")
     try:
         write_log(
             "INFO",
@@ -3990,7 +3193,7 @@ def admin_view_report(report_id: int):
 
 @app.post("/admin/reports/<int:report_id>/delete")
 def admin_delete_report(report_id: int):
-    if not admin_required():
+    if not admin_required("report_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4051,7 +3254,7 @@ def admin_delete_report(report_id: int):
 
 @app.route("/admin/users/new", methods=["GET", "POST"])
 def admin_create_user():
-    if not admin_required():
+    if not admin_required("staff_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4157,7 +3360,7 @@ def admin_create_user():
 
 @app.route("/admin/users/<int:user_id>", methods=["GET", "POST"])
 def admin_edit_user(user_id: int):
-    if not admin_required():
+    if not admin_required("staff_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4276,9 +3479,6 @@ def admin_edit_user(user_id: int):
             ReportDraft.query.filter_by(user_id=user.id).update(
                 {"username": new_username}, synchronize_session=False
             )
-            ReportTemplate.query.filter_by(user_id=user.id).update(
-                {"username": new_username}, synchronize_session=False
-            )
 
         db.session.commit()
 
@@ -4327,7 +3527,7 @@ def admin_edit_user(user_id: int):
 
 @app.post("/admin/users/<int:user_id>/delete")
 def admin_delete_user(user_id: int):
-    if not admin_required():
+    if not admin_required("staff_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4346,10 +3546,6 @@ def admin_delete_user(user_id: int):
             password_hash=user.password_hash,
             rank=user.rank,
             original_created_at=user.created_at,
-            digital_signature=user.digital_signature,
-            personnel_number=user.personnel_number,
-            default_case_location=user.default_case_location,
-            default_nurse=user.default_nurse,
             deleted_by_admin=session.get("admin_username", ""),
         )
         db.session.add(deleted_user)
@@ -4370,7 +3566,6 @@ def admin_delete_user(user_id: int):
         )
         # Taslaklar kalıcı rapor/veri değildir; hesap kapatılırken temizlenir.
         ReportDraft.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-        ReportTemplate.query.filter_by(user_id=user.id).delete(synchronize_session=False)
 
         db.session.delete(user)
         db.session.commit()
@@ -4411,7 +3606,7 @@ def admin_delete_user(user_id: int):
 
 @app.post("/admin/deleted-users/<int:deleted_user_id>/restore")
 def admin_restore_user(deleted_user_id: int):
-    if not admin_required():
+    if not admin_required("staff_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4433,10 +3628,6 @@ def admin_restore_user(deleted_user_id: int):
             username=deleted_user.username,
             password_hash=deleted_user.password_hash,
             rank=deleted_user.rank,
-            digital_signature=deleted_user.digital_signature,
-            personnel_number=deleted_user.personnel_number,
-            default_case_location=deleted_user.default_case_location,
-            default_nurse=deleted_user.default_nurse,
         )
 
         # Mümkünse eski üyelik oluşturma zamanını koru.
@@ -4508,7 +3699,7 @@ def admin_restore_user(deleted_user_id: int):
 
 @app.post("/admin/deleted-users/<int:deleted_user_id>/delete-permanently")
 def admin_permanently_delete_user(deleted_user_id: int):
-    if not admin_required():
+    if not admin_required("staff_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4564,221 +3755,9 @@ def admin_permanently_delete_user(deleted_user_id: int):
         return redirect(url_for("admin_dashboard"))
 
 
-@app.route("/admin/reports/create-for-user", methods=["GET", "POST"])
-def admin_create_report_for_user():
-    if not admin_required():
-        flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
-        return redirect(url_for("admin_login"))
-
-    medical_users = (
-        User.query
-        .filter(User.rank.in_(sorted(MEDICAL_USER_RANKS)))
-        .order_by(User.username.asc())
-        .all()
-    )
-    if not medical_users:
-        flash(
-            "Vaka veya Adli Rapor adına kayıt oluşturulabilecek tıbbi personel hesabı bulunmuyor.",
-            "error",
-        )
-        return redirect(url_for("admin_create_user"))
-
-    user_map = {user.id: user for user in medical_users}
-    create_numbers = {
-        "vaka": next_report_number("vaka", "CLSMC-VKR"),
-        "adli": next_report_number("adli", "CLSMC-ADL"),
-    }
-
-    def render_create_form(
-        selected_user: User,
-        selected_type: str = "vaka",
-        form_data: dict | None = None,
-        status_code: int = 200,
-    ):
-        normalized_type = (
-            selected_type
-            if selected_type in ADMIN_PROXY_REPORT_TYPES
-            else "vaka"
-        )
-        payload = dict(form_data or {})
-        if normalized_type == "vaka":
-            payload.setdefault("rapor_no", create_numbers["vaka"])
-        else:
-            payload.setdefault("adli_rapor_no", create_numbers["adli"])
-
-        draft_report = Report(
-            report_type=normalized_type,
-            report_number=(
-                payload.get("rapor_no", "")
-                if normalized_type == "vaka"
-                else payload.get("adli_rapor_no", "")
-            ),
-            doctor_name=selected_user.username,
-            doctor_rank=selected_user.rank,
-            report_date=None,
-            bbcode="",
-            form_data=json.dumps(payload, ensure_ascii=False),
-            created_by_user_id=selected_user.id,
-            created_by_username=selected_user.username,
-            workflow_status="completed",
-        )
-
-        response = render_template(
-            "admin_report_edit.html",
-            admin_username=session.get("admin_username", ""),
-            report=draft_report,
-            users=medical_users,
-            report_type_labels=REPORT_TYPE_LABELS,
-            report_form_data=payload,
-            report_is_legacy=False,
-            preview_mode=False,
-            create_mode=True,
-            create_report_numbers=create_numbers,
-        )
-        return (response, status_code) if status_code != 200 else response
-
-    if request.method == "GET":
-        requested_user_id = request.args.get("user_id", type=int)
-        selected_user = user_map.get(requested_user_id) or medical_users[0]
-        requested_type = request.args.get("type", "vaka").strip()
-        return render_create_form(selected_user, requested_type)
-
-    target_user_id = request.form.get("target_user_id", type=int)
-    report_type = request.form.get("report_type", "").strip()
-    report_number = request.form.get("report_number", "").strip()
-    report_date = request.form.get("report_date", "").strip()
-    bbcode = request.form.get("bbcode", "").strip()
-    form_data_text = request.form.get("form_data", "").strip()
-
-    selected_user = user_map.get(target_user_id)
-    if not selected_user:
-        flash("Rapor adına oluşturulacak kullanıcı bulunamadı.", "error")
-        return render_create_form(medical_users[0], report_type, status_code=400)
-
-    try:
-        form_data_obj = json.loads(form_data_text or "{}")
-        if not isinstance(form_data_obj, dict):
-            raise ValueError("form_data must be an object")
-    except (TypeError, ValueError, json.JSONDecodeError):
-        flash("Rapor form verileri okunamadı.", "error")
-        return render_create_form(selected_user, report_type, status_code=400)
-
-    if report_type not in ADMIN_PROXY_REPORT_TYPES:
-        flash("Yönetici panelinden yalnızca Vaka veya Adli Rapor oluşturulabilir.", "error")
-        return render_create_form(selected_user, "vaka", form_data_obj, 400)
-
-    if report_type not in allowed_report_types_for_rank(selected_user.rank):
-        flash("Seçilen kullanıcının rütbesi bu rapor türüne uygun değil.", "error")
-        return render_create_form(selected_user, report_type, form_data_obj, 403)
-
-    if not report_number:
-        flash("Rapor numarası boş bırakılamaz.", "error")
-        return render_create_form(selected_user, report_type, form_data_obj, 400)
-
-    if not bbcode:
-        flash("BBCode oluşturulamadı. Form alanlarını kontrol edin.", "error")
-        return render_create_form(selected_user, report_type, form_data_obj, 400)
-
-    existing_report = Report.query.filter_by(
-        report_type=report_type,
-        report_number=report_number,
-    ).first()
-    if existing_report:
-        flash(
-            "Bu rapor türü ve numarasıyla bir kayıt zaten bulunuyor. "
-            "Mevcut kaydı Rapor Takibi bölümünden düzenleyin.",
-            "error",
-        )
-        return render_create_form(selected_user, report_type, form_data_obj, 409)
-
-    admin_username = session.get("admin_username", "")
-    try:
-        report = Report(
-            report_type=report_type,
-            report_number=report_number,
-            doctor_name=selected_user.username,
-            doctor_rank=selected_user.rank or None,
-            report_date=report_date or None,
-            bbcode=bbcode,
-            form_data=json.dumps(form_data_obj, ensure_ascii=False),
-            created_by_user_id=selected_user.id,
-            created_by_username=selected_user.username,
-            workflow_status="completed",
-            admin_note=(
-                f"{admin_username} adlı yönetici tarafından "
-                f"{selected_user.username} adına oluşturuldu."
-            ),
-        )
-        db.session.add(report)
-        db.session.flush()
-
-        add_report_archive_snapshot(
-            report,
-            "admin_created_for_user",
-            archived_by_admin=admin_username,
-            submitted_by_user_id=None,
-            submitted_by_username=f"Admin: {admin_username}",
-        )
-
-        create_user_notification(
-            selected_user,
-            "Adınıza yeni rapor oluşturuldu",
-            (
-                f"{REPORT_TYPE_LABELS.get(report_type, report_type)} "
-                f"{report_number}, {admin_username} adlı yönetici tarafından "
-                "hesabınız adına oluşturuldu."
-            ),
-            "info",
-            "report",
-            report.id,
-        )
-
-        db.session.commit()
-
-        write_log(
-            "INFO",
-            "ADMIN_REPORT_CREATED_FOR_USER",
-            (
-                f"admin={admin_username}; user_id={selected_user.id}; "
-                f"username={selected_user.username}; report_id={report.id}; "
-                f"report_type={report_type}; report_number={report_number}"
-            ),
-        )
-
-        flash(
-            f"{report_number}, {selected_user.username} adına başarıyla oluşturuldu.",
-            "success",
-        )
-        return redirect(url_for("admin_view_report", report_id=report.id))
-
-    except Exception as exc:
-        db.session.rollback()
-        logger.exception(
-            "ADMIN_REPORT_CREATE_FOR_USER_ERROR | user_id=%s | type=%s | number=%s",
-            selected_user.id,
-            report_type,
-            report_number,
-        )
-        try:
-            write_log(
-                "ERROR",
-                "ADMIN_REPORT_CREATE_FOR_USER_ERROR",
-                (
-                    f"admin={admin_username}; user_id={selected_user.id}; "
-                    f"report_type={report_type}; report_number={report_number}; "
-                    f"error={type(exc).__name__}"
-                ),
-            )
-        except Exception:
-            pass
-
-        flash("Kullanıcı adına rapor oluşturulurken bir hata meydana geldi.", "error")
-        return render_create_form(selected_user, report_type, form_data_obj, 500)
-
-
 @app.route("/admin/reports/<int:report_id>", methods=["GET", "POST"])
 def admin_edit_report(report_id: int):
-    if not admin_required():
+    if not admin_required("report_management"):
         flash("Bu bölüm yalnızca yönetici erişimine açıktır.", "error")
         return redirect(url_for("admin_login"))
 
@@ -4919,6 +3898,526 @@ def admin_edit_report(report_id: int):
         flash("Rapor güncellenirken bir hata oluştu.", "error")
         return redirect(url_for("admin_edit_report", report_id=report.id))
 
+# ---------------------------------------------------------------------------
+# V24.0 — Klinik görev, hasta dosyası, teslim zinciri ve yönetim araçları
+# ---------------------------------------------------------------------------
+
+@app.get("/clinical")
+def clinical_center():
+    user = current_user_account()
+    if not user or (user.rank or "").strip() not in ALLOWED_USER_RANKS:
+        flash("Klinik merkeze erişmek için aktif personel hesabı gereklidir.", "error")
+        return redirect(url_for("login_page"))
+
+    section = request.args.get("section", "tasks").strip()
+    search = request.args.get("q", "").strip()
+    task_filter = db.or_(
+        ClinicalTask.assigned_user_id == user.id,
+        db.and_(ClinicalTask.assigned_user_id.is_(None), ClinicalTask.assigned_username == user.username),
+    )
+    tasks = ClinicalTask.query.filter(task_filter).order_by(
+        text("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END"),
+        ClinicalTask.due_at.asc(), ClinicalTask.updated_at.desc(),
+    ).all()
+    task_updates_by_task = {task.id: [] for task in tasks}
+    if tasks:
+        updates = ClinicalTaskUpdate.query.filter(
+            ClinicalTaskUpdate.task_id.in_([task.id for task in tasks])
+        ).order_by(ClinicalTaskUpdate.created_at.desc()).all()
+        for update in updates:
+            task_updates_by_task.setdefault(update.task_id, []).append(update)
+    patients_query = PatientFile.query
+    if search:
+        needle = f"%{search}%"
+        patients_query = patients_query.filter(db.or_(
+            PatientFile.patient_number.ilike(needle), PatientFile.full_name.ilike(needle),
+            PatientFile.identity_number.ilike(needle), PatientFile.phone.ilike(needle),
+        ))
+    patients = patients_query.order_by(PatientFile.updated_at.desc()).limit(100).all()
+    handoffs = PatientHandoff.query.filter(db.or_(
+        PatientHandoff.from_user_id == user.id,
+        PatientHandoff.to_user_id == user.id,
+        PatientHandoff.from_username == user.username,
+        PatientHandoff.to_username == user.username,
+    )).order_by(PatientHandoff.created_at.desc()).limit(80).all()
+    staff = User.query.order_by(User.username.asc()).all()
+    open_tasks = sum(1 for item in tasks if item.status not in {"completed", "cancelled"})
+    incoming_handoffs = sum(1 for item in handoffs if item.status == "pending" and (
+        item.to_user_id == user.id or item.to_username == user.username
+    ))
+    return render_template(
+        "clinical_center.html", system_name=SYSTEM_NAME, user=user, section=section,
+        tasks=tasks, patients=patients, handoffs=handoffs, staff=staff, search=search,
+        open_tasks=open_tasks, incoming_handoffs=incoming_handoffs,
+        task_status_labels=TASK_STATUS_LABELS, task_priority_labels=TASK_PRIORITY_LABELS,
+        task_category_labels=TASK_CATEGORY_LABELS, patient_status_labels=PATIENT_STATUS_LABELS,
+        handoff_status_labels=HANDOFF_STATUS_LABELS,
+        task_checklist_value=task_checklist_value, task_updates_by_task=task_updates_by_task,
+    )
+
+
+@app.post("/clinical/tasks/<int:task_id>/update")
+def clinical_task_update(task_id: int):
+    user = current_user_account()
+    task = db.session.get(ClinicalTask, task_id)
+    if not user or not task or not (
+        task.assigned_user_id == user.id or task.assigned_username == user.username
+    ):
+        flash("Bu görevi güncelleme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("clinical_center", section="tasks"))
+    old_status = task.status
+    status = request.form.get("status", task.status).strip()
+    if status not in {"assigned", "in_progress", "waiting", "completed"}:
+        status = task.status
+    try:
+        progress = max(0, min(100, int(request.form.get("progress_percent", task.progress_percent))))
+    except (TypeError, ValueError):
+        progress = task.progress_percent
+    checklist = task_checklist_value(task.checklist_json)
+    completed_indices = {int(value) for value in request.form.getlist("checklist_done") if value.isdigit()}
+    for index, item in enumerate(checklist):
+        item["done"] = index in completed_indices
+    if checklist:
+        checklist_progress = round((sum(1 for item in checklist if item["done"]) / len(checklist)) * 100)
+        progress = max(progress, checklist_progress)
+    task.checklist_json = json.dumps(checklist, ensure_ascii=False)
+    task.status = status
+    task.progress_percent = 100 if status == "completed" else progress
+    task.result_note = request.form.get("result_note", "").strip() or task.result_note
+    task.completed_at = datetime.now(timezone.utc) if status == "completed" else None
+    db.session.add(ClinicalTaskUpdate(
+        task_id=task.id, actor_username=user.username, actor_type="user", action="task_progress",
+        old_status=old_status, new_status=task.status, progress_percent=task.progress_percent,
+        note=task.result_note,
+    ))
+    db.session.commit()
+    write_log("INFO", "CLINICAL_TASK_UPDATED", f"username={user.username}; task_id={task.id}; status={task.status}")
+    flash("Görev ilerlemesi güncellendi.", "success")
+    return redirect(url_for("clinical_center", section="tasks"))
+
+
+@app.post("/clinical/patients")
+def clinical_create_patient():
+    user = current_user_account()
+    if not user or (user.rank or "").strip() not in ALLOWED_USER_RANKS:
+        return redirect(url_for("login_page"))
+    full_name = request.form.get("full_name", "").strip()
+    if not full_name:
+        flash("Hasta adı ve soyadı zorunludur.", "error")
+        return redirect(url_for("clinical_center", section="patients"))
+    patient = PatientFile(
+        patient_number=next_patient_number(), full_name=full_name,
+        identity_number=request.form.get("identity_number", "").strip() or None,
+        date_of_birth=request.form.get("date_of_birth", "").strip() or None,
+        gender=request.form.get("gender", "").strip() or None,
+        phone=request.form.get("phone", "").strip() or None,
+        address=request.form.get("address", "").strip() or None,
+        blood_type=request.form.get("blood_type", "").strip() or None,
+        allergies=request.form.get("allergies", "").strip() or None,
+        chronic_conditions=request.form.get("chronic_conditions", "").strip() or None,
+        current_medications=request.form.get("current_medications", "").strip() or None,
+        medical_history=request.form.get("medical_history", "").strip() or None,
+        emergency_contact=request.form.get("emergency_contact", "").strip() or None,
+        emergency_phone=request.form.get("emergency_phone", "").strip() or None,
+        risk_notes=request.form.get("risk_notes", "").strip() or None,
+        created_by_username=user.username,
+    )
+    db.session.add(patient)
+    db.session.commit()
+    write_log("INFO", "PATIENT_FILE_CREATED", f"username={user.username}; patient_id={patient.id}")
+    flash(f"{patient.patient_number} numaralı hasta dosyası oluşturuldu.", "success")
+    return redirect(url_for("patient_file_view", patient_id=patient.id))
+
+
+@app.get("/clinical/patients/<int:patient_id>")
+def patient_file_view(patient_id: int):
+    user = current_user_account()
+    admin_mode = False
+    if not user:
+        if not admin_required("clinical_read"):
+            flash("Hasta dosyasına erişim yetkiniz bulunmuyor.", "error")
+            return redirect(url_for("login_page"))
+        admin_mode = True
+    patient = db.session.get(PatientFile, patient_id)
+    if not patient:
+        flash("Hasta dosyası bulunamadı.", "error")
+        return redirect(url_for("admin_clinical_center" if admin_mode else "clinical_center"))
+    entries = PatientClinicalEntry.query.filter_by(patient_file_id=patient.id).order_by(
+        PatientClinicalEntry.created_at.desc(), PatientClinicalEntry.id.desc()).all()
+    handoffs = PatientHandoff.query.filter_by(patient_file_id=patient.id).order_by(
+        PatientHandoff.created_at.desc(), PatientHandoff.id.desc()).all()
+    tasks = ClinicalTask.query.filter_by(patient_file_id=patient.id).order_by(ClinicalTask.updated_at.desc()).all()
+    staff = User.query.order_by(User.username.asc()).all()
+    linked_reports = {report.id: report for report in Report.query.filter(
+        Report.id.in_([entry.linked_report_id for entry in entries if entry.linked_report_id])
+    ).all()} if entries else {}
+    return render_template(
+        "patient_file_view.html", system_name=SYSTEM_NAME, patient=patient, entries=entries,
+        handoffs=handoffs, tasks=tasks, staff=staff, user=user, admin_mode=admin_mode,
+        patient_status_labels=PATIENT_STATUS_LABELS,
+        clinical_entry_labels=CLINICAL_ENTRY_LABELS,
+        handoff_status_labels=HANDOFF_STATUS_LABELS,
+        task_status_labels=TASK_STATUS_LABELS,
+        patient_vitals_value=patient_vitals_value, linked_reports=linked_reports,
+    )
+
+
+@app.post("/clinical/patients/<int:patient_id>/update")
+def clinical_update_patient(patient_id: int):
+    user = current_user_account()
+    admin = current_admin_account()
+    if not user and not (admin and admin_required("clinical_management")):
+        flash("Hasta dosyasını güncelleme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("login_page"))
+    patient = db.session.get(PatientFile, patient_id)
+    if not patient:
+        flash("Hasta dosyası bulunamadı.", "error")
+        return redirect(url_for("clinical_center"))
+    for field in [
+        "full_name", "identity_number", "date_of_birth", "gender", "phone", "address",
+        "blood_type", "allergies", "chronic_conditions", "current_medications",
+        "surgical_history", "family_history", "medical_history", "emergency_contact",
+        "emergency_phone", "risk_notes", "status",
+    ]:
+        value = request.form.get(field, "").strip()
+        if field == "status" and value not in PATIENT_STATUS_LABELS:
+            continue
+        if field == "full_name" and not value:
+            continue
+        setattr(patient, field, value or None)
+    db.session.commit()
+    actor = user.username if user else session.get("admin_username", "")
+    write_log("INFO", "PATIENT_FILE_UPDATED", f"actor={actor}; patient_id={patient.id}")
+    flash("Hasta dosyası güncellendi.", "success")
+    return redirect(url_for("patient_file_view", patient_id=patient.id))
+
+
+@app.post("/clinical/patients/<int:patient_id>/entries")
+def clinical_add_patient_entry(patient_id: int):
+    user = current_user_account()
+    admin = current_admin_account()
+    if not user and not (admin and admin_required("clinical_management")):
+        return redirect(url_for("login_page"))
+    patient = db.session.get(PatientFile, patient_id)
+    if not patient:
+        flash("Hasta dosyası bulunamadı.", "error")
+        return redirect(url_for("clinical_center"))
+    title = request.form.get("title", "").strip()
+    note = request.form.get("clinical_note", "").strip()
+    entry_type = request.form.get("entry_type", "other").strip()
+    if entry_type not in CLINICAL_ENTRY_LABELS:
+        entry_type = "other"
+    if not title or not note:
+        flash("Klinik kayıt başlığı ve notu zorunludur.", "error")
+        return redirect(url_for("patient_file_view", patient_id=patient.id))
+    report_number = request.form.get("report_number", "").strip()
+    linked_report = Report.query.filter_by(report_number=report_number).first() if report_number else None
+    vitals = {
+        "temperature": request.form.get("temperature", "").strip(),
+        "pulse": request.form.get("pulse", "").strip(),
+        "blood_pressure": request.form.get("blood_pressure", "").strip(),
+        "respiration": request.form.get("respiration", "").strip(),
+        "oxygen": request.form.get("oxygen", "").strip(),
+        "pain": request.form.get("pain", "").strip(),
+    }
+    actor_name = user.username if user else session.get("admin_username", "")
+    actor_rank = user.rank if user else ADMIN_ROLE_LABELS.get(admin.permission_level or "system_admin")
+    entry = PatientClinicalEntry(
+        patient_file_id=patient.id, entry_type=entry_type, title=title, clinical_note=note,
+        diagnosis=request.form.get("diagnosis", "").strip() or None,
+        treatment=request.form.get("treatment", "").strip() or None,
+        medication=request.form.get("medication", "").strip() or None,
+        vitals_json=json.dumps(vitals, ensure_ascii=False),
+        linked_report_id=linked_report.id if linked_report else None,
+        created_by_user_id=user.id if user else None,
+        created_by_username=actor_name, created_by_rank=actor_rank,
+    )
+    db.session.add(entry)
+    db.session.commit()
+    write_log("INFO", "PATIENT_CLINICAL_ENTRY_CREATED", f"actor={actor_name}; patient_id={patient.id}; entry_id={entry.id}")
+    flash("Klinik kayıt hasta dosyasına eklendi.", "success")
+    return redirect(url_for("patient_file_view", patient_id=patient.id) + "#clinical-history")
+
+
+@app.post("/clinical/handoffs")
+def clinical_create_handoff():
+    user = current_user_account()
+    admin = current_admin_account()
+    if not user and not (admin and admin_required("clinical_management")):
+        return redirect(url_for("login_page"))
+    patient = db.session.get(PatientFile, request.form.get("patient_file_id", type=int))
+    target = db.session.get(User, request.form.get("to_user_id", type=int))
+    if not patient or not target:
+        flash("Hasta dosyası ve teslim alacak personel seçilmelidir.", "error")
+        return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
+    actor_name = user.username if user else session.get("admin_username", "")
+    actor_rank = user.rank if user else ADMIN_ROLE_LABELS.get(admin.permission_level or "system_admin")
+    handoff = PatientHandoff(
+        patient_file_id=patient.id,
+        from_unit=request.form.get("from_unit", "").strip() or "Belirtilmedi",
+        to_unit=request.form.get("to_unit", "").strip() or "Belirtilmedi",
+        from_user_id=user.id if user else None, from_username=actor_name, from_rank=actor_rank,
+        to_user_id=target.id, to_username=target.username, to_rank=target.rank,
+        reason=request.form.get("reason", "").strip() or "Klinik devir",
+        condition_summary=request.form.get("condition_summary", "").strip() or "Durum bilgisi belirtilmedi.",
+        risks=request.form.get("risks", "").strip() or None,
+        active_treatments=request.form.get("active_treatments", "").strip() or None,
+        pending_actions=request.form.get("pending_actions", "").strip() or None,
+    )
+    db.session.add(handoff)
+    db.session.flush()
+    create_user_notification(
+        target, "Yeni hasta teslimi bekliyor",
+        f"{patient.patient_number} — {patient.full_name} dosyası {actor_name} tarafından size devredildi.",
+        "handoff", "patient_handoff", handoff.id,
+    )
+    db.session.commit()
+    write_log("INFO", "PATIENT_HANDOFF_CREATED", f"actor={actor_name}; handoff_id={handoff.id}; to={target.username}")
+    flash("Hasta teslim kaydı oluşturuldu ve ilgili personele bildirim gönderildi.", "success")
+    return redirect(url_for("patient_file_view", patient_id=patient.id) + "#handoff-chain")
+
+
+@app.post("/clinical/handoffs/<int:handoff_id>/respond")
+def clinical_respond_handoff(handoff_id: int):
+    user = current_user_account()
+    handoff = db.session.get(PatientHandoff, handoff_id)
+    if not user or not handoff or not (
+        handoff.to_user_id == user.id or handoff.to_username == user.username
+    ):
+        flash("Bu hasta teslimine yanıt verme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("clinical_center", section="handoffs"))
+    decision = request.form.get("decision", "").strip()
+    if decision not in {"accepted", "rejected"} or handoff.status != "pending":
+        flash("Geçersiz veya daha önce sonuçlandırılmış teslim işlemi.", "error")
+        return redirect(url_for("clinical_center", section="handoffs"))
+    handoff.status = decision
+    handoff.response_note = request.form.get("response_note", "").strip() or None
+    handoff.responded_at = datetime.now(timezone.utc)
+    handoff.responded_by = user.username
+    sender = db.session.get(User, handoff.from_user_id) if handoff.from_user_id else User.query.filter_by(username=handoff.from_username).first()
+    create_user_notification(
+        sender, "Hasta teslimi sonuçlandı",
+        f"{handoff.to_username}, hasta teslimini {'kabul etti' if decision == 'accepted' else 'reddetti'}.",
+        "handoff", "patient_handoff", handoff.id, username=handoff.from_username,
+    )
+    db.session.commit()
+    write_log("INFO", "PATIENT_HANDOFF_RESPONDED", f"username={user.username}; handoff_id={handoff.id}; decision={decision}")
+    flash("Hasta teslim kararı kaydedildi.", "success")
+    return redirect(url_for("clinical_center", section="handoffs"))
+
+
+@app.post("/clinical/handoffs/<int:handoff_id>/cancel")
+def clinical_cancel_handoff(handoff_id: int):
+    user = current_user_account()
+    admin = current_admin_account()
+    handoff = db.session.get(PatientHandoff, handoff_id)
+    allowed = bool(handoff and (
+        (user and (handoff.from_user_id == user.id or handoff.from_username == user.username))
+        or (admin and admin_required("clinical_management"))
+    ))
+    if not allowed or handoff.status != "pending":
+        flash("Bu teslim kaydı iptal edilemez.", "error")
+        return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
+    actor = user.username if user else session.get("admin_username", "")
+    handoff.status = "cancelled"
+    handoff.cancelled_at = datetime.now(timezone.utc)
+    handoff.cancelled_by = actor
+    target = db.session.get(User, handoff.to_user_id) if handoff.to_user_id else None
+    create_user_notification(target, "Hasta teslimi iptal edildi", f"{handoff.from_username} tarafından oluşturulan teslim kaydı iptal edildi.", "warning", "patient_handoff", handoff.id, username=handoff.to_username)
+    db.session.commit()
+    write_log("WARNING", "PATIENT_HANDOFF_CANCELLED", f"actor={actor}; handoff_id={handoff.id}")
+    flash("Hasta teslim kaydı iptal edildi; zincir geçmişinde korunuyor.", "success")
+    return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
+
+
+@app.get("/admin/clinical")
+def admin_clinical_center():
+    if not admin_required("clinical_read"):
+        flash("Klinik kayıtları görüntüleme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_dashboard"))
+    q = request.args.get("q", "").strip()
+    patient_query = PatientFile.query
+    if q:
+        needle = f"%{q}%"
+        patient_query = patient_query.filter(db.or_(
+            PatientFile.patient_number.ilike(needle), PatientFile.full_name.ilike(needle),
+            PatientFile.identity_number.ilike(needle),
+        ))
+    patients = patient_query.order_by(PatientFile.updated_at.desc()).limit(150).all()
+    tasks = ClinicalTask.query.order_by(ClinicalTask.updated_at.desc()).limit(150).all()
+    task_updates_by_task = {task.id: [] for task in tasks}
+    if tasks:
+        updates = ClinicalTaskUpdate.query.filter(
+            ClinicalTaskUpdate.task_id.in_([task.id for task in tasks])
+        ).order_by(ClinicalTaskUpdate.created_at.desc()).all()
+        for update in updates:
+            task_updates_by_task.setdefault(update.task_id, []).append(update)
+    handoffs = PatientHandoff.query.order_by(PatientHandoff.created_at.desc()).limit(120).all()
+    staff = User.query.order_by(User.username.asc()).all()
+    open_task_count = sum(1 for item in tasks if item.status not in {"completed", "cancelled"})
+    pending_handoff_count = sum(1 for item in handoffs if item.status == "pending")
+    return render_template(
+        "admin_clinical_center.html", system_name=SYSTEM_NAME,
+        admin_username=session.get("admin_username", ""), patients=patients,
+        tasks=tasks, handoffs=handoffs, staff=staff, q=q,
+        task_status_labels=TASK_STATUS_LABELS, task_priority_labels=TASK_PRIORITY_LABELS,
+        task_category_labels=TASK_CATEGORY_LABELS, patient_status_labels=PATIENT_STATUS_LABELS,
+        handoff_status_labels=HANDOFF_STATUS_LABELS, task_checklist_value=task_checklist_value,
+        can_manage=admin_has_permission("clinical_management"),
+        open_task_count=open_task_count, pending_handoff_count=pending_handoff_count,
+        task_updates_by_task=task_updates_by_task,
+    )
+
+
+@app.post("/admin/clinical/tasks")
+def admin_create_clinical_task():
+    if not admin_required("clinical_management"):
+        flash("Klinik görev oluşturma yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_clinical_center"))
+    assignee = db.session.get(User, request.form.get("assigned_user_id", type=int))
+    if not assignee:
+        flash("Görev atanacak personel seçilmelidir.", "error")
+        return redirect(url_for("admin_clinical_center") + "#tasks")
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+    if not title or not description:
+        flash("Görev başlığı ve açıklaması zorunludur.", "error")
+        return redirect(url_for("admin_clinical_center") + "#tasks")
+    checklist = [
+        {"text": line.strip(), "done": False}
+        for line in request.form.get("checklist", "").splitlines() if line.strip()
+    ]
+    patient_id = request.form.get("patient_file_id", type=int)
+    patient = db.session.get(PatientFile, patient_id) if patient_id else None
+    priority = request.form.get("priority", "normal").strip()
+    category = request.form.get("category", "general").strip()
+    if priority not in TASK_PRIORITY_LABELS: priority = "normal"
+    if category not in TASK_CATEGORY_LABELS: category = "general"
+    task = ClinicalTask(
+        title=title, category=category, priority=priority, description=description,
+        instructions=request.form.get("instructions", "").strip() or None,
+        checklist_json=json.dumps(checklist, ensure_ascii=False),
+        assigned_user_id=assignee.id, assigned_username=assignee.username,
+        assigned_rank=assignee.rank, patient_file_id=patient.id if patient else None,
+        created_by_admin=session.get("admin_username", ""),
+        due_at=parse_datetime_local(request.form.get("due_at")),
+    )
+    db.session.add(task)
+    db.session.flush()
+    db.session.add(ClinicalTaskUpdate(
+        task_id=task.id, actor_username=session.get("admin_username", ""),
+        actor_type="admin", action="task_created", new_status=task.status,
+        progress_percent=0, note=task.description,
+    ))
+    create_user_notification(
+        assignee, "Yeni klinik görev atandı",
+        f"{title} görevi size atandı.{f' Hasta: {patient.patient_number}' if patient else ''}",
+        "task", "clinical_task", task.id,
+    )
+    db.session.commit()
+    write_log("INFO", "CLINICAL_TASK_CREATED", f"admin={session.get('admin_username','')}; task_id={task.id}; user={assignee.username}")
+    flash("Klinik görev oluşturuldu ve personele bildirim gönderildi.", "success")
+    return redirect(url_for("admin_clinical_center") + "#tasks")
+
+
+@app.post("/admin/clinical/tasks/<int:task_id>/update")
+def admin_update_clinical_task(task_id: int):
+    if not admin_required("clinical_management"):
+        return redirect(url_for("admin_clinical_center"))
+    task = db.session.get(ClinicalTask, task_id)
+    if not task:
+        flash("Görev bulunamadı.", "error")
+        return redirect(url_for("admin_clinical_center"))
+    old_status = task.status
+    status = request.form.get("status", task.status).strip()
+    if status in TASK_STATUS_LABELS:
+        task.status = status
+    assignee_id = request.form.get("assigned_user_id", type=int)
+    if assignee_id and assignee_id != task.assigned_user_id:
+        assignee = db.session.get(User, assignee_id)
+        if assignee:
+            task.assigned_user_id, task.assigned_username, task.assigned_rank = assignee.id, assignee.username, assignee.rank
+            create_user_notification(assignee, "Klinik görev size devredildi", f"{task.title} görevi size atandı.", "task", "clinical_task", task.id)
+    if task.status == "completed":
+        task.progress_percent, task.completed_at = 100, datetime.now(timezone.utc)
+    elif task.status == "cancelled":
+        task.completed_at = None
+    note = request.form.get("admin_note", "").strip()
+    db.session.add(ClinicalTaskUpdate(
+        task_id=task.id, actor_username=session.get("admin_username", ""), actor_type="admin",
+        action="admin_update", old_status=old_status, new_status=task.status,
+        progress_percent=task.progress_percent, note=note or None,
+    ))
+    db.session.commit()
+    write_log("WARNING", "CLINICAL_TASK_ADMIN_UPDATED", f"admin={session.get('admin_username','')}; task_id={task.id}; status={task.status}")
+    flash("Görev yönetici tarafından güncellendi.", "success")
+    return redirect(url_for("admin_clinical_center") + "#tasks")
+
+
+@app.get("/admin/leave-calendar")
+def admin_leave_calendar():
+    if not admin_required("hospital_management"):
+        flash("İzin takvimini görüntüleme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_dashboard"))
+    raw_month = request.args.get("month", datetime.now(timezone.utc).strftime("%Y-%m"))
+    try:
+        year, month = [int(part) for part in raw_month.split("-", 1)]
+        selected = date(year, month, 1)
+    except (ValueError, TypeError):
+        selected = datetime.now(timezone.utc).date().replace(day=1)
+    month_days = calendar.Calendar(firstweekday=0).monthdatescalendar(selected.year, selected.month)
+    approved = LeaveRequest.query.filter_by(
+        status="approved",
+        is_archived=False,
+    ).order_by(LeaveRequest.start_date.asc()).all()
+    events_by_day = {}
+    for item in approved:
+        try:
+            start = date.fromisoformat(item.start_date); end = date.fromisoformat(item.end_date)
+        except ValueError:
+            continue
+        current = max(start, month_days[0][0]); final = min(end, month_days[-1][-1])
+        while current <= final:
+            events_by_day.setdefault(current.isoformat(), []).append(item)
+            current += timedelta(days=1)
+    previous_month = (selected - timedelta(days=1)).replace(day=1)
+    next_month = (selected.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return render_template(
+        "admin_leave_calendar.html", system_name=SYSTEM_NAME, selected=selected,
+        month_days=month_days, events_by_day=events_by_day,
+        previous_month=previous_month.strftime("%Y-%m"), next_month=next_month.strftime("%Y-%m"),
+        leave_type_labels=LEAVE_TYPE_LABELS,
+    )
+
+
+@app.get("/admin/audit-log")
+def admin_audit_log():
+    if not admin_required("audit_read"):
+        flash("Yönetici işlem geçmişini görüntüleme yetkiniz bulunmuyor.", "error")
+        return redirect(url_for("admin_dashboard"))
+    level = request.args.get("level", "").strip().upper()
+    event = request.args.get("event", "").strip()
+    q = request.args.get("q", "").strip()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    query = AppLog.query
+    if level in {"INFO", "WARNING", "ERROR"}: query = query.filter(AppLog.level == level)
+    if event: query = query.filter(AppLog.event.ilike(f"%{event}%"))
+    if q: query = query.filter(AppLog.message.ilike(f"%{q}%"))
+    if date_from:
+        try: query = query.filter(AppLog.created_at >= datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc))
+        except ValueError: pass
+    if date_to:
+        try: query = query.filter(AppLog.created_at < datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1))
+        except ValueError: pass
+    logs = query.order_by(AppLog.created_at.desc()).limit(500).all()
+    events = [row[0] for row in db.session.query(AppLog.event).distinct().order_by(AppLog.event.asc()).all()]
+    return render_template(
+        "admin_audit_log.html", system_name=SYSTEM_NAME, logs=logs, events=events,
+        filters={"level": level, "event": event, "q": q, "date_from": date_from, "date_to": date_to},
+    )
+
+
 @app.post("/admin/logout")
 def admin_logout():
     admin_username = session.get("admin_username", "")
@@ -4932,4 +4431,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V23.8.0"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1"}, 200

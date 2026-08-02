@@ -1,0 +1,37 @@
+CLSMC V24.1 — SADECE ADMİN PERSONEL İZİN ARŞİVİ
+===================================================
+
+Bu sürümde izin arşivi yönetimi yalnızca admin tarafındadır.
+
+Admin panelinde:
+- Süresi biten onaylanmış izinler otomatik arşivlenir.
+- Her aktif izin için "Arşive Ekle" butonu bulunur.
+- Arşivde "Arşivden Çıkar" butonu bulunur.
+- Arşivde "Kalıcı Sil" butonu bulunur.
+- Kalıcı silme sırasında bağlı izin bildirimleri de kaldırılır.
+- Bütün işlemler admin sistem loguna kaydedilir.
+
+Normal kullanıcı panelinde:
+- Arşiv yönetim butonları bulunmaz.
+- Arşiv listesi bulunmaz.
+- Kullanıcı yalnızca aktif izin taleplerini ve yönetici kararlarını görür.
+- Arşivlenmiş kayıtlar kullanıcının aktif izin listesinde gösterilmez.
+
+Yetki güvenliği:
+- Butonları gizlemenin yanında bütün route'lar hospital_management
+  admin yetkisiyle backend tarafında korunur.
+- Normal kullanıcı URL'yi elle yazsa bile işlem yapamaz.
+
+Otomatik arşivleme:
+- Uygulama açılışında kontrol edilir.
+- Site kullanımında en fazla saatte bir kontrol edilir.
+- İzin bitiş günü geçtikten sonra arşivlenir; bitiş günü tamamlanmadan taşınmaz.
+- Süresi geçmiş kayıt admin tarafından arşivden çıkarılırsa tekrar anında
+  otomatik arşive düşmemesi için özel koruma uygulanır.
+
+Neon veritabanı:
+- Gerekli kolonlar deploy sırasında otomatik eklenir.
+- Mevcut kullanıcı, rapor, izin, hasta dosyası ve diğer veriler korunur.
+
+Sürüm: V24.1
+Developer: Veyrath
