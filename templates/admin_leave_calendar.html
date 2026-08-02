@@ -1,7 +1,192 @@
-<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>İzin Takvimi</title><script>(function(){var t='dark';try{t=localStorage.getItem('clsmc-interface-theme')==='light'?'light':'dark'}catch(e){}document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t})();</script>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Personel İzin Takvimi</title>
+<script>
+(function(){
+  var theme='dark';
+  try{
+    theme=localStorage.getItem('clsmc-interface-theme')==='light'?'light':'dark';
+  }catch(error){}
+  document.documentElement.dataset.theme=theme;
+  document.documentElement.style.colorScheme=theme;
+})();
+</script>
 <link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static',filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_theme_toggle.css',v='24.0') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_theme_toggle.css',v='24.1.2') }}">
 <link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='24.0') }}">
-<script>document.getElementById('clsmc-light-theme').media=document.documentElement.dataset.theme==='light'?'all':'not all'</script>
-<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js') }}"></script></head><body><header class="v24-topbar"><div class="v24-topbar-inner"><div class="v24-brand"><img src="{{ url_for('static',filename='clsmc_logo.png') }}"><div><strong>Onaylanmış İzin Takvimi</strong><small>{{ selected.strftime('%m.%Y') }}</small></div></div><div class="v24-actions"><a class="btn" href="{{ url_for('admin_hospital_management') }}">← Hastane Yöneticisi</a><a class="btn" href="{{ url_for('admin_leave_calendar',month=previous_month) }}">Önceki Ay</a><a class="btn" href="{{ url_for('admin_leave_calendar',month=next_month) }}">Sonraki Ay</a></div></div></header><main class="v24-shell"><section class="v24-hero"><h1>{{ selected.strftime('%m.%Y') }} İzin Takvimi</h1><p>Yalnızca onaylanmış izinler gösterilir. Aynı gün içinde birden fazla izin görünüyorsa personel planlamasında çakışma olabilir.</p></section><div class="v24-calendar">{% for name in ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] %}<div class="v24-calendar-head">{{ name }}</div>{% endfor %}{% for week in month_days %}{% for day in week %}<div class="v24-day {% if day.month!=selected.month %}outside{% endif %}"><div class="v24-day-number">{{ day.day }}</div>{% for item in events_by_day.get(day.isoformat(),[]) %}<div class="v24-leave-event"><strong>{{ item.username }}</strong><br>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}<br>{{ item.start_date }} — {{ item.end_date }}</div>{% endfor %}</div>{% endfor %}{% endfor %}</div></main><div class="developer-credit">Developer: Veyrath</div></body></html>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='24.1.2') }}">
+<script>
+document.getElementById('clsmc-light-theme').media=
+  document.documentElement.dataset.theme==='light'?'all':'not all';
+</script>
+<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js') }}"></script>
+<style id="clsmc-v2412-leave-calendar-colors">
+.v2412-calendar-intro{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.v2412-legend{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.v2412-legend-item{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel);
+  color:var(--text);
+  font-size:11px;
+  font-weight:800;
+}
+.v2412-legend-dot{
+  width:10px;
+  height:10px;
+  flex:0 0 10px;
+  border-radius:50%;
+}
+.v2412-legend-dot.ongoing{background:#229a63}
+.v2412-legend-dot.archived{background:#d5a000}
+.v2412-legend-dot.upcoming{background:#4687d7}
+.v2412-legend-dot.expired{background:#7e8994}
+
+.v24-leave-event{
+  position:relative;
+  padding:8px 9px !important;
+  border-width:1px !important;
+  border-style:solid !important;
+  color:var(--text) !important;
+}
+.v24-leave-event.ongoing{
+  border-color:#2b9f6b !important;
+  background:color-mix(in srgb,#2b9f6b 20%,var(--panel)) !important;
+  box-shadow:inset 3px 0 0 #2b9f6b;
+}
+.v24-leave-event.archived{
+  border-color:#d2a10a !important;
+  background:color-mix(in srgb,#e1b21f 24%,var(--panel)) !important;
+  box-shadow:inset 3px 0 0 #d2a10a;
+}
+.v24-leave-event.upcoming{
+  border-color:#4b86cf !important;
+  background:color-mix(in srgb,#4b86cf 17%,var(--panel)) !important;
+  box-shadow:inset 3px 0 0 #4b86cf;
+}
+.v24-leave-event.expired{
+  border-color:#7e8994 !important;
+  background:color-mix(in srgb,#7e8994 15%,var(--panel)) !important;
+  box-shadow:inset 3px 0 0 #7e8994;
+}
+.v2412-event-status{
+  display:inline-flex;
+  margin-top:6px;
+  padding:4px 7px;
+  border:1px solid currentColor;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  line-height:1;
+}
+.v24-leave-event.ongoing .v2412-event-status{color:#25885d}
+.v24-leave-event.archived .v2412-event-status{color:#a97d00}
+.v24-leave-event.upcoming .v2412-event-status{color:#3976c0}
+.v24-leave-event.expired .v2412-event-status{color:#6d7882}
+.v2412-archive-meta{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.4;
+}
+@media(max-width:700px){
+  .v2412-calendar-intro{
+    align-items:flex-start;
+  }
+  .v2412-legend{
+    width:100%;
+  }
+}
+</style>
+</head>
+<body>
+<header class="v24-topbar">
+  <div class="v24-topbar-inner">
+    <div class="v24-brand">
+      <img src="{{ url_for('static',filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+      <div>
+        <strong>Personel İzin Takvimi</strong>
+        <small>{{ selected.strftime('%m.%Y') }}</small>
+      </div>
+    </div>
+    <div class="v24-actions">
+      <a class="btn" href="{{ url_for('admin_hospital_management') }}">← Hastane Yöneticisi</a>
+      <a class="btn" href="{{ url_for('admin_leave_calendar',month=previous_month) }}">Önceki Ay</a>
+      <a class="btn" href="{{ url_for('admin_leave_calendar',month=next_month) }}">Sonraki Ay</a>
+    </div>
+  </div>
+</header>
+
+<main class="v24-shell">
+  <section class="v24-hero v2412-calendar-intro">
+    <div>
+      <h1>{{ selected.strftime('%m.%Y') }} İzin Takvimi</h1>
+      <p>
+        Onaylanmış izinler arşive alınsa bile takvimde korunur.
+        Devam eden aktif izinler yeşil, arşivlenmiş izinler sarı gösterilir.
+      </p>
+    </div>
+    <div class="v2412-legend" aria-label="İzin takvimi renk açıklamaları">
+      <span class="v2412-legend-item"><span class="v2412-legend-dot ongoing"></span>Devam Ediyor</span>
+      <span class="v2412-legend-item"><span class="v2412-legend-dot archived"></span>Arşivde</span>
+      <span class="v2412-legend-item"><span class="v2412-legend-dot upcoming"></span>Planlandı</span>
+      <span class="v2412-legend-item"><span class="v2412-legend-dot expired"></span>Süresi Geçti</span>
+    </div>
+  </section>
+
+  <div class="v24-calendar">
+    {% for name in ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'] %}
+      <div class="v24-calendar-head">{{ name }}</div>
+    {% endfor %}
+
+    {% for week in month_days %}
+      {% for day in week %}
+        <div class="v24-day {% if day.month!=selected.month %}outside{% endif %}">
+          <div class="v24-day-number">{{ day.day }}</div>
+
+          {% for event in events_by_day.get(day.isoformat(),[]) %}
+            {% set item=event.leave %}
+            <div class="v24-leave-event {{ event.state }}">
+              <strong>{{ item.username }}</strong><br>
+              {{ leave_type_labels.get(item.leave_type,item.leave_type) }}<br>
+              {{ item.start_date }} — {{ item.end_date }}
+              <br><span class="v2412-event-status">{{ event.status_label }}</span>
+
+              {% if event.state=='archived' %}
+                <span class="v2412-archive-meta">
+                  {{ item.archived_by_admin or 'Sistem' }}
+                  {% if item.archived_at %}
+                    · {{ item.archived_at.strftime('%d.%m.%Y') }}
+                  {% endif %}
+                </span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</main>
+
+<div class="developer-credit">Developer: Veyrath</div>
+</body>
+</html>

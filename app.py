@@ -2773,7 +2773,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V24.1.1",
+        "version": "V24.1.2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4390,19 +4390,46 @@ def admin_leave_calendar():
     except (ValueError, TypeError):
         selected = datetime.now(timezone.utc).date().replace(day=1)
     month_days = calendar.Calendar(firstweekday=0).monthdatescalendar(selected.year, selected.month)
-    approved = LeaveRequest.query.filter_by(
-        status="approved",
-        is_archived=False,
-    ).order_by(LeaveRequest.start_date.asc()).all()
+    # Aktif ve arşivlenmiş bütün onaylı izinler takvimde korunur.
+    approved = (
+        LeaveRequest.query
+        .filter(LeaveRequest.status == "approved")
+        .order_by(LeaveRequest.start_date.asc(), LeaveRequest.id.asc())
+        .all()
+    )
+    today = datetime.now(timezone.utc).date()
     events_by_day = {}
     for item in approved:
         try:
-            start = date.fromisoformat(item.start_date); end = date.fromisoformat(item.end_date)
-        except ValueError:
+            start = date.fromisoformat(item.start_date)
+            end = date.fromisoformat(item.end_date)
+        except (TypeError, ValueError):
             continue
-        current = max(start, month_days[0][0]); final = min(end, month_days[-1][-1])
+
+        if item.is_archived:
+            calendar_state = "archived"
+            calendar_status_label = "Arşivde"
+        elif start <= today <= end:
+            calendar_state = "ongoing"
+            calendar_status_label = "Devam Ediyor"
+        elif today < start:
+            calendar_state = "upcoming"
+            calendar_status_label = "Planlandı"
+        else:
+            # Yönetici süresi geçmiş bir kaydı arşivden çıkardıysa takvimde
+            # kaybolmaz; ayrı ve nötr bir durumla gösterilir.
+            calendar_state = "expired"
+            calendar_status_label = "Süresi Geçti"
+
+        calendar_event = {
+            "leave": item,
+            "state": calendar_state,
+            "status_label": calendar_status_label,
+        }
+        current = max(start, month_days[0][0])
+        final = min(end, month_days[-1][-1])
         while current <= final:
-            events_by_day.setdefault(current.isoformat(), []).append(item)
+            events_by_day.setdefault(current.isoformat(), []).append(calendar_event)
             current += timedelta(days=1)
     previous_month = (selected - timedelta(days=1)).replace(day=1)
     next_month = (selected.replace(day=28) + timedelta(days=4)).replace(day=1)
@@ -4411,6 +4438,7 @@ def admin_leave_calendar():
         month_days=month_days, events_by_day=events_by_day,
         previous_month=previous_month.strftime("%Y-%m"), next_month=next_month.strftime("%Y-%m"),
         leave_type_labels=LEAVE_TYPE_LABELS,
+        today=today,
     )
 
 
@@ -4455,4 +4483,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1.1"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1.2"}, 200
