@@ -1140,14 +1140,6 @@ def panel():
         .all()
     )
 
-    drafts = ReportDraft.query.filter_by(user_id=user.id).order_by(ReportDraft.updated_at.desc()).all()
-    draft_payloads = {}
-    for draft in drafts:
-        try:
-            parsed = json.loads(draft.form_data or "{}")
-            draft_payloads[draft.report_type] = parsed if isinstance(parsed, dict) else {}
-        except (TypeError, ValueError, json.JSONDecodeError):
-            draft_payloads[draft.report_type] = {}
 
     return render_template(
         "panel.html",
@@ -1170,8 +1162,6 @@ def panel():
         leave_requests=leave_requests,
         leave_status_labels=LEAVE_STATUS_LABELS,
         leave_type_labels=LEAVE_TYPE_LABELS,
-        drafts=drafts,
-        draft_payloads=draft_payloads,
     )
 
 
@@ -1331,7 +1321,6 @@ def save_report():
             submitted_by_user_id=current_user.id,
             submitted_by_username=current_user.username,
         )
-        ReportDraft.query.filter_by(user_id=current_user.id, report_type=report_type).delete()
         db.session.commit()
 
         write_log(
@@ -1367,45 +1356,12 @@ def save_report():
 
 @app.route("/api/drafts/<report_type>", methods=["GET", "POST", "DELETE"])
 def report_draft_api(report_type: str):
-    if not session.get("user_id"):
-        return {"ok": False, "message": "Oturum süresi dolmuş."}, 401
-    user = db.session.get(User, session["user_id"])
-    if not user:
-        session.clear()
-        return {"ok": False, "message": "Kullanıcı hesabı bulunamadı."}, 401
-    if report_type not in allowed_report_types_for_rank(user.rank):
-        return {"ok": False, "message": "Bu rapor türüne erişiminiz yok."}, 403
-
-    draft = ReportDraft.query.filter_by(user_id=user.id, report_type=report_type).first()
-    if request.method == "GET":
-        if not draft:
-            return {"ok": True, "exists": False, "form_data": {}}, 200
-        try:
-            parsed = json.loads(draft.form_data or "{}")
-            if not isinstance(parsed, dict):
-                parsed = {}
-        except (TypeError, ValueError, json.JSONDecodeError):
-            parsed = {}
-        return {"ok": True, "exists": True, "form_data": parsed, "updated_at": draft.updated_at.isoformat() if draft.updated_at else None}, 200
-
-    if request.method == "DELETE":
-        if draft:
-            db.session.delete(draft)
-            db.session.commit()
-        return {"ok": True, "message": "Taslak silindi."}, 200
-
-    data = request.get_json(silent=True) or {}
-    form_data = data.get("form_data", {})
-    if not isinstance(form_data, dict):
-        return {"ok": False, "message": "Taslak verisi geçersiz."}, 400
-    if not draft:
-        draft = ReportDraft(user_id=user.id, username=user.username, report_type=report_type)
-        db.session.add(draft)
-    draft.username = user.username
-    draft.form_data = json.dumps(form_data, ensure_ascii=False)
-    draft.updated_at = datetime.now(timezone.utc)
-    db.session.commit()
-    return {"ok": True, "message": "Taslak kaydedildi.", "updated_at": draft.updated_at.isoformat()}, 200
+    # V24.1.3: Taslak özelliği kaldırıldı.
+    # Eski ReportDraft kayıtları veri güvenliği için otomatik silinmez.
+    return {
+        "ok": False,
+        "message": "Rapor taslağı özelliği kaldırıldı.",
+    }, 410
 
 
 @app.get("/reports")
@@ -2773,7 +2729,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V24.1.2",
+        "version": "V24.1.3",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4483,4 +4439,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1.2"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.1.3"}, 200

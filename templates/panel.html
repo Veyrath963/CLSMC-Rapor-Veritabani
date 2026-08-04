@@ -364,6 +364,15 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
+
+<style id="clsmc-v2413-no-drafts">
+@media(min-width:1101px){
+  .v23-metrics{
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <section class="app">
@@ -391,8 +400,8 @@ input:focus,select:focus,textarea:focus{
   <main class="shell">
     <section class="v23-user-home">
       <article class="hero v23-welcome">
-        <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, taslaklarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
-        <div class="v23-user-actions"><a class="btn btn-primary" href="#report-creator">＋ Yeni Rapor</a><a class="btn btn-secondary" href="#report-creator" onclick="setTimeout(loadDraft,50)">▣ Taslağı Devam Ettir</a><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a><a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Görevler</a><a class="btn btn-secondary" href="#leave-center">İzin Talebi</a></div>
+        <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
+        <div class="v23-user-actions"><a class="btn btn-primary" href="#report-creator">＋ Yeni Rapor</a><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a><a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Görevler</a><a class="btn btn-secondary" href="#leave-center">İzin Talebi</a></div>
       </article>
 
       {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="padding:13px 15px">{{ message }}</div>{% endfor %}{% endwith %}
@@ -402,7 +411,6 @@ input:focus,select:focus,textarea:focus{
         <div class="v23-metric"><span>Bu Hafta</span><strong>{{ personal_stats.week }}</strong></div>
         <div class="v23-metric"><span>Bu Ay</span><strong>{{ personal_stats.month }}</strong></div>
         <div class="v23-metric"><span>Favoriler</span><strong>{{ personal_stats.favorites }}</strong></div>
-        <div class="v23-metric"><span>Kayıtlı Taslak</span><strong>{{ drafts|length }}</strong></div>
         <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
       </section>
 
@@ -417,7 +425,6 @@ input:focus,select:focus,textarea:focus{
           <div class="v23-list">{% for item in notifications %}<div class="v23-item {% if not item.is_read %}unread{% endif %}"><strong>{{ item.title }}</strong><p>{{ item.message }}</p><div class="v23-item-meta"><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>{% if not item.is_read %}<form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>{% endif %}</div></div>{% else %}<div class="empty">Yeni bildiriminiz yok.</div>{% endfor %}</div>
         </article>
 
-        {% if drafts %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Kayıtlı Taslaklarım</h3><div class="sub">Taslaklar sunucuda ve tarayıcıda saklanır; rapor kaydedildiğinde ilgili taslak temizlenir.</div></div></div><div class="v23-list">{% for draft in drafts %}<div class="v23-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>{{ report_type_labels.get(draft.report_type,draft.report_type) }}</strong><p>Son otomatik kayıt: {{ draft.updated_at.strftime('%d.%m.%Y %H:%M') if draft.updated_at else '—' }}</p></div><div style="display:flex;gap:8px"><a class="btn btn-secondary" href="#report-creator" onclick="loadServerDraft('{{ draft.report_type }}')">Devam Et</a><button class="btn btn-danger" type="button" onclick="deleteDraftType('{{ draft.report_type }}')">Sil</button></div></div></div>{% endfor %}</div></article>{% endif %}
 
         {% if announcements %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>{{ item.created_by_admin }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
 
@@ -499,7 +506,6 @@ input:focus,select:focus,textarea:focus{
 
           <div class="actions">
             <button class="btn btn-primary" onclick="renderBBCode()">BBCode Oluştur</button>
-            <button class="btn btn-secondary" onclick="saveDraft()">Taslağı Kaydet</button>
             {% if not is_ems_user %}
             <button class="btn btn-secondary" onclick="fillSample()">Örnek Veriyi Doldur</button>
             <button class="btn btn-secondary" onclick="fillAdliSample()">Adli Örneği Doldur</button>
@@ -546,9 +552,7 @@ let currentType = INITIAL_REPORT_TYPE;
 
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
 const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
-const SERVER_DRAFTS = {{ draft_payloads|tojson }};
 let hasUnsavedChanges = false;
-let autoSaveTimer = null;
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -1860,75 +1864,8 @@ function showCopyToast(){
   window.__copyToastTimer = setTimeout(()=>toast.classList.remove('show'), 2100);
 }
 
-function collectDraftValues(){
-  const values = {};
-  document.querySelectorAll('[data-field]').forEach(el => values[el.dataset.field] = el.value);
-  return values;
-}
-
-async function saveDraft(silent=false){
-  const values = collectDraftValues();
-  localStorage.setItem('raporDemoDraft', JSON.stringify({type:currentType, values}));
-  try{
-    const response = await fetch(`/api/drafts/${currentType}`, {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({form_data:values})});
-    const result = await response.json().catch(()=>({}));
-    if(!response.ok || !result.ok) throw new Error(result.message || 'Taslak kaydedilemedi');
-    hasUnsavedChanges = false;
-    if(!silent) setStatus('Taslak kaydedildi'); else setStatus('Otomatik taslak kaydedildi');
-  }catch(error){
-    if(!silent) setStatus('Taslak yalnızca tarayıcıya kaydedildi');
-  }
-}
-
-function scheduleAutoSave(){
+function markUnsavedChanges(){
   hasUnsavedChanges = true;
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(()=>saveDraft(true), 12000);
-}
-
-function loadServerDraft(type){
-  const values = (SERVER_DRAFTS || {})[type];
-  if(!values) return;
-  localStorage.setItem('raporDemoDraft', JSON.stringify({type:type, values:values}));
-  loadDraft();
-  setStatus('Taslak açıldı');
-}
-
-async function deleteDraftType(type){
-  if(!window.confirm('Bu taslak silinsin mi?')) return;
-  try{
-    const response = await fetch(`/api/drafts/${type}`, {method:'DELETE',credentials:'same-origin'});
-    if(!response.ok) throw new Error('Taslak silinemedi');
-    const local = localStorage.getItem('raporDemoDraft');
-    if(local){
-      try{ const data=JSON.parse(local); if(data.type===type) localStorage.removeItem('raporDemoDraft'); }catch(error){}
-    }
-    window.location.reload();
-  }catch(error){ window.alert('Taslak silinemedi.'); }
-}
-
-function loadDraft(){
-  const raw = localStorage.getItem('raporDemoDraft');
-  let data = null;
-  try{ data = raw ? JSON.parse(raw) : null; }catch(error){}
-  if(!data){
-    const firstServerType = Object.keys(SERVER_DRAFTS || {})[0];
-    if(firstServerType) data = {type:firstServerType, values:SERVER_DRAFTS[firstServerType]};
-  }
-  if(!data) return;
-  try{
-    if(data.type && reportConfig[data.type] && ALLOWED_REPORT_TYPES.includes(data.type)){
-      const card = document.querySelector(`.card[data-type="${data.type}"]`);
-      setReportType(data.type, card);
-    }
-    setTimeout(()=>{
-      Object.entries(data.values || {}).forEach(([k,v])=>{
-        const el = document.querySelector(`[data-field="${k}"]`);
-        if(el) el.value = v;
-      });
-      renderBBCode();
-    },0);
-  }catch(e){}
 }
 
 function fillSample(){
@@ -2056,15 +1993,18 @@ function downloadTxt(){
 
 
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('raporDemoDraft');
-  if(saved || Object.keys(SERVER_DRAFTS || {}).length){
-    loadDraft();
-  }
+  // Eski tarayıcı taslağı yeni sürümde kullanılmaz.
+  try{
+    localStorage.removeItem('raporDemoDraft');
+  }catch(error){}
+
   const activeCard = document.querySelector(`.card[data-type="${currentType}"]`);
   if(activeCard) setReportType(currentType, activeCard);
   renderBBCode();
-  document.getElementById('dynamicFields').addEventListener('input', scheduleAutoSave);
-  document.getElementById('dynamicFields').addEventListener('change', scheduleAutoSave);
+
+  const dynamicFields = document.getElementById('dynamicFields');
+  dynamicFields?.addEventListener('input', markUnsavedChanges);
+  dynamicFields?.addEventListener('change', markUnsavedChanges);
 });
 window.addEventListener('beforeunload', function(event){
   if(!hasUnsavedChanges) return;
