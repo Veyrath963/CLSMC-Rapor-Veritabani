@@ -373,6 +373,192 @@ input:focus,select:focus,textarea:focus{
 }
 </style>
 
+
+<style id="clsmc-v242-modular-home">
+.v242-top-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  min-width:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.v242-top-actions::-webkit-scrollbar{display:none}
+.v242-top-actions form{margin:0}
+
+.v242-workspace-selector{
+  margin:18px 0;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:var(--panel);
+  box-shadow:var(--shadow);
+  scroll-margin-top:96px;
+}
+.v242-selector-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+}
+.v242-selector-head h2{
+  margin:3px 0 4px;
+  font-size:20px;
+}
+.v242-selector-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+.v242-selector-kicker{
+  color:var(--accent);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.v242-selector-nav{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.v242-selector-button{
+  position:relative;
+  min-width:0;
+  min-height:72px;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel2);
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+}
+.v242-selector-button:hover,
+.v242-selector-button:focus{
+  transform:none !important;
+  border-color:var(--accent);
+}
+.v242-selector-button.is-active{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 13%,var(--panel2));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent);
+}
+.v242-selector-button > span:nth-child(2){
+  min-width:0;
+}
+.v242-selector-button strong,
+.v242-selector-button small{
+  display:block;
+}
+.v242-selector-button strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v242-selector-button small{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:11px;
+}
+.v242-selector-icon{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
+  color:var(--accent);
+  font-weight:900;
+}
+.v242-back-overview[hidden]{display:none!important}
+
+.v242-quick-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:11px;
+}
+.v242-quick-card{
+  position:relative;
+  min-width:0;
+  min-height:110px;
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel2);
+  color:var(--text);
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+}
+.v242-quick-card:hover,
+.v242-quick-card:focus{
+  transform:none!important;
+  border-color:var(--accent);
+}
+.v242-quick-card strong,
+.v242-quick-card small{
+  display:block;
+}
+.v242-quick-card small{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.v242-quick-icon{
+  width:36px;
+  height:36px;
+  flex:0 0 36px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
+  color:var(--accent);
+  font-weight:900;
+}
+[data-dashboard-panel][hidden]{
+  display:none!important;
+}
+.v242-report-intro{
+  margin-top:22px!important;
+}
+
+@media(max-width:1100px){
+  .v242-selector-nav{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .v242-quick-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:760px){
+  .v242-selector-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .v242-selector-nav,
+  .v242-quick-grid{
+    grid-template-columns:1fr;
+  }
+  .v242-selector-button{
+    min-height:64px;
+  }
+  .v242-quick-card{
+    min-height:88px;
+  }
+}
+</style>
+
 </head>
 <body>
 <section class="app">
@@ -385,10 +571,14 @@ input:focus,select:focus,textarea:focus{
         <small>Rapor Paneli</small>
       </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div class="v242-top-actions">
+      <button class="btn btn-secondary" type="button" data-dashboard-open="overview">⌂ Ana Ekran</button>
       <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
       <a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Merkez</a>
-      <a class="btn btn-secondary" href="#notifications">🔔 Bildirimler {% if unread_notification_count %}<span class="v23-notification-count">{{ unread_notification_count }}</span>{% endif %}</a>
+      <button class="btn btn-secondary" type="button" data-dashboard-open="notifications">
+        🔔 Bildirimler
+        {% if unread_notification_count %}<span class="v23-notification-count">{{ unread_notification_count }}</span>{% endif %}
+      </button>
       <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
       <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
       <form method="post" action="{{ url_for('logout') }}" style="margin:0">
@@ -401,7 +591,13 @@ input:focus,select:focus,textarea:focus{
     <section class="v23-user-home">
       <article class="hero v23-welcome">
         <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
-        <div class="v23-user-actions"><a class="btn btn-primary" href="#report-creator">＋ Yeni Rapor</a><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a><a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Görevler</a><a class="btn btn-secondary" href="#leave-center">İzin Talebi</a></div>
+        <div class="v23-user-actions">
+          <button class="btn btn-primary" type="button" data-dashboard-open="report">＋ Yeni Rapor</button>
+          <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a>
+          <a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Merkez</a>
+          <button class="btn btn-secondary" type="button" data-dashboard-open="leave">İzin ve Devamsızlık</button>
+          <button class="btn btn-secondary" type="button" data-dashboard-open="notifications">Duyuru Merkezi</button>
+        </div>
       </article>
 
       {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="padding:13px 15px">{{ message }}</div>{% endfor %}{% endwith %}
@@ -414,21 +610,63 @@ input:focus,select:focus,textarea:focus{
         <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
       </section>
 
+      <section class="v242-workspace-selector" id="workspace-root" aria-label="Personel çalışma alanları">
+        <div class="v242-selector-head">
+          <div>
+            <span class="v242-selector-kicker">Çalışma alanı</span>
+            <h2 id="v242WorkspaceTitle">Genel Bakış</h2>
+            <p id="v242WorkspaceDescription">Güncel raporlarınız ve sık kullandığınız işlemler.</p>
+          </div>
+          <button class="btn btn-secondary v242-back-overview" type="button" data-dashboard-open="overview" hidden>
+            ← Genel Bakışa Dön
+          </button>
+        </div>
+
+        <nav class="v242-selector-nav" aria-label="Ana panel bölümleri">
+          <button class="v242-selector-button is-active" type="button"
+                  data-dashboard-open="overview" aria-selected="true">
+            <span class="v242-selector-icon">⌂</span>
+            <span><strong>Genel Bakış</strong><small>Özet ve hızlı erişim</small></span>
+          </button>
+          <button class="v242-selector-button" type="button"
+                  data-dashboard-open="report" aria-selected="false">
+            <span class="v242-selector-icon">＋</span>
+            <span><strong>Rapor Oluştur</strong><small>Form ve BBCode alanı</small></span>
+          </button>
+          <button class="v242-selector-button" type="button"
+                  data-dashboard-open="leave" aria-selected="false">
+            <span class="v242-selector-icon">◷</span>
+            <span><strong>İzin ve Devamsızlık</strong><small>Talep ve geçmiş</small></span>
+          </button>
+          <button class="v242-selector-button" type="button"
+                  data-dashboard-open="notifications" aria-selected="false">
+            <span class="v242-selector-icon">🔔</span>
+            <span>
+              <strong>Duyuru Merkezi</strong>
+              <small>Bildirimler ve duyurular</small>
+            </span>
+            {% if unread_notification_count %}
+              <span class="v23-notification-count">{{ unread_notification_count }}</span>
+            {% endif %}
+          </button>
+        </nav>
+      </section>
+
       <section class="v23-grid">
-        <article class="v23-box v23-span-7">
+        <article class="v23-box v23-span-7" data-dashboard-panel="overview">
           <div class="v23-box-head"><div><h3>Son Raporlarım</h3><div class="sub">Raporlar ayrıca yönetici veya rütbeli onayı beklemeden doğrudan kaydedilir.</div></div><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">Tümünü Aç</a></div>
           {% if recent_reports %}<div class="table-wrap"><table><thead><tr><th>Rapor No</th><th>Tür</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead><tbody>{% for report in recent_reports %}<tr><td><strong>{{ report.report_number }}</strong>{% if report.is_favorite %} ★{% endif %}</td><td>{{ report_type_labels.get(report.report_type,report.report_type) }}</td><td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,'Tamamlandı') }}</span></td><td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td><td><a class="edit" href="{{ url_for('user_report_view',report_id=report.id) }}">Görüntüle</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">Henüz rapor kaydınız bulunmuyor.</div>{% endif %}
         </article>
 
-        <article class="v23-box v23-span-5" id="notifications">
+        <article class="v23-box v23-span-5" id="notifications" data-dashboard-panel="notifications" hidden>
           <div class="v23-box-head"><div><h3>Bildirim Merkezi</h3><div class="sub">İzin, rapor ve yönetici bildirimleri</div></div>{% if unread_notification_count %}<form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="btn btn-secondary" type="submit">Tümünü Okundu Yap</button></form>{% endif %}</div>
           <div class="v23-list">{% for item in notifications %}<div class="v23-item {% if not item.is_read %}unread{% endif %}"><strong>{{ item.title }}</strong><p>{{ item.message }}</p><div class="v23-item-meta"><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>{% if not item.is_read %}<form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>{% endif %}</div></div>{% else %}<div class="empty">Yeni bildiriminiz yok.</div>{% endfor %}</div>
         </article>
 
 
-        {% if announcements %}<article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>{{ item.created_by_admin }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
+        {% if announcements %}<article class="v23-box v23-span-12" data-dashboard-panel="notifications" hidden><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>{{ item.created_by_admin }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
 
-        <article class="v23-box v23-span-6" id="leave-center">
+        <article class="v23-box v23-span-6" id="leave-center" data-dashboard-panel="leave" hidden>
           <div class="v23-box-head"><div><h3>İzin Talebi</h3><div class="sub">Talep Hastane Yöneticisi paneline düşer; sonuçlandığında bildirim alırsınız.</div></div></div>
           <form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form">
             <div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
@@ -439,13 +677,45 @@ input:focus,select:focus,textarea:focus{
           </form>
         </article>
 
-        <article class="v23-box v23-span-6"><div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleriniz ve yönetici kararları</div></div></div><div class="v23-list">{% for item in leave_requests %}<div class="v23-item"><div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div><p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>{% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}{% if item.status=='pending' %}<form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>{% endif %}</div>{% else %}<div class="empty">Henüz izin talebiniz yok.</div>{% endfor %}</div></article>
+        <article class="v23-box v23-span-6" data-dashboard-panel="leave" hidden><div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleriniz ve yönetici kararları</div></div></div><div class="v23-list">{% for item in leave_requests %}<div class="v23-item"><div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div><p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>{% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}{% if item.status=='pending' %}<form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>{% endif %}</div>{% else %}<div class="empty">Henüz izin talebiniz yok.</div>{% endfor %}</div></article>
 
-        <article class="v23-box v23-span-12"><div class="v23-box-head"><div><h3>Aktif Personel Hizmetleri</h3><div class="sub">Günlük kullanımda aktif olan personel işlemleri.</div></div></div><div class="v23-module-grid"><div class="v23-module active"><span class="tag">Aktif</span><strong>İzin ve Devamsızlık</strong><small>İzin gönderme, yönetici kararı ve kullanıcı bildirimi.</small></div><div class="v23-module active"><span class="tag">Aktif</span><strong>Duyuru Merkezi</strong><small>Hedefli hastane duyuruları ve bildirimler.</small></div></div></article>
+        <article class="v23-box v23-span-12" data-dashboard-panel="overview">
+          <div class="v23-box-head">
+            <div>
+              <h3>Hızlı Erişim</h3>
+              <div class="sub">Yalnızca kullanacağınız bölümü açın; ayrıntılı paneller ana ekranda yer kaplamaz.</div>
+            </div>
+          </div>
+          <div class="v242-quick-grid">
+            <button class="v242-quick-card" type="button" data-dashboard-open="report">
+              <span class="v242-quick-icon">＋</span>
+              <span><strong>Yeni Rapor</strong><small>Rapor formunu ve BBCode alanını aç</small></span>
+            </button>
+            <a class="v242-quick-card" href="{{ url_for('user_report_center') }}">
+              <span class="v242-quick-icon">▤</span>
+              <span><strong>Raporlarım</strong><small>Arama, filtreleme ve rapor geçmişi</small></span>
+            </a>
+            <a class="v242-quick-card" href="{{ url_for('clinical_center') }}">
+              <span class="v242-quick-icon">⚕</span>
+              <span><strong>Klinik Merkez</strong><small>Görevler, hasta dosyaları ve teslim zinciri</small></span>
+            </a>
+            <button class="v242-quick-card" type="button" data-dashboard-open="leave">
+              <span class="v242-quick-icon">◷</span>
+              <span><strong>İzin ve Devamsızlık</strong><small>Talep oluştur ve karar geçmişini görüntüle</small></span>
+            </button>
+            <button class="v242-quick-card" type="button" data-dashboard-open="notifications">
+              <span class="v242-quick-icon">🔔</span>
+              <span><strong>Duyuru Merkezi</strong><small>Bildirimleri ve hastane duyurularını aç</small></span>
+              {% if unread_notification_count %}
+                <span class="v23-notification-count">{{ unread_notification_count }}</span>
+              {% endif %}
+            </button>
+          </div>
+        </article>
       </section>
     </section>
 
-    <section class="hero" id="report-creator">
+    <section class="hero v242-report-intro" id="report-creator" data-dashboard-panel="report" hidden>
       <h1>Rapor oluştur</h1>
       <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
@@ -457,7 +727,7 @@ input:focus,select:focus,textarea:focus{
       </div>
     </section>
 
-    <section class="cards">
+    <section class="cards" data-dashboard-panel="report" hidden>
       {% if "vaka" in allowed_report_types %}
       <div class="card {% if initial_report_type == 'vaka' %}active{% endif %}" data-type="vaka" onclick="setReportType('vaka', this)">
         <div class="icon">🩺</div>
@@ -495,7 +765,7 @@ input:focus,select:focus,textarea:focus{
       {% endif %}
     </section>
 
-    <section class="workspace">
+    <section class="workspace" data-dashboard-panel="report" hidden>
       <div class="panel">
         <div class="panel-head">
           <h3 id="formTitle">Vaka Raporu Formu</h3>
@@ -543,6 +813,88 @@ input:focus,select:focus,textarea:focus{
   </main>
 
 </section>
+<script>
+const DASHBOARD_PANEL_INFO = {
+  overview: {
+    title: 'Genel Bakış',
+    description: 'Güncel raporlarınız ve sık kullandığınız işlemler.',
+    hash: 'overview'
+  },
+  report: {
+    title: 'Rapor Oluştur',
+    description: 'Rapor türünü seçin, formu doldurun ve BBCode çıktısını oluşturun.',
+    hash: 'report-creator'
+  },
+  leave: {
+    title: 'İzin ve Devamsızlık',
+    description: 'Yeni izin talebi oluşturun ve önceki taleplerinizi inceleyin.',
+    hash: 'leave-center'
+  },
+  notifications: {
+    title: 'Duyuru ve Bildirim Merkezi',
+    description: 'Yönetici duyurularını ve kişisel bildirimlerinizi görüntüleyin.',
+    hash: 'notifications'
+  }
+};
+
+function dashboardPanelFromHash(){
+  const hash=(window.location.hash || '').replace('#','');
+  if(hash==='report-creator') return 'report';
+  if(hash==='leave-center') return 'leave';
+  if(hash==='notifications') return 'notifications';
+  return 'overview';
+}
+
+function openDashboardPanel(panelName, options={}){
+  const selected=DASHBOARD_PANEL_INFO[panelName] ? panelName : 'overview';
+  const info=DASHBOARD_PANEL_INFO[selected];
+
+  document.querySelectorAll('[data-dashboard-panel]').forEach(function(element){
+    element.hidden=element.dataset.dashboardPanel!==selected;
+  });
+
+  document.querySelectorAll('[data-dashboard-open]').forEach(function(control){
+    const active=control.dataset.dashboardOpen===selected;
+    control.classList.toggle('is-active',active);
+    if(control.classList.contains('v242-selector-button')){
+      control.setAttribute('aria-selected',active ? 'true' : 'false');
+    }
+  });
+
+  const title=document.getElementById('v242WorkspaceTitle');
+  const description=document.getElementById('v242WorkspaceDescription');
+  const backButton=document.querySelector('.v242-back-overview');
+  if(title) title.textContent=info.title;
+  if(description) description.textContent=info.description;
+  if(backButton) backButton.hidden=selected==='overview';
+
+  if(options.updateHash!==false){
+    history.replaceState(null,'',`#${info.hash}`);
+  }
+
+  if(options.scroll===true){
+    document.getElementById('workspace-root')?.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  }
+}
+
+document.addEventListener('click',function(event){
+  const control=event.target.closest('[data-dashboard-open]');
+  if(!control) return;
+  event.preventDefault();
+  openDashboardPanel(control.dataset.dashboardOpen,{updateHash:true,scroll:true});
+});
+
+window.addEventListener('hashchange',function(){
+  openDashboardPanel(dashboardPanelFromHash(),{updateHash:false,scroll:false});
+});
+
+window.addEventListener('DOMContentLoaded',function(){
+  openDashboardPanel(dashboardPanelFromHash(),{updateHash:false,scroll:false});
+});
+</script>
 <script>
 
 const ALLOWED_REPORT_TYPES = {{ allowed_report_types|tojson }};

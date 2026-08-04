@@ -1,0 +1,43 @@
+CLSMC V24.2 — TOPLU VE MODÜLER PERSONEL ANA EKRANI
+=====================================================
+
+Ana ekran sadeleştirildi:
+- Sayfa ilk açıldığında yalnızca genel bilgiler görünür.
+- Hoş geldiniz alanı, kişisel istatistikler, son raporlar ve hızlı erişim korunur.
+- Ayrıntılı rapor, izin, bildirim ve duyuru panelleri ana ekranda açık durmaz.
+
+Yeni çalışma alanı seçici:
+- Genel Bakış
+- Rapor Oluştur
+- İzin ve Devamsızlık
+- Duyuru Merkezi
+
+Butona basıldığında:
+- Yalnızca seçilen konuyla ilgili panel açılır.
+- Diğer ayrıntılı paneller gizlenir.
+- "Genel Bakışa Dön" butonu görünür.
+- Adres çubuğundaki bölüm bağlantısı korunur.
+
+Hızlı erişim:
+- Yeni Rapor
+- Raporlarım
+- Klinik Merkez
+- İzin ve Devamsızlık
+- Duyuru Merkezi
+
+Ayrı sayfa olarak korunan bölümler:
+- Rapor Merkezi / Raporlarım
+- Klinik Merkez
+- Ayarlar
+- İstatistikler
+
+Uyumluluk:
+- #report-creator bağlantısı Rapor Oluştur alanını açar.
+- #leave-center bağlantısı İzin ve Devamsızlık alanını açar.
+- #notifications bağlantısı Duyuru Merkezi alanını açar.
+- İzin veya bildirim işleminden dönüşte doğru bölüm açılmaya devam eder.
+- Rapor oluşturma ve BBCode JavaScript işlevleri değiştirilmemiştir.
+- Mobil görünümde bölüm seçiciler tek sütuna geçer.
+
+Sürüm: V24.2
+Developer: Veyrath
