@@ -1,0 +1,63 @@
+{% macro his_icon(name, extra_class='') -%}
+<svg class="his-svg-icon {{ extra_class }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  {% if name == 'home' %}
+    <path d="M3 11.2 12 4l9 7.2"/><path d="M5.5 10.4V20h5v-5.2h3V20h5v-9.6"/>
+  {% elif name == 'file-plus' %}
+    <path d="M6 3.5h8l4 4V21H6z"/><path d="M14 3.5V8h4"/><path d="M12 11v6M9 14h6"/>
+  {% elif name == 'file-text' %}
+    <path d="M6 3.5h8l4 4V21H6z"/><path d="M14 3.5V8h4"/><path d="M9 11h6M9 14h6M9 17h4"/>
+  {% elif name == 'folder' %}
+    <path d="M3.5 6.5h6l2 2h9v10.5H3.5z"/><path d="M3.5 9h17"/>
+  {% elif name == 'hospital' %}
+    <path d="M5 21V5h10v16M15 10h4v11M8 8h4M10 6v4M8 13h2M12 13h1M8 17h2M12 17h1"/><path d="M3 21h18"/>
+  {% elif name == 'patient-file' %}
+    <path d="M4 4h16v16H4z"/><circle cx="9" cy="10" r="2"/><path d="M6.5 16c.8-2 4.2-2 5 0M14 9h3M14 12h3M14 15h3"/>
+  {% elif name == 'patient' %}
+    <circle cx="12" cy="8" r="3"/><path d="M5.5 20c.7-4 3.1-6 6.5-6s5.8 2 6.5 6"/>
+  {% elif name == 'users' %}
+    <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 20c.7-4 2.8-6 5.5-6s4.8 2 5.5 6M14.5 15c2.9-.4 5.2 1.2 6 4"/>
+  {% elif name == 'user-plus' %}
+    <circle cx="9" cy="8" r="3"/><path d="M3.5 20c.7-4 2.8-6 5.5-6s4.8 2 5.5 6M17 8v6M14 11h6"/>
+  {% elif name == 'handoff' %}
+    <path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>
+  {% elif name == 'calendar' %}
+    <rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7 3.5v4M17 3.5v4M3.5 10h17"/><path d="M8 14h2M12 14h2M16 14h1M8 17h2M12 17h2"/>
+  {% elif name == 'clock' %}
+    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>
+  {% elif name == 'department' %}
+    <path d="M4 21V7h7v14M11 11h9v10M7 10h1M7 13h1M7 16h1M14 14h1M17 14h1M14 17h1M17 17h1M3 21h18"/>
+  {% elif name == 'bell' %}
+    <path d="M6 17h12l-1.5-2.2V10a4.5 4.5 0 0 0-9 0v4.8z"/><path d="M10 20h4"/>
+  {% elif name == 'settings' %}
+    <circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18"/><circle cx="12" cy="12" r="7"/>
+  {% elif name == 'logout' %}
+    <path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10"/>
+  {% elif name == 'megaphone' %}
+    <path d="M4 13V9l12-4v12z"/><path d="M16 9h3v4h-3M7 13l1.5 6h3L10 12"/>
+  {% elif name == 'archive' %}
+    <path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3zM9 11h6"/>
+  {% elif name == 'chart' %}
+    <path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"/>
+  {% elif name == 'logs' %}
+    <path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h4M4 7H2M4 12H2M4 17H2"/>
+  {% elif name == 'shield' %}
+    <path d="M12 3.5 19 6v5.5c0 4.5-2.8 7.4-7 9-4.2-1.6-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/>
+  {% elif name == 'system-health' %}
+    <path d="M3 12h4l2-5 3 10 2-5h7"/><path d="M12 21C6 18 3 14.7 3 10.5A4.5 4.5 0 0 1 11 7a4.5 4.5 0 0 1 8 3.5c0 4.2-3 7.5-7 10.5"/>
+  {% elif name == 'scales' %}
+    <path d="M12 4v16M7 20h10M5 7h14M8 7 5 13h6zM16 7l-3 6h6z"/>
+  {% elif name == 'heart' %}
+    <path d="M12 20S4 15.5 4 9.5A4.2 4.2 0 0 1 11.5 7 4.2 4.2 0 0 1 20 9.5C20 15.5 12 20 12 20z"/><path d="M7.5 12h2l1-2 2 4 1-2h3"/>
+  {% elif name == 'ambulance' %}
+    <path d="M3 8h11v9H3zM14 11h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M8.5 10v4M6.5 12h4"/>
+  {% elif name == 'microscope' %}
+    <path d="M9 4h4v7H9zM11 11l-3 4M7 15h7a4 4 0 0 1-4 4H6M5 21h13M15 8h3M16.5 8v4"/>
+  {% elif name == 'check' %}
+    <path d="m5 12 4 4L19 6"/>
+  {% elif name == 'alert' %}
+    <path d="M12 4 3.5 20h17z"/><path d="M12 9v5M12 17h.01"/>
+  {% else %}
+    <circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/>
+  {% endif %}
+</svg>
+{%- endmacro %}

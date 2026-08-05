@@ -1,21 +1,27 @@
+{% from '_his_icons.html' import his_icon %}
 <aside class="his-sidebar his-user-sidebar">
   <div class="his-sidebar-brand">
-    <img src="{{ url_for('static',filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+    <span class="his-sidebar-brand-logo-shell">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.1') }}" alt="CLSMC kurum logosu">
+    </span>
     <div><strong>CLSMC</strong><small>Medical Center</small></div>
   </div>
-  <nav class="his-sidebar-nav">
-    <a class="{% if request.endpoint=='panel' %}active{% endif %}" href="{{ url_for('panel') }}#overview"><span>⌂</span>Ana Sayfa</a>
-    <a href="{{ url_for('panel') }}#report-creator"><span>▤</span>Rapor Oluştur</a>
-    <a class="{% if request.endpoint in ['user_report_center','user_report_view','user_report_version_view'] %}active{% endif %}" href="{{ url_for('user_report_center') }}"><span>▱</span>Rapor Merkezi</a>
-    <a class="{% if request.endpoint=='clinical_center' %}active{% endif %}" href="{{ url_for('clinical_center') }}"><span>▦</span>Klinik Merkez</a>
-    <a href="{{ url_for('clinical_center',section='patients') }}"><span>▧</span>Hasta Dosyaları</a>
-    <a href="{{ url_for('clinical_center',section='handoffs') }}"><span>⌁</span>Hasta Teslim Zinciri</a>
-    <a href="{{ url_for('panel') }}#leave-center"><span>◁</span>İzin ve Duyurular</a>
-    <a href="{{ url_for('panel') }}#notifications"><span>♢</span>Bildirimler{% if unread_notification_count|default(0) %}<b>{{ unread_notification_count }}</b>{% endif %}</a>
-    <a class="{% if request.endpoint=='settings' %}active{% endif %}" href="{{ url_for('settings') }}"><span>⚙</span>Ayarlar</a>
+  <nav class="his-sidebar-nav" aria-label="Kullanıcı ana menüsü">
+    <a class="{% if request.endpoint=='panel' %}active{% endif %}" href="{{ url_for('panel') }}#overview"><span class="his-nav-icon">{{ his_icon('home') }}</span>Ana Sayfa</a>
+    <a href="{{ url_for('panel') }}#report-creator"><span class="his-nav-icon">{{ his_icon('file-plus') }}</span>Rapor Oluştur</a>
+    <a class="{% if request.endpoint in ['user_report_center','user_report_view','user_report_version_view'] %}active{% endif %}" href="{{ url_for('user_report_center') }}"><span class="his-nav-icon">{{ his_icon('folder') }}</span>Rapor Merkezi</a>
+    <a class="{% if request.endpoint=='clinical_center' %}active{% endif %}" href="{{ url_for('clinical_center') }}"><span class="his-nav-icon">{{ his_icon('hospital') }}</span>Klinik Merkez</a>
+    <a href="{{ url_for('clinical_center',section='patients') }}"><span class="his-nav-icon">{{ his_icon('patient-file') }}</span>Hasta Dosyaları</a>
+    <a href="{{ url_for('clinical_center',section='handoffs') }}"><span class="his-nav-icon">{{ his_icon('handoff') }}</span>Hasta Teslim Zinciri</a>
+    <a href="{{ url_for('panel') }}#leave-center"><span class="his-nav-icon">{{ his_icon('calendar') }}</span>İzin ve Duyurular</a>
+    <a href="{{ url_for('panel') }}#notifications"><span class="his-nav-icon">{{ his_icon('bell') }}</span>Bildirimler{% if unread_notification_count|default(0) %}<b>{{ unread_notification_count }}</b>{% endif %}</a>
+    <a class="{% if request.endpoint=='settings' %}active{% endif %}" href="{{ url_for('settings') }}"><span class="his-nav-icon">{{ his_icon('settings') }}</span>Ayarlar</a>
   </nav>
   <div class="his-sidebar-footer">
-    <strong>CLSMC</strong><small>Central Los Santos<br>Medical Center</small>
-    <div><span>V25.1</span><span class="online">● Çevrimiçi</span></div>
+    <div class="his-sidebar-footer-brand">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.1') }}" alt="">
+      <div><strong>CLSMC</strong><small>Central Los Santos<br>Medical Center</small></div>
+    </div>
+    <div><span>V25.1.1</span><span class="online">● Çevrimiçi</span></div>
   </div>
 </aside>

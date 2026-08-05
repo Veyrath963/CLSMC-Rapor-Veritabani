@@ -1,4 +1,4 @@
-/* CLSMC V25.1 — Light-only hospital information system */
+/* CLSMC V25.1.1 — Light-only hospital information system */
 :root{--his-bg:#f2f6f9;--his-white:#fff;--his-text:#102c4e;--his-muted:#657a93;--his-line:#dbe5ed;--his-blue:#1769d2;--his-blue2:#49a9dc;--his-green:#24a66a;--his-red:#eb4d55;--his-amber:#e79a25;--his-violet:#7045d8;--his-shadow:0 5px 18px rgba(27,70,105,.07);--sidebar:190px}
 html,html[data-theme="light"],html[data-theme="dark"]{color-scheme:light!important;background:var(--his-bg)!important}
 body,body.clsmc-medical-user-ui,body.clsmc-medical-admin-ui,body.clsmc-medical-auth{background:var(--his-bg)!important;color:var(--his-text)!important;font-family:Inter,Segoe UI,Arial,sans-serif!important}
@@ -64,3 +64,282 @@ body.clsmc-medical-auth{background:linear-gradient(135deg,#edf4f8,#f9fbfc)!impor
 
 @media(max-width:1000px){.his-module .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}.his-module .workspace{grid-template-columns:1fr!important}}
 @media(max-width:600px){.his-module .cards,.his-module #dynamicFields{grid-template-columns:1fr!important}.his-module .bbcode{min-height:260px!important}}
+
+
+/* CLSMC V25.1.1 — Real logo and native SVG icon correction */
+.his-svg-icon{
+  width:1em;
+  height:1em;
+  display:block;
+  flex:0 0 auto;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  overflow:visible;
+}
+
+.his-sidebar-brand{
+  height:108px!important;
+  gap:12px!important;
+  padding:14px 13px!important;
+}
+.his-sidebar-brand-logo-shell{
+  width:68px;
+  height:68px;
+  flex:0 0 68px;
+  display:grid;
+  place-items:center;
+  padding:5px;
+  border:1px solid #c7d8e5;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 5px 14px rgba(26,69,104,.10);
+  overflow:hidden;
+}
+.his-sidebar-brand-logo-shell img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:contain!important;
+  image-rendering:auto;
+}
+.his-sidebar-brand strong{
+  font-size:16px!important;
+}
+.his-sidebar-brand small{
+  font-size:9px!important;
+}
+
+.his-sidebar-nav a{
+  gap:11px!important;
+}
+.his-sidebar-nav a .his-nav-icon{
+  width:25px!important;
+  height:25px!important;
+  flex:0 0 25px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#244a73!important;
+  font-size:18px!important;
+}
+.his-sidebar-nav a .his-nav-icon .his-svg-icon{
+  width:18px;
+  height:18px;
+}
+.his-sidebar-nav a:hover .his-nav-icon,
+.his-sidebar-nav a.active .his-nav-icon{
+  color:#075ec5!important;
+}
+
+.his-sidebar-footer{
+  padding:13px 12px!important;
+}
+.his-sidebar-footer-brand{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+.his-sidebar-footer-brand img{
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  display:block;
+  object-fit:contain;
+}
+.his-sidebar-footer-brand strong{
+  display:block;
+  color:var(--his-text);
+  font-size:11px;
+}
+.his-sidebar-footer-brand small{
+  display:block;
+  margin:2px 0 0!important;
+  font-size:8px!important;
+  line-height:1.3!important;
+}
+
+.his-topbar-identity{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.his-topbar-logo-shell{
+  width:52px;
+  height:52px;
+  flex:0 0 52px;
+  display:grid;
+  place-items:center;
+  padding:4px;
+  border:1px solid #c7d8e5;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 4px 12px rgba(26,69,104,.08);
+}
+.his-topbar-logo-shell img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+}
+.his-topbar-action .his-svg-icon{
+  width:15px;
+  height:15px;
+  color:currentColor;
+}
+
+.his-shift-with-icon{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.his-shift-icon{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-size:31px!important;
+}
+.his-shift-icon .his-svg-icon{
+  width:31px;
+  height:31px;
+  stroke-width:1.7;
+}
+
+.his-metric-icon .his-svg-icon{
+  width:27px;
+  height:27px;
+}
+.his-quick-action{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+}
+.his-quick-action .his-svg-icon{
+  width:17px;
+  height:17px;
+  flex:0 0 17px;
+}
+.his-list-icon .his-svg-icon{
+  width:18px;
+  height:18px;
+}
+.his-inline-row-icon{
+  width:14px!important;
+  height:14px!important;
+  display:inline-block!important;
+  vertical-align:-2px;
+  margin-right:3px;
+}
+.his-handoff-dot .his-svg-icon{
+  width:17px;
+  height:17px;
+}
+.his-patient-avatar .his-svg-icon{
+  width:30px;
+  height:30px;
+}
+.his-module .card .icon .his-svg-icon{
+  width:23px;
+  height:23px;
+}
+
+.his-admin-icon .his-svg-icon{
+  width:58px;
+  height:58px;
+}
+.his-admin-metric{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.his-admin-metric-icon{
+  width:45px;
+  height:45px;
+  flex:0 0 45px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:#e9f2ff;
+  color:#1769d2;
+}
+.his-admin-metric:nth-child(2) .his-admin-metric-icon{background:#fff5e8;color:#e58b17}
+.his-admin-metric:nth-child(3) .his-admin-metric-icon{background:#fff4df;color:#cf8518}
+.his-admin-metric:nth-child(4) .his-admin-metric-icon{background:#eaf8f1;color:#25915e}
+.his-admin-metric:nth-child(5) .his-admin-metric-icon{background:#edf2ff;color:#3f6ec5}
+.his-admin-metric:nth-child(6) .his-admin-metric-icon{background:#ffedf0;color:#e84252}
+.his-admin-metric-icon .his-svg-icon{
+  width:23px;
+  height:23px;
+}
+.his-admin-quick a span{
+  width:30px!important;
+  height:30px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0 auto 5px!important;
+  color:#1769d2!important;
+  font-size:22px!important;
+}
+.his-admin-quick a span .his-svg-icon{
+  width:23px;
+  height:23px;
+}
+.his-system-state-icon{
+  color:#249562;
+}
+.his-system-state-icon .his-svg-icon{
+  width:25px;
+  height:25px;
+}
+
+@media(max-width:850px){
+  .his-sidebar-brand{
+    width:190px!important;
+    height:63px!important;
+    padding:6px 10px!important;
+  }
+  .his-sidebar-brand-logo-shell{
+    width:48px;
+    height:48px;
+    flex-basis:48px;
+    padding:4px;
+  }
+  .his-sidebar-nav a .his-nav-icon{
+    width:27px!important;
+    height:27px!important;
+    flex-basis:27px!important;
+  }
+  .his-sidebar-nav a:not(.active) .his-nav-icon{
+    display:grid!important;
+  }
+  .his-topbar-logo-shell{
+    width:45px;
+    height:45px;
+    flex-basis:45px;
+  }
+}
+@media(max-width:520px){
+  .his-sidebar-brand{
+    width:68px!important;
+  }
+  .his-sidebar-brand-logo-shell{
+    width:47px;
+    height:47px;
+    flex-basis:47px;
+  }
+  .his-topbar-identity{
+    align-items:flex-start;
+  }
+  .his-topbar-logo-shell{
+    width:42px;
+    height:42px;
+    flex-basis:42px;
+  }
+}

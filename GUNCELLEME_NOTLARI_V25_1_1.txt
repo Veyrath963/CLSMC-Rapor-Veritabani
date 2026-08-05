@@ -1,0 +1,37 @@
+CLSMC V25.1.1 — LOGO VE SVG İKON DÜZELTMESİ
+================================================
+
+Düzeltilen sorun:
+- Sol menü ve dashboard kartlarında Unicode karakterler ikon olarak kullanılıyordu.
+- Bazı tarayıcı/font kombinasyonlarında bu karakterler küçük kutu, nokta veya
+  anlamsız işaret şeklinde görünüyordu.
+- CLSMC kurum logosu görünse bile çok küçük ve düşük belirginlikte kalıyordu.
+
+Yeni davranış:
+- Bütün ana kullanıcı ve admin menü ikonları yerleşik SVG olarak çizilir.
+- SVG ikonlar için internet, Font Awesome, Google Fonts veya başka bir servis gerekmez.
+- Kurum logosu sol menüde 68 px çerçeve içinde net gösterilir.
+- Kurum logosu kullanıcı ve admin üst başlığına da eklendi.
+- Sol alt sistem alanına küçük kurum logosu eklendi.
+- Vardiya, departman, tarih ve saat ikonları SVG olarak gösterilir.
+- Hasta, klinik belge, teslim, bildirim ve hızlı işlem kartları SVG ikon kullanır.
+- Rapor türü kartlarındaki emoji simgeleri SVG ile değiştirildi.
+- Admin hızlı işlemleri, metrikleri ve sistem durumu ikonları SVG ile değiştirildi.
+- Mobil görünümde ikonlar ve kurum logosu uygun boyuta küçülür.
+- Statik dosya önbelleği V25.1.1 sürüm parametresiyle yenilenir.
+
+Korunanlar:
+- Yalnızca aydınlık tema
+- Sol menü düzeni
+- Gerçek veritabanı kayıtları
+- Rapor ve BBCode işlemleri
+- Hasta dosyaları ve teslim zinciri
+- Bildirim, duyuru, izin ve admin işlemleri
+- Neon veritabanı ve mevcut rotalar
+
+Kontrol sınırı:
+- Python sözdizimi ve bütün Jinja şablonları statik kontrol edilmiştir.
+- Canlı Render tarayıcı testi yapılmamıştır.
+
+Sürüm: V25.1.1
+Developer: Veyrath
