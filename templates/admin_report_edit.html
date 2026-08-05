@@ -424,6 +424,10 @@ const reportConfig = {
           <input data-field="adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 42851936" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Cinsiyet</label>
           <select data-field="cinsiyet" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -526,6 +530,10 @@ const reportConfig = {
         <div class="field">
           <label>Hasta Adı ve Soyadı</label>
           <input data-field="adli_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="adli_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 73190524" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -937,6 +945,10 @@ const reportConfig = {
           <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="ems_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 59128476" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Bilinç Durumu</label>
           <select data-field="ems_bilinc" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -1120,6 +1132,9 @@ ${textOrDash(getVal('rapor_no'))}
 [b][color=#4C88A8]Hasta Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('adsoyad'))}
 
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('kimlik_no'))}
+
 [b][color=#4C88A8]Cinsiyet:[/color][/b]
 ${getVal('cinsiyet') || 'Erkek / Kadın / Diğer'}
 
@@ -1200,6 +1215,9 @@ ${getVal('adli_rapor_no') || 'CLSMC-ADL-0000'}
 
 [b][color=#943C3C]Hasta Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('adli_adsoyad'))}
+
+[b][color=#943C3C]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('adli_kimlik_no'))}
 
 [b][color=#943C3C]Cinsiyet:[/color][/b]
 ${getVal('adli_cinsiyet') || 'Erkek / Kadın / Diğer'}
@@ -1504,6 +1522,9 @@ ${textOrDash(getVal('ems_ihbar'))}
 
 [b][color=#4C88A8]Hastanın Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('ems_adsoyad'))}
+
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('ems_kimlik_no'))}
 
 [b][color=#4C88A8]Bilinç Durumu:[/color][/b]
 ${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}

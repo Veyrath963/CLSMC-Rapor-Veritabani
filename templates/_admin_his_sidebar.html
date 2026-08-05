@@ -2,7 +2,7 @@
 <aside class="his-sidebar his-admin-sidebar">
   <div class="his-sidebar-brand">
     <span class="his-sidebar-brand-logo-shell">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.2') }}" alt="CLSMC kurum logosu">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.4') }}" alt="CLSMC kurum logosu">
     </span>
     <div><strong>CLSMC</strong><small>Yönetim Merkezi</small></div>
   </div>
@@ -12,7 +12,6 @@
     <a class="{% if request.endpoint=='admin_accounts' %}active{% endif %}" href="{{ url_for('admin_accounts') }}"><span class="his-nav-icon">{{ his_icon('shield') }}</span>Admin Hesapları</a>
     <a href="{{ url_for('admin_dashboard') }}#reports"><span class="his-nav-icon">{{ his_icon('file-text') }}</span>Rapor Denetimi</a>
     <a class="{% if request.endpoint=='admin_clinical_center' %}active{% endif %}" href="{{ url_for('admin_clinical_center',section='patients') }}"><span class="his-nav-icon">{{ his_icon('patient-file') }}</span>Hasta Dosyaları</a>
-    <a href="{{ url_for('admin_clinical_center',section='handoffs') }}"><span class="his-nav-icon">{{ his_icon('handoff') }}</span>Hasta Teslim Zinciri</a>
     <a class="{% if request.endpoint in ['admin_hospital_management','admin_leave_calendar'] %}active{% endif %}" href="{{ url_for('admin_hospital_management') }}#leave-requests"><span class="his-nav-icon">{{ his_icon('calendar') }}</span>İzin Yönetimi</a>
     <a href="{{ url_for('admin_hospital_management') }}#announcements"><span class="his-nav-icon">{{ his_icon('megaphone') }}</span>Duyuru Merkezi{% if active_announcement_count|default(0) %}<b>{{ active_announcement_count }}</b>{% endif %}</a>
     <a class="{% if request.endpoint in ['admin_archive','admin_archive_view'] %}active{% endif %}" href="{{ url_for('admin_archive') }}"><span class="his-nav-icon">{{ his_icon('archive') }}</span>Veri Arşivi</a>
@@ -21,9 +20,9 @@
   </nav>
   <div class="his-sidebar-footer">
     <div class="his-sidebar-footer-brand">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.2') }}" alt="">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.4') }}" alt="">
       <div><strong>CLSMC</strong><small>Central Los Santos<br>Medical Center</small></div>
     </div>
-    <div><span>V25.1.2</span><span class="online">● Operasyonel</span></div>
+    <div><span>V25.1.3</span><span class="online">● Operasyonel</span></div>
   </div>
 </aside>

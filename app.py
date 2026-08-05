@@ -1165,28 +1165,6 @@ def panel():
         dashboard_task_filter,
         ClinicalTask.status.notin_(["completed", "cancelled"]),
     ).count()
-    dashboard_handoff_filter = db.or_(
-        PatientHandoff.from_user_id == user.id,
-        PatientHandoff.to_user_id == user.id,
-        PatientHandoff.from_username == user.username,
-        PatientHandoff.to_username == user.username,
-    )
-    dashboard_handoffs = (
-        PatientHandoff.query
-        .filter(dashboard_handoff_filter)
-        .order_by(PatientHandoff.created_at.desc(), PatientHandoff.id.desc())
-        .limit(6)
-        .all()
-    )
-    dashboard_pending_handoff_count = PatientHandoff.query.filter(
-        dashboard_handoff_filter,
-        PatientHandoff.status == "pending",
-    ).count()
-    dashboard_patient_ids = {item.patient_file_id for item in dashboard_handoffs}
-    dashboard_patient_map = {
-        item.id: item
-        for item in PatientFile.query.filter(PatientFile.id.in_(dashboard_patient_ids)).all()
-    } if dashboard_patient_ids else {}
     dashboard_preview_patient = dashboard_patients[0] if dashboard_patients else None
     dashboard_preview_entry = None
     if dashboard_preview_patient:
@@ -1248,9 +1226,6 @@ def panel():
         dashboard_patient_count=dashboard_patient_count,
         dashboard_tasks=dashboard_tasks,
         dashboard_open_task_count=dashboard_open_task_count,
-        dashboard_handoffs=dashboard_handoffs,
-        dashboard_pending_handoff_count=dashboard_pending_handoff_count,
-        dashboard_patient_map=dashboard_patient_map,
         dashboard_preview_patient=dashboard_preview_patient,
         dashboard_preview_entry=dashboard_preview_entry,
         dashboard_now=dashboard_now,
@@ -1263,7 +1238,6 @@ def panel():
         patient_status_labels=PATIENT_STATUS_LABELS,
         task_status_labels=TASK_STATUS_LABELS,
         task_priority_labels=TASK_PRIORITY_LABELS,
-        handoff_status_labels=HANDOFF_STATUS_LABELS,
     )
 
 
@@ -1324,6 +1298,36 @@ REPORT_TYPE_LABELS = {
     "ems": "EMS Saha Raporu",
 }
 
+# Kimlik numarası yalnızca yaşayan hasta değerlendirmesi içeren raporlarda tutulur.
+# Ex ve Otopsi raporları bu alanı kullanmaz.
+REPORT_IDENTITY_FIELDS = {
+    "vaka": "kimlik_no",
+    "adli": "adli_kimlik_no",
+    "ems": "ems_kimlik_no",
+}
+
+REPORT_FORM_FIELD_LABELS = {
+    "kimlik_no": "Kimlik Numarası",
+    "adli_kimlik_no": "Kimlik Numarası",
+    "ems_kimlik_no": "Kimlik Numarası",
+}
+
+
+def normalize_report_form_data(report_type: str, form_data: dict) -> dict:
+    """Normalize identity data and prevent it from leaking to Ex/Otopsi reports."""
+    normalized = dict(form_data or {})
+    allowed_identity_field = REPORT_IDENTITY_FIELDS.get(report_type)
+
+    for identity_field in REPORT_IDENTITY_FIELDS.values():
+        if identity_field != allowed_identity_field:
+            normalized.pop(identity_field, None)
+
+    if allowed_identity_field:
+        identity_number = str(normalized.get(allowed_identity_field, "") or "").strip()
+        normalized[allowed_identity_field] = identity_number[:80]
+
+    return normalized
+
 
 @app.post("/api/reports")
 def save_report():
@@ -1338,7 +1342,6 @@ def save_report():
     form_data_raw = data.get("form_data", {})
     if not isinstance(form_data_raw, dict):
         form_data_raw = {}
-    form_data_json = json.dumps(form_data_raw, ensure_ascii=False)
 
     current_user = db.session.get(User, session["user_id"])
     if not current_user:
@@ -1352,6 +1355,9 @@ def save_report():
 
     if report_type not in REPORT_TYPE_LABELS:
         return {"ok": False, "message": "Geçersiz rapor türü."}, 400
+
+    form_data_raw = normalize_report_form_data(report_type, form_data_raw)
+    form_data_json = json.dumps(form_data_raw, ensure_ascii=False)
 
     allowed_report_types = allowed_report_types_for_rank(doctor_rank)
     if report_type not in allowed_report_types:
@@ -1905,6 +1911,7 @@ def inject_access_context():
         "admin_permissions": permissions,
         "admin_role_labels": ADMIN_ROLE_LABELS,
         "current_admin_role": (admin.permission_level if admin else None),
+        "report_form_field_labels": REPORT_FORM_FIELD_LABELS,
     }
 
 
@@ -2159,21 +2166,12 @@ def admin_dashboard():
     admin_open_task_count = ClinicalTask.query.filter(
         ClinicalTask.status.notin_(["completed", "cancelled"])
     ).count()
-    admin_pending_handoff_count = PatientHandoff.query.filter_by(status="pending").count()
     admin_recent_patients = (
         PatientFile.query.order_by(PatientFile.updated_at.desc(), PatientFile.id.desc()).limit(6).all()
     )
     admin_recent_tasks = (
         ClinicalTask.query.order_by(ClinicalTask.updated_at.desc(), ClinicalTask.id.desc()).limit(6).all()
     )
-    admin_recent_handoffs = (
-        PatientHandoff.query.order_by(PatientHandoff.created_at.desc(), PatientHandoff.id.desc()).limit(6).all()
-    )
-    admin_patient_ids = {item.patient_file_id for item in admin_recent_handoffs}
-    admin_patient_map = {
-        item.id: item
-        for item in PatientFile.query.filter(PatientFile.id.in_(admin_patient_ids)).all()
-    } if admin_patient_ids else {}
     admin_pending_leave_requests = (
         LeaveRequest.query
         .filter_by(status="pending", is_archived=False)
@@ -2222,17 +2220,13 @@ def admin_dashboard():
         backup_warning=backup_warning,
         admin_active_patient_count=admin_active_patient_count,
         admin_open_task_count=admin_open_task_count,
-        admin_pending_handoff_count=admin_pending_handoff_count,
         admin_recent_patients=admin_recent_patients,
         admin_recent_tasks=admin_recent_tasks,
-        admin_recent_handoffs=admin_recent_handoffs,
-        admin_patient_map=admin_patient_map,
         admin_pending_leave_requests=admin_pending_leave_requests,
         admin_active_announcements=admin_active_announcements,
         patient_status_labels=PATIENT_STATUS_LABELS,
         task_status_labels=TASK_STATUS_LABELS,
         task_priority_labels=TASK_PRIORITY_LABELS,
-        handoff_status_labels=HANDOFF_STATUS_LABELS,
         leave_status_labels=LEAVE_STATUS_LABELS,
         leave_type_labels=LEAVE_TYPE_LABELS,
     )
@@ -2881,7 +2875,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V25.1.2",
+        "version": "V25.1.4",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -3974,6 +3968,8 @@ def admin_edit_report(report_id: int):
         flash("Geçersiz rapor türü.", "error")
         return redirect(url_for("admin_edit_report", report_id=report.id))
 
+    form_data_obj = normalize_report_form_data(report_type, form_data_obj)
+
     if doctor_rank not in ALLOWED_USER_RANKS:
         flash("Geçerli bir doktor rütbesi seçilmelidir.", "error")
         return redirect(url_for("admin_edit_report", report_id=report.id))
@@ -4042,6 +4038,8 @@ def clinical_center():
         return redirect(url_for("login_page"))
 
     section = request.args.get("section", "tasks").strip()
+    if section not in {"tasks", "patients"}:
+        section = "tasks"
     search = request.args.get("q", "").strip()
     task_filter = db.or_(
         ClinicalTask.assigned_user_id == user.id,
@@ -4066,24 +4064,12 @@ def clinical_center():
             PatientFile.identity_number.ilike(needle), PatientFile.phone.ilike(needle),
         ))
     patients = patients_query.order_by(PatientFile.updated_at.desc()).limit(100).all()
-    handoffs = PatientHandoff.query.filter(db.or_(
-        PatientHandoff.from_user_id == user.id,
-        PatientHandoff.to_user_id == user.id,
-        PatientHandoff.from_username == user.username,
-        PatientHandoff.to_username == user.username,
-    )).order_by(PatientHandoff.created_at.desc()).limit(80).all()
-    staff = User.query.order_by(User.username.asc()).all()
-    open_tasks = sum(1 for item in tasks if item.status not in {"completed", "cancelled"})
-    incoming_handoffs = sum(1 for item in handoffs if item.status == "pending" and (
-        item.to_user_id == user.id or item.to_username == user.username
-    ))
     return render_template(
         "clinical_center.html", system_name=SYSTEM_NAME, user=user, section=section,
-        tasks=tasks, patients=patients, handoffs=handoffs, staff=staff, search=search,
-        open_tasks=open_tasks, incoming_handoffs=incoming_handoffs,
+        tasks=tasks, patients=patients, search=search,
+        open_tasks=open_tasks,
         task_status_labels=TASK_STATUS_LABELS, task_priority_labels=TASK_PRIORITY_LABELS,
         task_category_labels=TASK_CATEGORY_LABELS, patient_status_labels=PATIENT_STATUS_LABELS,
-        handoff_status_labels=HANDOFF_STATUS_LABELS,
         task_checklist_value=task_checklist_value, task_updates_by_task=task_updates_by_task,
     )
 
@@ -4176,19 +4162,15 @@ def patient_file_view(patient_id: int):
         return redirect(url_for("admin_clinical_center" if admin_mode else "clinical_center"))
     entries = PatientClinicalEntry.query.filter_by(patient_file_id=patient.id).order_by(
         PatientClinicalEntry.created_at.desc(), PatientClinicalEntry.id.desc()).all()
-    handoffs = PatientHandoff.query.filter_by(patient_file_id=patient.id).order_by(
-        PatientHandoff.created_at.desc(), PatientHandoff.id.desc()).all()
     tasks = ClinicalTask.query.filter_by(patient_file_id=patient.id).order_by(ClinicalTask.updated_at.desc()).all()
-    staff = User.query.order_by(User.username.asc()).all()
     linked_reports = {report.id: report for report in Report.query.filter(
         Report.id.in_([entry.linked_report_id for entry in entries if entry.linked_report_id])
     ).all()} if entries else {}
     return render_template(
         "patient_file_view.html", system_name=SYSTEM_NAME, patient=patient, entries=entries,
-        handoffs=handoffs, tasks=tasks, staff=staff, user=user, admin_mode=admin_mode,
+        tasks=tasks, user=user, admin_mode=admin_mode,
         patient_status_labels=PATIENT_STATUS_LABELS,
         clinical_entry_labels=CLINICAL_ENTRY_LABELS,
-        handoff_status_labels=HANDOFF_STATUS_LABELS,
         task_status_labels=TASK_STATUS_LABELS,
         patient_vitals_value=patient_vitals_value, linked_reports=linked_reports,
     )
@@ -4273,93 +4255,40 @@ def clinical_add_patient_entry(patient_id: int):
 
 @app.post("/clinical/handoffs")
 def clinical_create_handoff():
+    """V25.1.3: Hasta teslim zinciri özelliği kullanıcı arayüzünden kaldırıldı."""
     user = current_user_account()
     admin = current_admin_account()
-    if not user and not (admin and admin_required("clinical_management")):
-        return redirect(url_for("login_page"))
-    patient = db.session.get(PatientFile, request.form.get("patient_file_id", type=int))
-    target = db.session.get(User, request.form.get("to_user_id", type=int))
-    if not patient or not target:
-        flash("Hasta dosyası ve teslim alacak personel seçilmelidir.", "error")
-        return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
-    actor_name = user.username if user else session.get("admin_username", "")
-    actor_rank = user.rank if user else ADMIN_ROLE_LABELS.get(admin.permission_level or "system_admin")
-    handoff = PatientHandoff(
-        patient_file_id=patient.id,
-        from_unit=request.form.get("from_unit", "").strip() or "Belirtilmedi",
-        to_unit=request.form.get("to_unit", "").strip() or "Belirtilmedi",
-        from_user_id=user.id if user else None, from_username=actor_name, from_rank=actor_rank,
-        to_user_id=target.id, to_username=target.username, to_rank=target.rank,
-        reason=request.form.get("reason", "").strip() or "Klinik devir",
-        condition_summary=request.form.get("condition_summary", "").strip() or "Durum bilgisi belirtilmedi.",
-        risks=request.form.get("risks", "").strip() or None,
-        active_treatments=request.form.get("active_treatments", "").strip() or None,
-        pending_actions=request.form.get("pending_actions", "").strip() or None,
-    )
-    db.session.add(handoff)
-    db.session.flush()
-    create_user_notification(
-        target, "Yeni hasta teslimi bekliyor",
-        f"{patient.patient_number} — {patient.full_name} dosyası {actor_name} tarafından size devredildi.",
-        "handoff", "patient_handoff", handoff.id,
-    )
-    db.session.commit()
-    write_log("INFO", "PATIENT_HANDOFF_CREATED", f"actor={actor_name}; handoff_id={handoff.id}; to={target.username}")
-    flash("Hasta teslim kaydı oluşturuldu ve ilgili personele bildirim gönderildi.", "success")
-    return redirect(url_for("patient_file_view", patient_id=patient.id) + "#handoff-chain")
+    flash("Hasta teslim zinciri özelliği sistemden kaldırılmıştır.", "error")
+    if admin:
+        return redirect(url_for("admin_clinical_center"))
+    if user:
+        return redirect(url_for("clinical_center", section="tasks"))
+    return redirect(url_for("login_page"))
 
 
 @app.post("/clinical/handoffs/<int:handoff_id>/respond")
 def clinical_respond_handoff(handoff_id: int):
+    """Eski bağlantıları güvenli biçimde etkisizleştirir."""
+    del handoff_id
     user = current_user_account()
-    handoff = db.session.get(PatientHandoff, handoff_id)
-    if not user or not handoff or not (
-        handoff.to_user_id == user.id or handoff.to_username == user.username
-    ):
-        flash("Bu hasta teslimine yanıt verme yetkiniz bulunmuyor.", "error")
-        return redirect(url_for("clinical_center", section="handoffs"))
-    decision = request.form.get("decision", "").strip()
-    if decision not in {"accepted", "rejected"} or handoff.status != "pending":
-        flash("Geçersiz veya daha önce sonuçlandırılmış teslim işlemi.", "error")
-        return redirect(url_for("clinical_center", section="handoffs"))
-    handoff.status = decision
-    handoff.response_note = request.form.get("response_note", "").strip() or None
-    handoff.responded_at = datetime.now(timezone.utc)
-    handoff.responded_by = user.username
-    sender = db.session.get(User, handoff.from_user_id) if handoff.from_user_id else User.query.filter_by(username=handoff.from_username).first()
-    create_user_notification(
-        sender, "Hasta teslimi sonuçlandı",
-        f"{handoff.to_username}, hasta teslimini {'kabul etti' if decision == 'accepted' else 'reddetti'}.",
-        "handoff", "patient_handoff", handoff.id, username=handoff.from_username,
-    )
-    db.session.commit()
-    write_log("INFO", "PATIENT_HANDOFF_RESPONDED", f"username={user.username}; handoff_id={handoff.id}; decision={decision}")
-    flash("Hasta teslim kararı kaydedildi.", "success")
-    return redirect(url_for("clinical_center", section="handoffs"))
+    flash("Hasta teslim zinciri özelliği sistemden kaldırılmıştır.", "error")
+    if user:
+        return redirect(url_for("clinical_center", section="tasks"))
+    return redirect(url_for("login_page"))
 
 
 @app.post("/clinical/handoffs/<int:handoff_id>/cancel")
 def clinical_cancel_handoff(handoff_id: int):
+    """Eski kullanıcı veya admin bağlantılarını güvenli biçimde etkisizleştirir."""
+    del handoff_id
     user = current_user_account()
     admin = current_admin_account()
-    handoff = db.session.get(PatientHandoff, handoff_id)
-    allowed = bool(handoff and (
-        (user and (handoff.from_user_id == user.id or handoff.from_username == user.username))
-        or (admin and admin_required("clinical_management"))
-    ))
-    if not allowed or handoff.status != "pending":
-        flash("Bu teslim kaydı iptal edilemez.", "error")
-        return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
-    actor = user.username if user else session.get("admin_username", "")
-    handoff.status = "cancelled"
-    handoff.cancelled_at = datetime.now(timezone.utc)
-    handoff.cancelled_by = actor
-    target = db.session.get(User, handoff.to_user_id) if handoff.to_user_id else None
-    create_user_notification(target, "Hasta teslimi iptal edildi", f"{handoff.from_username} tarafından oluşturulan teslim kaydı iptal edildi.", "warning", "patient_handoff", handoff.id, username=handoff.to_username)
-    db.session.commit()
-    write_log("WARNING", "PATIENT_HANDOFF_CANCELLED", f"actor={actor}; handoff_id={handoff.id}")
-    flash("Hasta teslim kaydı iptal edildi; zincir geçmişinde korunuyor.", "success")
-    return redirect(request.referrer or url_for("clinical_center", section="handoffs"))
+    flash("Hasta teslim zinciri özelliği sistemden kaldırılmıştır.", "error")
+    if admin:
+        return redirect(url_for("admin_clinical_center"))
+    if user:
+        return redirect(url_for("clinical_center", section="tasks"))
+    return redirect(url_for("login_page"))
 
 
 @app.get("/admin/clinical")
@@ -4384,19 +4313,17 @@ def admin_clinical_center():
         ).order_by(ClinicalTaskUpdate.created_at.desc()).all()
         for update in updates:
             task_updates_by_task.setdefault(update.task_id, []).append(update)
-    handoffs = PatientHandoff.query.order_by(PatientHandoff.created_at.desc()).limit(120).all()
     staff = User.query.order_by(User.username.asc()).all()
     open_task_count = sum(1 for item in tasks if item.status not in {"completed", "cancelled"})
-    pending_handoff_count = sum(1 for item in handoffs if item.status == "pending")
     return render_template(
         "admin_clinical_center.html", system_name=SYSTEM_NAME,
         admin_username=session.get("admin_username", ""), patients=patients,
-        tasks=tasks, handoffs=handoffs, staff=staff, q=q,
+        tasks=tasks, staff=staff, q=q,
         task_status_labels=TASK_STATUS_LABELS, task_priority_labels=TASK_PRIORITY_LABELS,
         task_category_labels=TASK_CATEGORY_LABELS, patient_status_labels=PATIENT_STATUS_LABELS,
-        handoff_status_labels=HANDOFF_STATUS_LABELS, task_checklist_value=task_checklist_value,
+        task_checklist_value=task_checklist_value,
         can_manage=admin_has_permission("clinical_management"),
-        open_task_count=open_task_count, pending_handoff_count=pending_handoff_count,
+        open_task_count=open_task_count,
         task_updates_by_task=task_updates_by_task,
     )
 
@@ -4591,4 +4518,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1.2"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1.4"}, 200

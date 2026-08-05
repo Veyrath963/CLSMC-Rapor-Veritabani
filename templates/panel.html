@@ -5,9 +5,9 @@
 <title>CLSMC Klinik Paneli</title>
 <script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script>
 <link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.2') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.2') }}">
-<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.2') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.4') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.4') }}">
+<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.4') }}"></script>
 </head>
 <body class="his-app-page his-user-app">
 {% from '_his_icons.html' import his_icon %}
@@ -16,7 +16,7 @@
 <header class="his-topbar">
   <div class="his-topbar-identity">
     <span class="his-topbar-logo-shell">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.2') }}" alt="CLSMC kurum logosu">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.4') }}" alt="CLSMC kurum logosu">
     </span>
     <div class="his-topbar-title"><h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1><p>Giriş yapan: <strong>{{ username }}</strong> — {{ user_rank or 'Rütbe Atanmadı' }}</p></div>
   </div>
@@ -39,7 +39,7 @@
     <div class="his-metrics">
       <div class="his-metric"><span class="his-metric-icon">{{ his_icon('users') }}</span><div><small>Aktif Hasta Dosyaları</small><strong>{{ dashboard_patient_count }}</strong><span>Güncel klinik kayıt</span></div></div>
       <div class="his-metric"><span class="his-metric-icon">{{ his_icon('file-text') }}</span><div><small>Klinik Belgelerim</small><strong>{{ personal_stats.total }}</strong><span>Bu hafta: <em>{{ personal_stats.week }}</em></span></div></div>
-      <div class="his-metric"><span class="his-metric-icon">{{ his_icon('handoff') }}</span><div><small>Bekleyen Teslim</small><strong>{{ dashboard_pending_handoff_count }}</strong><span>Açık görev: {{ dashboard_open_task_count }}</span></div></div>
+      <div class="his-metric"><span class="his-metric-icon">{{ his_icon('check') }}</span><div><small>Açık Klinik Görev</small><strong>{{ dashboard_open_task_count }}</strong><span>Size atanmış işlemler</span></div></div>
       <div class="his-metric"><span class="his-metric-icon">{{ his_icon('bell') }}</span><div><small>Aktif Bildirimler</small><strong>{{ unread_notification_count }}</strong><span>Okunmamış mesaj</span></div></div>
     </div>
     <article class="his-card his-quick-card"><div class="his-card-head"><h3>Hızlı İşlemler</h3></div><div class="his-card-body">
@@ -57,8 +57,7 @@
     <article class="his-card"><div class="his-card-head"><h3>Son Rapor Hareketleri</h3><a href="{{ url_for('user_report_center') }}">Tümünü Gör ›</a></div><div class="his-card-body his-report-list">{% for report in recent_reports[:5] %}<div class="his-report-item"><span class="his-list-icon">{{ his_icon('file-text') }}</span><div><strong>{{ report_type_labels.get(report.report_type,report.report_type) }} #{{ report.report_number }}</strong><small>{{ report.doctor_name }}</small></div><div class="his-report-time">{{ report.updated_at.strftime('%H:%M') if report.updated_at else '—' }}<span class="his-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,report.workflow_status) }}</span></div></div>{% else %}<div class="his-empty">Henüz rapor hareketi yok.</div>{% endfor %}</div></article>
     <article class="his-card"><div class="his-card-head"><h3>Duyuru ve Bildirimler</h3><a href="{{ url_for('panel') }}#notifications">Tümünü Gör ›</a></div><div class="his-card-body his-message-list">{% for item in announcements[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag {% if loop.first %}important{% endif %}">{% if loop.first %}ÖNEMLİ{% else %}DUYURU{% endif %}</span>{{ item.title }}</strong><small>{{ item.body|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in notifications[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag">BİLDİRİM</span>{{ item.title }}</strong><small>{{ item.message|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not announcements and not notifications %}<div class="his-empty">Yeni duyuru veya bildirim bulunmuyor.</div>{% endif %}</div></article>
   </section>
-  <section class="his-bottom-grid">
-    <article class="his-card"><div class="his-card-head"><h3>Hasta Teslim Zinciri</h3><a href="{{ url_for('clinical_center',section='handoffs') }}">Tümünü Gör ›</a></div><div class="his-card-body"><div class="his-handoff-flow">{% for handoff in dashboard_handoffs[:5] %}<div class="his-handoff-step {% if handoff.status=='pending' %}pending{% endif %}"><div class="his-handoff-dot">{% if handoff.status=='accepted' %}{{ his_icon('check') }}{% else %}{{ his_icon('handoff') }}{% endif %}</div><strong>{{ handoff.from_unit }} → {{ handoff.to_unit }}</strong><small>{{ dashboard_patient_map.get(handoff.patient_file_id).full_name if dashboard_patient_map.get(handoff.patient_file_id) else 'Hasta Dosyası' }}</small><small>{{ handoff_status_labels.get(handoff.status,handoff.status) }}</small></div>{% else %}<div class="his-empty">Teslim zinciri kaydı bulunmuyor.</div>{% endfor %}</div></div></article>
+  <section class="his-bottom-grid his-single-panel">
     <article class="his-card"><div class="his-card-head"><h3>Hasta Dosyası Önizleme</h3><a href="{{ url_for('clinical_center',section='patients') }}">Tüm Dosyaları Aç ›</a></div><div class="his-card-body">{% if dashboard_preview_patient %}<div class="his-patient-preview"><div class="his-patient-id"><span class="his-patient-avatar">{{ his_icon('patient') }}</span><div><strong>{{ dashboard_preview_patient.full_name }}</strong><small>{{ dashboard_preview_patient.gender or '—' }} · {{ dashboard_preview_patient.date_of_birth or 'Doğum tarihi yok' }}</small><small>Dosya No: {{ dashboard_preview_patient.patient_number }}</small></div></div><div class="his-patient-detail"><div><strong>Alerjiler</strong><p>{{ dashboard_preview_patient.allergies or 'Kayıt yok' }}</p></div><div><strong>Tanı / Kronik Durum</strong><p>{{ dashboard_preview_patient.chronic_conditions or (dashboard_preview_entry.diagnosis if dashboard_preview_entry else 'Kayıt yok') }}</p></div><div><strong>İlaçlar</strong><p>{{ dashboard_preview_patient.current_medications or 'Kayıt yok' }}</p></div><div><strong>Son Klinik Not</strong><p>{{ dashboard_preview_entry.clinical_note|truncate(120) if dashboard_preview_entry else 'Klinik not bulunmuyor.' }}</p></div></div></div>{% else %}<div class="his-empty">Önizlenecek hasta dosyası bulunmuyor.</div>{% endif %}</div></article>
   </section>
 </section>
@@ -296,6 +295,10 @@ const reportConfig = {
           <input data-field="adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 42851936" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Cinsiyet</label>
           <select data-field="cinsiyet" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -398,6 +401,10 @@ const reportConfig = {
         <div class="field">
           <label>Hasta Adı ve Soyadı</label>
           <input data-field="adli_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="adli_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 73190524" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -810,6 +817,10 @@ const reportConfig = {
           <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="ems_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 59128476" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Bilinç Durumu</label>
           <select data-field="ems_bilinc" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -991,6 +1002,9 @@ ${textOrDash(getVal('rapor_no'))}
 [b][color=#4C88A8]Hasta Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('adsoyad'))}
 
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('kimlik_no'))}
+
 [b][color=#4C88A8]Cinsiyet:[/color][/b]
 ${getVal('cinsiyet') || 'Erkek / Kadın / Diğer'}
 
@@ -1071,6 +1085,9 @@ ${getVal('adli_rapor_no') || 'CLSMC-ADL-0000'}
 
 [b][color=#943C3C]Hasta Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('adli_adsoyad'))}
+
+[b][color=#943C3C]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('adli_kimlik_no'))}
 
 [b][color=#943C3C]Cinsiyet:[/color][/b]
 ${getVal('adli_cinsiyet') || 'Erkek / Kadın / Diğer'}
@@ -1376,6 +1393,9 @@ ${textOrDash(getVal('ems_ihbar'))}
 [b][color=#4C88A8]Hastanın Adı ve Soyadı:[/color][/b]
 ${textOrDash(getVal('ems_adsoyad'))}
 
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('ems_kimlik_no'))}
+
 [b][color=#4C88A8]Bilinç Durumu:[/color][/b]
 ${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}
 
@@ -1582,6 +1602,7 @@ function fillSample(){
   const values = {
     rapor_no: 'CLSMC-VKR-0017',
     adsoyad: 'Peter Burrington',
+    kimlik_no: '42851936',
     tarih: '2026-07-26T19:48',
     olayyeri: 'Central Los Santos Medical Center — Hasta Odası',
     basvuru: 'Acil Giriş',
@@ -1613,6 +1634,7 @@ function fillAdliSample(){
   const values = {
     adli_rapor_no: 'CLSMC-ADL-0001',
     adli_adsoyad: 'Katarina Belrova',
+    adli_kimlik_no: '73190524',
     adli_tarih: '2026-07-26T04:11',
     adli_vaka_turu: 'Diğer',
     adli_vaka_diger: 'Travmatik yüz ve burun yaralanması',
@@ -1652,6 +1674,7 @@ function fillEmsSample(){
     ems_vaka_turu: 'Trafik Kazası',
     ems_ihbar: 'İki araçlı trafik kazası ve bir yaralı ihbarı üzerine ekip olay yerine sevk edildi.',
     ems_adsoyad: 'John Doe',
+    ems_kimlik_no: '59128476',
     ems_bilinc: 'Açık',
     ems_genel_durum: 'Stabil',
     ems_bulgular: 'Sağ ön kolda yüzeysel laserasyon, hafif baş dönmesi ve hassasiyet tespit edildi. Solunum ve dolaşım bulguları stabildi.',

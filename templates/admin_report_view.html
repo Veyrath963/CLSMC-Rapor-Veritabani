@@ -225,7 +225,7 @@ input:focus,select:focus,textarea:focus{
     <h3>Rapor Durumu ve Kullanıcı Bildirimi</h3>
     <div class="body">
       <form method="post" action="{{ url_for('admin_update_report_workflow',report_id=report.id) }}" class="v23-announcement-form">
-        <div class="field"><label>Durum</label><select name="workflow_status">{% for key,label in report_status_labels.items() %}<option value="{{ key }}" {% if report.workflow_status==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="field"><label>Durum</label><select name="workflow_status">{% for key,label in report_status_labels.items() %}<option value="{{ report_form_field_labels.get(key,key) }}" {% if report.workflow_status==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
         <div class="field wide"><label>Yönetici Notu</label><textarea name="admin_note" placeholder="Kullanıcı panelinde gösterilecek açıklama">{{ report.admin_note or '' }}</textarea></div>
         <div class="wide"><button class="btn primary" type="submit">Durumu Güncelle ve Bildirim Gönder</button></div>
       </form>
