@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html class="clsmc-auth-html" lang="tr">
+<html class="clsmc-auth-html" lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CLSMC Merkezi Takip ve Raporlama Sistemi — Giriş</title>
+<title>CLSMC Klinik Bilgi Sistemi — Giriş</title>
 <script>
 (function(){
   var selected = "dark";
@@ -334,8 +334,8 @@ body.clsmc-auth-page .developer-credit{
   }
 }
 </style>
-</head>
-<body class="clsmc-auth-page">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_auth_v250.css',v='25.0') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="clsmc-auth-page clsmc-medical-auth clsmc-medical-user-auth">
 <main class="clsmc-auth-screen">
   <section class="clsmc-auth-container" aria-labelledby="user-login-title">
     <header class="clsmc-auth-brand is-centered">
@@ -344,15 +344,15 @@ body.clsmc-auth-page .developer-credit{
       </div>
       <div class="clsmc-auth-heading">
         <h1 id="user-login-title">CLSMC Merkezi Takip ve Raporlama Sistemi</h1>
-        <p>Central Los Santos Medical Center</p>
+        <p>Yetkili klinik personel çalışma istasyonu</p>
       </div>
     </header>
 
     <div class="clsmc-auth-notice" role="note" aria-label="Platform bilgilendirmesi">
       <div class="clsmc-auth-notice-icon" aria-hidden="true">i</div>
       <div>
-        <strong>Platform Bilgilendirmesi</strong>
-        Bu site, Losland Roleplay platformunun Medical Departmanı adına hazırlanmıştır.
+        <strong>Klinik Sistem Erişimi</strong>
+        Bu çalışma istasyonu yalnızca yetkilendirilmiş hastane personelinin kullanımına açıktır.
       </div>
     </div>
 
@@ -371,13 +371,13 @@ body.clsmc-auth-page .developer-credit{
         <label for="loginPassword">Şifre</label>
         <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
       </div>
-      <button class="clsmc-auth-submit" type="submit">Giriş Yap</button>
+      <button class="clsmc-auth-submit" type="submit">Klinik Sisteme Giriş</button>
     </form>
 
     <div class="clsmc-auth-example">
-      <strong>Örnek kullanıcı:</strong><br>
-      Kullanıcı Adı: Darius Blackwell<br>
-      Şifre: Darius123
+      <strong>Hesap yönetimi:</strong><br>
+      Personel hesapları Hastane Yönetimi tarafından oluşturulur. Giriş bilgileriniz
+      bulunmuyorsa yetkili yöneticiyle iletişime geçin.
     </div>
   </section>
 </main>

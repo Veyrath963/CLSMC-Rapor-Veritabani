@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -117,8 +117,9 @@ document.getElementById('clsmc-light-theme').media=
   }
 }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_admin_v244.css',v='24.4') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage">
+{% include '_admin_his_sidebar.html' %}
 <header class="v24-topbar">
   <div class="v24-topbar-inner">
     <div class="v24-brand">
@@ -136,7 +137,7 @@ document.getElementById('clsmc-light-theme').media=
   </div>
 </header>
 
-<main class="v24-shell">
+<main class="v24-shell clsmc-admin-ops-shell">
   <section class="v24-hero v2412-calendar-intro">
     <div>
       <h1>{{ selected.strftime('%m.%Y') }} İzin Takvimi</h1>

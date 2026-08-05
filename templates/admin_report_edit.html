@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -252,8 +252,9 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_admin_v244.css',v='24.4') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage">
+{% include '_admin_his_sidebar.html' %}
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
     <strong>CLSMC Yönetim Merkezi • Rapor Düzenleme</strong><br>
@@ -262,7 +263,7 @@ input:focus,select:focus,textarea:focus{
   <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
-<main class="shell">
+<main class="shell clsmc-admin-ops-shell">
   <section class="hero">
     <h1>{{ report.report_number }}</h1>
     <p>Raporu kullanıcı panelindeki gibi alanlardan ve seçim menülerinden düzenle. BBCode anlık olarak yeniden oluşturulur.</p>

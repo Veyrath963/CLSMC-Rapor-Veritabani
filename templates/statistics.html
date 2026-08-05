@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -233,8 +233,9 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_user_v243.css',v='25.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_portal_v250.css',v='25.0') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="his-app-page his-user-subpage clsmc-medical-ui clsmc-medical-user-ui clsmc-medical-portal-page">
+{% include '_user_his_sidebar.html' %}
 <header class="topbar">
   <div class="brand">
     <div class="logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
@@ -246,7 +247,7 @@ input:focus,select:focus,textarea:focus{
   </div>
 </header>
 
-<main class="shell">
+<main class="shell clsmc-medical-portal-shell">
   <section class="hero">
     <h2>İstatistikler</h2>
     <p>BBCode'u Kopyala işlemiyle otomatik kaydedilen raporlar.</p>

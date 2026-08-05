@@ -1,723 +1,71 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rapor Paneli</title>
-<style>
-  :root{
-    --bg:#0b1020;
-    --panel:#121a2f;
-    --panel2:#17213b;
-    --line:#2a3657;
-    --text:#eef3ff;
-    --muted:#9eabc8;
-    --accent:#5b8cff;
-    --accent2:#7aa2ff;
-    --good:#38d39f;
-    --danger:#ff6b7a;
-    --shadow:0 16px 50px rgba(0,0,0,.28);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    background:
-      radial-gradient(circle at 20% 0%, rgba(91,140,255,.15), transparent 30%),
-      radial-gradient(circle at 85% 10%, rgba(56,211,159,.10), transparent 25%),
-      var(--bg);
-    color:var(--text);
-    min-height:100vh;
-  }
-  button,input,select,textarea{font:inherit}
-  .hidden{display:none!important}
-  .login-wrap{
-    min-height:100vh;display:grid;place-items:center;padding:24px;
-  }
-  .login-card{
-    width:min(460px,100%);
-    background:rgba(18,26,47,.95);
-    border:1px solid var(--line);
-    border-radius:24px;
-    padding:32px;
-    box-shadow:var(--shadow);
-  }
-  .brand{
-    display:flex;align-items:center;gap:12px;margin-bottom:28px;
-  }
-  .logo{
-    width:48px;height:48px;border-radius:14px;
-    display:grid;place-items:center;
-    background:linear-gradient(135deg,var(--accent),#785bff);
-    font-size:24px;font-weight:800;
-  }
-  .brand h1{font-size:20px;margin:0}
-  .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
-  label{display:block;font-size:13px;color:#c7d1ea;margin-bottom:7px}
-  input,select,textarea{
-    width:100%;background:#0f162a;border:1px solid var(--line);color:var(--text);
-    border-radius:12px;padding:12px 13px;outline:none;
-  }
-  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
-  textarea{min-height:110px;resize:vertical}
-  .field{margin-bottom:16px}
-  .btn{
-    border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;
-    transition:.18s ease;
-  }
-  .btn:hover{transform:translateY(-1px)}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#7b61ff);color:white}
-  .btn-secondary{background:#202b49;color:#dce6ff;border:1px solid #344264}
-  .btn-good{background:var(--good);color:#07140f}
-  .btn-danger{background:#3a1f2a;color:#ffdce2;border:1px solid #603040}
-  .full{width:100%}
-  .hint{
-    margin-top:15px;padding:11px 12px;border-radius:12px;background:#0f162a;
-    border:1px dashed #344264;color:var(--muted);font-size:12px;line-height:1.5
-  }
-
-  .app{min-height:100vh}
-  .topbar{
-    position:sticky;top:0;z-index:5;
-    display:flex;justify-content:space-between;align-items:center;
-    padding:16px 24px;background:rgba(11,16,32,.87);backdrop-filter:blur(12px);
-    border-bottom:1px solid rgba(42,54,87,.7)
-  }
-  .topbar .left{display:flex;align-items:center;gap:10px}
-  .mini-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#785bff);display:grid;place-items:center;font-weight:800}
-  .topbar h2{font-size:15px;margin:0}
-  .topbar small{color:var(--muted)}
-  .shell{max-width:1320px;margin:0 auto;padding:24px}
-  .hero{margin:10px 0 22px}
-  .hero h1{font-size:28px;margin:0 0 8px}
-  .hero p{margin:0;color:var(--muted)}
-  .cards{
-    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:28px
-  }
-  .card{
-    background:linear-gradient(180deg,var(--panel),#10172a);
-    border:1px solid var(--line);border-radius:18px;padding:20px;
-    cursor:pointer;transition:.18s ease;box-shadow:0 8px 26px rgba(0,0,0,.12)
-  }
-  .card:hover{transform:translateY(-3px);border-color:#4966a5}
-  .card.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
-  .icon{
-    width:44px;height:44px;border-radius:12px;background:#1b2a4d;display:grid;place-items:center;
-    font-size:22px;margin-bottom:14px
-  }
-  .card h3{margin:0 0 7px;font-size:17px}
-  .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
-
-  .workspace{
-    display:grid;grid-template-columns:minmax(0,1.05fr) minmax(380px,.95fr);gap:20px;
-    align-items:start
-  }
-  .panel{
-    background:var(--panel);border:1px solid var(--line);border-radius:18px;
-    box-shadow:var(--shadow);overflow:hidden
-  }
-  .panel-head{
-    padding:17px 20px;border-bottom:1px solid var(--line);
-    display:flex;align-items:center;justify-content:space-between;gap:12px
-  }
-  .panel-head h3{margin:0;font-size:16px}
-  .panel-body{padding:20px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-  .bbcode{
-    background:#090f1d;border:1px solid #263453;border-radius:14px;padding:16px;
-    white-space:pre-wrap;word-break:break-word;min-height:430px;max-height:650px;overflow:auto;
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;color:#dce7ff
-  }
-  .status{font-size:12px;color:var(--muted)}
-  .badge{
-    display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;
-    background:#0f1a31;border:1px solid #2a3a60;color:#b8c9ef;font-size:12px
-  }
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
-  .footer-note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.6}
-  @media (max-width:1100px){
-    .cards{grid-template-columns:repeat(2,1fr)}
-    .workspace{grid-template-columns:1fr}
-  }
-  @media (max-width:620px){
-    .cards{grid-template-columns:1fr}
-    .shell{padding:16px}
-    .topbar{padding:14px 16px}
-    .grid2{grid-template-columns:1fr}
-    .hero h1{font-size:23px}
-  }
-
-body .app{display:block!important}
-
-.developer-credit{
-  position:fixed;
-  right:14px;
-  bottom:10px;
-  z-index:1000;
-  color:var(--muted, #7A8891);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.2px;
-  opacity:.78;
-  user-select:none;
-  pointer-events:none;
-}
-@media(max-width:600px){
-  .developer-credit{
-    right:10px;
-    bottom:8px;
-    font-size:10px;
-  }
-}
-
-
-.doctor-identity{
-  margin:0 0 16px;
-  padding:13px 14px;
-  border:1px solid #344264;
-  border-radius:12px;
-  background:#0f162a;
-}
-.doctor-identity .doctor-label{
-  display:block;
-  color:var(--muted);
-  font-size:11px;
-  margin-bottom:5px;
-  text-transform:uppercase;
-  letter-spacing:.5px;
-}
-.doctor-identity strong{font-size:14px}
-.doctor-identity.warning{
-  border-color:rgba(255,107,122,.48);
-  background:rgba(255,107,122,.08);
-}
-
-</style>
-<script>
-(function(){
-  var selected = "dark";
-  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
-  document.documentElement.dataset.theme = selected;
-  document.documentElement.style.colorScheme = selected;
-})();
-</script>
-<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
-<script>
-  document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
-</script>
-<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
-<style id="clsmc-critical-layout-v234">
-html{
-  width:100%;
-  min-width:320px;
-  overflow-y:scroll;
-  scrollbar-gutter:stable;
-}
-body{
-  width:100%;
-  min-width:320px;
-  overflow-x:hidden !important;
-}
-*,*::before,*::after{box-sizing:border-box}
-img,svg,video,canvas{max-width:100%}
-
-.shell,.v22-dashboard-shell{
-  width:min(1440px,calc(100% - 40px)) !important;
-  max-width:1440px !important;
-  margin-left:auto !important;
-  margin-right:auto !important;
-  padding-left:0 !important;
-  padding-right:0 !important;
-}
-
-.topbar{
-  width:100% !important;
-  min-height:76px !important;
-  padding:12px max(20px,calc((100vw - 1440px)/2)) !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:space-between !important;
-  gap:16px !important;
-  flex-wrap:nowrap !important;
-}
-.topbar>*{min-width:0}
-.topbar .brand,.topbar-brand{
-  flex:1 1 auto;
-  min-width:0 !important;
-  max-width:650px;
-}
-.topbar>:last-child,
-.topbar .actions,
-.topbar .v22-top-actions{
-  flex:0 1 auto;
-  max-width:65%;
-  min-width:0;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:flex-end !important;
-  gap:8px !important;
-  flex-wrap:nowrap !important;
-  overflow-x:auto !important;
-  overflow-y:hidden !important;
-  scrollbar-width:none;
-}
-.topbar>:last-child::-webkit-scrollbar,
-.topbar .actions::-webkit-scrollbar,
-.topbar .v22-top-actions::-webkit-scrollbar{display:none}
-.topbar a,.topbar button{flex:0 0 auto;white-space:nowrap}
-
-main,section,article,aside,header,footer,nav,
-.panel,.card,.metric,.v22-grid,.v23-grid,
-.v22-tab-panel,.v23-box,.table-wrap{min-width:0}
-
-.grid,.grid2,.metrics,.v22-grid,.v23-grid,
-.v23-metrics,.v22-metrics,.v23-manager-cards,
-.v23-module-grid,.v23-announcement-form,
-.v23-leave-form,.filter-grid,.data-grid{width:100%}
-
-.grid>*,.grid2>*,.metrics>*,
-.v22-grid>*,.v23-grid>*,.v23-metrics>*,
-.v22-metrics>*,.v23-manager-cards>*,
-.v23-module-grid>*,.v23-announcement-form>*,
-.v23-leave-form>*,.filter-grid>*,.data-grid>*{min-width:0}
-
-.table-wrap{
-  width:100% !important;
-  max-width:100% !important;
-  overflow-x:auto !important;
-  overflow-y:hidden !important;
-  overscroll-behavior-inline:contain;
-  -webkit-overflow-scrolling:touch;
-}
-.table-wrap table{
-  width:100% !important;
-  min-width:860px;
-  margin:0;
-}
-table th{white-space:nowrap}
-table td{overflow-wrap:anywhere}
-
-.developer-credit{
-  position:fixed !important;
-  left:auto !important;
-  right:16px !important;
-  top:auto !important;
-  bottom:14px !important;
-  width:max-content !important;
-  max-width:calc(100vw - 32px) !important;
-  min-width:0 !important;
-  margin:0 !important;
-  z-index:9000 !important;
-  white-space:nowrap;
-  pointer-events:none;
-}
-
-.btn:hover,.btn:focus,
-.btn-primary:hover,.btn-primary:focus,
-.btn-secondary:hover,.btn-secondary:focus,
-.primary:hover,.primary:focus,
-.danger:hover,.danger:focus,
-.btn-good:hover,.btn-good:focus,
-.card:hover,.v22-quick-card:hover,
-input:focus,select:focus,textarea:focus{
-  transform:none !important;
-}
-.v22-tab-panel.active{animation:none !important}
-
-@media(max-width:900px){
-  .shell,.v22-dashboard-shell{
-    width:calc(100% - 28px) !important;
-  }
-  .topbar{
-    min-height:auto !important;
-    padding:12px 14px !important;
-    align-items:flex-start !important;
-    flex-wrap:wrap !important;
-  }
-  .topbar .brand,.topbar-brand{
-    width:100%;
-    max-width:100%;
-  }
-  .topbar>:last-child,
-  .topbar .actions,
-  .topbar .v22-top-actions{
-    width:100%;
-    max-width:100%;
-    justify-content:flex-start !important;
-  }
-}
-@media(max-width:650px){
-  .shell,.v22-dashboard-shell{
-    width:calc(100% - 20px) !important;
-  }
-  .v23-announcement-form{grid-template-columns:1fr !important}
-  .developer-credit{
-    right:10px !important;
-    bottom:8px !important;
-    font-size:10px !important;
-  }
-}
-</style>
-
-<style id="clsmc-v2413-no-drafts">
-@media(min-width:1101px){
-  .v23-metrics{
-    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
-  }
-}
-</style>
-
-
-<style id="clsmc-v242-modular-home">
-.v242-top-actions{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:8px;
-  min-width:0;
-  overflow-x:auto;
-  scrollbar-width:none;
-}
-.v242-top-actions::-webkit-scrollbar{display:none}
-.v242-top-actions form{margin:0}
-
-.v242-workspace-selector{
-  margin:18px 0;
-  padding:18px;
-  border:1px solid var(--line);
-  border-radius:20px;
-  background:var(--panel);
-  box-shadow:var(--shadow);
-  scroll-margin-top:96px;
-}
-.v242-selector-head{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:16px;
-  margin-bottom:14px;
-}
-.v242-selector-head h2{
-  margin:3px 0 4px;
-  font-size:20px;
-}
-.v242-selector-head p{
-  margin:0;
-  color:var(--muted);
-  font-size:13px;
-}
-.v242-selector-kicker{
-  color:var(--accent);
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-}
-.v242-selector-nav{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:10px;
-}
-.v242-selector-button{
-  position:relative;
-  min-width:0;
-  min-height:72px;
-  display:flex;
-  align-items:center;
-  gap:11px;
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--panel2);
-  color:var(--text);
-  text-align:left;
-  cursor:pointer;
-}
-.v242-selector-button:hover,
-.v242-selector-button:focus{
-  transform:none !important;
-  border-color:var(--accent);
-}
-.v242-selector-button.is-active{
-  border-color:var(--accent);
-  background:color-mix(in srgb,var(--accent) 13%,var(--panel2));
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent);
-}
-.v242-selector-button > span:nth-child(2){
-  min-width:0;
-}
-.v242-selector-button strong,
-.v242-selector-button small{
-  display:block;
-}
-.v242-selector-button strong{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.v242-selector-button small{
-  margin-top:4px;
-  color:var(--muted);
-  font-size:11px;
-}
-.v242-selector-icon{
-  width:34px;
-  height:34px;
-  flex:0 0 34px;
-  display:grid;
-  place-items:center;
-  border-radius:10px;
-  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
-  color:var(--accent);
-  font-weight:900;
-}
-.v242-back-overview[hidden]{display:none!important}
-
-.v242-quick-grid{
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:11px;
-}
-.v242-quick-card{
-  position:relative;
-  min-width:0;
-  min-height:110px;
-  display:flex;
-  align-items:flex-start;
-  gap:11px;
-  padding:14px;
-  border:1px solid var(--line);
-  border-radius:15px;
-  background:var(--panel2);
-  color:var(--text);
-  text-align:left;
-  text-decoration:none;
-  cursor:pointer;
-}
-.v242-quick-card:hover,
-.v242-quick-card:focus{
-  transform:none!important;
-  border-color:var(--accent);
-}
-.v242-quick-card strong,
-.v242-quick-card small{
-  display:block;
-}
-.v242-quick-card small{
-  margin-top:6px;
-  color:var(--muted);
-  font-size:11px;
-  line-height:1.45;
-}
-.v242-quick-icon{
-  width:36px;
-  height:36px;
-  flex:0 0 36px;
-  display:grid;
-  place-items:center;
-  border-radius:11px;
-  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
-  color:var(--accent);
-  font-weight:900;
-}
-[data-dashboard-panel][hidden]{
-  display:none!important;
-}
-.v242-report-intro{
-  margin-top:22px!important;
-}
-
-@media(max-width:1100px){
-  .v242-selector-nav{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-  .v242-quick-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
-}
-@media(max-width:760px){
-  .v242-selector-head{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-  .v242-selector-nav,
-  .v242-quick-grid{
-    grid-template-columns:1fr;
-  }
-  .v242-selector-button{
-    min-height:64px;
-  }
-  .v242-quick-card{
-    min-height:88px;
-  }
-}
-</style>
-
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLSMC Klinik Paneli</title>
+<script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}">
+<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1') }}"></script>
 </head>
-<body>
-<section class="app">
-
-  <header class="topbar">
-    <div class="left">
-      <div class="mini-logo"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div>
-      <div>
-        <h2>CLSMC Merkezi Takip ve Raporlama Sistemi</h2><small>Giriş yapan: {{ username }}{% if user_rank %} — {{ user_rank }}{% else %} — Rütbe Atanmadı{% endif %}</small>
-        <small>Rapor Paneli</small>
-      </div>
+<body class="his-app-page his-user-app">
+{% include '_user_his_sidebar.html' %}
+<div class="his-page" id="workspace-root">
+<header class="his-topbar">
+  <div class="his-topbar-title"><h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1><p>Giriş yapan: <strong>{{ username }}</strong> — {{ user_rank or 'Rütbe Atanmadı' }}</p></div>
+  <div class="his-topbar-actions">
+    <a class="his-topbar-action badge" href="{{ url_for('panel') }}#notifications">♢ Bildirimler {% if unread_notification_count %}<b>{{ unread_notification_count }}</b>{% endif %}</a>
+    <a class="his-topbar-action" href="{{ url_for('settings') }}">⚙ Ayarlar</a>
+    <form method="post" action="{{ url_for('logout') }}"><button class="his-topbar-action danger" type="submit">↪ Çıkış Yap</button></form>
+  </div>
+</header>
+<main class="his-content">
+{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="margin-bottom:12px;padding:11px 13px;border:1px solid #dbe5ed;border-radius:7px;background:white">{{ message }}</div>{% endfor %}{% endwith %}
+<section class="his-module" data-dashboard-panel="overview">
+  <section class="his-shift-banner">
+    <div class="his-shift-cell his-shift-main"><span class="his-shift-icon">⌂</span><div><small>Mevcut Vardiya</small><strong>{{ dashboard_shift_name }}</strong><span class="his-state-pill">Aktif</span></div></div>
+    <div class="his-shift-cell"><small>Tarih</small><strong>{{ dashboard_date_label }}</strong><span>{{ dashboard_day_name }}</span></div>
+    <div class="his-shift-cell"><small>Departman</small><strong>{{ dashboard_department }}</strong><span>Central Los Santos Medical Center</span></div>
+    <div class="his-shift-cell"><small>Vardiya Saati</small><strong>{{ dashboard_shift_hours }}</strong><span>{{ '%02d:%02d'|format(dashboard_shift_remaining_minutes//60,dashboard_shift_remaining_minutes%60) }} kaldı</span></div>
+  </section>
+  <section class="his-dashboard-top">
+    <div class="his-metrics">
+      <div class="his-metric"><span class="his-metric-icon">♙</span><div><small>Aktif Hasta Dosyaları</small><strong>{{ dashboard_patient_count }}</strong><span>Güncel klinik kayıt</span></div></div>
+      <div class="his-metric"><span class="his-metric-icon">▤</span><div><small>Klinik Belgelerim</small><strong>{{ personal_stats.total }}</strong><span>Bu hafta: <em>{{ personal_stats.week }}</em></span></div></div>
+      <div class="his-metric"><span class="his-metric-icon">⌁</span><div><small>Bekleyen Teslim</small><strong>{{ dashboard_pending_handoff_count }}</strong><span>Açık görev: {{ dashboard_open_task_count }}</span></div></div>
+      <div class="his-metric"><span class="his-metric-icon">♢</span><div><small>Aktif Bildirimler</small><strong>{{ unread_notification_count }}</strong><span>Okunmamış mesaj</span></div></div>
     </div>
-    <div class="v242-top-actions">
-      <button class="btn btn-secondary" type="button" data-dashboard-open="overview">⌂ Ana Ekran</button>
-      <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">▤ Raporlarım</a>
-      <a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Merkez</a>
-      <button class="btn btn-secondary" type="button" data-dashboard-open="notifications">
-        🔔 Bildirimler
-        {% if unread_notification_count %}<span class="v23-notification-count">{{ unread_notification_count }}</span>{% endif %}
-      </button>
-      <a class="btn btn-secondary" href="{{ url_for('settings') }}">⚙️ Ayarlar</a>
-      <a class="btn btn-secondary" href="{{ url_for('statistics') }}">📊 İstatistikler</a>
-      <form method="post" action="{{ url_for('logout') }}" style="margin:0">
-        <button class="btn btn-secondary" type="submit">Çıkış</button>
-      </form>
-    </div>
-  </header>
-
-  <main class="shell">
-    <section class="v23-user-home">
-      <article class="hero v23-welcome">
-        <div><div class="v23-kicker">⚕ Personel çalışma merkezi</div><h1>Hoş geldiniz, {{ username }}</h1><p>Raporlarınızı, bildirimlerinizi ve izin taleplerinizi tek merkezden yönetin.</p></div>
-        <div class="v23-user-actions">
-          <button class="btn btn-primary" type="button" data-dashboard-open="report">＋ Yeni Rapor</button>
-          <a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">⌕ Raporlarımda Ara</a>
-          <a class="btn btn-secondary" href="{{ url_for('clinical_center') }}">⚕ Klinik Merkez</a>
-          <button class="btn btn-secondary" type="button" data-dashboard-open="leave">İzin ve Devamsızlık</button>
-          <button class="btn btn-secondary" type="button" data-dashboard-open="notifications">Duyuru Merkezi</button>
-        </div>
-      </article>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="padding:13px 15px">{{ message }}</div>{% endfor %}{% endwith %}
-
-      <section class="v23-metrics">
-        <div class="v23-metric"><span>Toplam Raporum</span><strong>{{ personal_stats.total }}</strong></div>
-        <div class="v23-metric"><span>Bu Hafta</span><strong>{{ personal_stats.week }}</strong></div>
-        <div class="v23-metric"><span>Bu Ay</span><strong>{{ personal_stats.month }}</strong></div>
-        <div class="v23-metric"><span>Favoriler</span><strong>{{ personal_stats.favorites }}</strong></div>
-        <div class="v23-metric"><span>En Çok Kullandığım</span><strong style="font-size:16px">{{ personal_stats.favorite_type }}</strong></div>
-      </section>
-
-      <section class="v242-workspace-selector" id="workspace-root" aria-label="Personel çalışma alanları">
-        <div class="v242-selector-head">
-          <div>
-            <span class="v242-selector-kicker">Çalışma alanı</span>
-            <h2 id="v242WorkspaceTitle">Genel Bakış</h2>
-            <p id="v242WorkspaceDescription">Güncel raporlarınız ve sık kullandığınız işlemler.</p>
-          </div>
-          <button class="btn btn-secondary v242-back-overview" type="button" data-dashboard-open="overview" hidden>
-            ← Genel Bakışa Dön
-          </button>
-        </div>
-
-        <nav class="v242-selector-nav" aria-label="Ana panel bölümleri">
-          <button class="v242-selector-button is-active" type="button"
-                  data-dashboard-open="overview" aria-selected="true">
-            <span class="v242-selector-icon">⌂</span>
-            <span><strong>Genel Bakış</strong><small>Özet ve hızlı erişim</small></span>
-          </button>
-          <button class="v242-selector-button" type="button"
-                  data-dashboard-open="report" aria-selected="false">
-            <span class="v242-selector-icon">＋</span>
-            <span><strong>Rapor Oluştur</strong><small>Form ve BBCode alanı</small></span>
-          </button>
-          <button class="v242-selector-button" type="button"
-                  data-dashboard-open="leave" aria-selected="false">
-            <span class="v242-selector-icon">◷</span>
-            <span><strong>İzin ve Devamsızlık</strong><small>Talep ve geçmiş</small></span>
-          </button>
-          <button class="v242-selector-button" type="button"
-                  data-dashboard-open="notifications" aria-selected="false">
-            <span class="v242-selector-icon">🔔</span>
-            <span>
-              <strong>Duyuru Merkezi</strong>
-              <small>Bildirimler ve duyurular</small>
-            </span>
-            {% if unread_notification_count %}
-              <span class="v23-notification-count">{{ unread_notification_count }}</span>
-            {% endif %}
-          </button>
-        </nav>
-      </section>
-
-      <section class="v23-grid">
-        <article class="v23-box v23-span-7" data-dashboard-panel="overview">
-          <div class="v23-box-head"><div><h3>Son Raporlarım</h3><div class="sub">Raporlar ayrıca yönetici veya rütbeli onayı beklemeden doğrudan kaydedilir.</div></div><a class="btn btn-secondary" href="{{ url_for('user_report_center') }}">Tümünü Aç</a></div>
-          {% if recent_reports %}<div class="table-wrap"><table><thead><tr><th>Rapor No</th><th>Tür</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead><tbody>{% for report in recent_reports %}<tr><td><strong>{{ report.report_number }}</strong>{% if report.is_favorite %} ★{% endif %}</td><td>{{ report_type_labels.get(report.report_type,report.report_type) }}</td><td><span class="v23-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,'Tamamlandı') }}</span></td><td>{{ report.updated_at.strftime('%d.%m.%Y %H:%M') if report.updated_at else '—' }}</td><td><a class="edit" href="{{ url_for('user_report_view',report_id=report.id) }}">Görüntüle</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">Henüz rapor kaydınız bulunmuyor.</div>{% endif %}
-        </article>
-
-        <article class="v23-box v23-span-5" id="notifications" data-dashboard-panel="notifications" hidden>
-          <div class="v23-box-head"><div><h3>Bildirim Merkezi</h3><div class="sub">İzin, rapor ve yönetici bildirimleri</div></div>{% if unread_notification_count %}<form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="btn btn-secondary" type="submit">Tümünü Okundu Yap</button></form>{% endif %}</div>
-          <div class="v23-list">{% for item in notifications %}<div class="v23-item {% if not item.is_read %}unread{% endif %}"><strong>{{ item.title }}</strong><p>{{ item.message }}</p><div class="v23-item-meta"><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span>{% if not item.is_read %}<form method="post" action="{{ url_for('user_notification_read',notification_id=item.id) }}"><button class="edit" type="submit" style="border:0;background:none;cursor:pointer">Okundu yap</button></form>{% endif %}</div></div>{% else %}<div class="empty">Yeni bildiriminiz yok.</div>{% endfor %}</div>
-        </article>
-
-
-        {% if announcements %}<article class="v23-box v23-span-12" data-dashboard-panel="notifications" hidden><div class="v23-box-head"><div><h3>Hastane Duyuruları</h3><div class="sub">Yönetim tarafından yayımlanan aktif duyurular</div></div></div><div class="v23-list">{% for item in announcements %}<div class="v23-item v23-announcement"><strong>{{ item.title }}</strong><p>{{ item.body }}</p><div class="v23-item-meta"><span>{{ item.created_by_admin }}</span><span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div></div>{% endfor %}</div></article>{% endif %}
-
-        <article class="v23-box v23-span-6" id="leave-center" data-dashboard-panel="leave" hidden>
-          <div class="v23-box-head"><div><h3>İzin Talebi</h3><div class="sub">Talep Hastane Yöneticisi paneline düşer; sonuçlandığında bildirim alırsınız.</div></div></div>
-          <form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form">
-            <div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
-            <div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div>
-            <div class="field"><label>Bitiş Tarihi</label><input type="date" name="end_date" required></div>
-            <div class="field wide"><label>Açıklama</label><textarea name="reason" placeholder="İzin talebinizin nedenini ve gerekli bilgileri yazın." required></textarea></div>
-            <div class="wide"><button class="btn btn-primary" type="submit">İzin Talebini Gönder</button></div>
-          </form>
-        </article>
-
-        <article class="v23-box v23-span-6" data-dashboard-panel="leave" hidden><div class="v23-box-head"><div><h3>İzin Geçmişim</h3><div class="sub">Son izin talepleriniz ve yönetici kararları</div></div></div><div class="v23-list">{% for item in leave_requests %}<div class="v23-item"><div style="display:flex;justify-content:space-between;gap:10px"><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><span class="v23-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div><p>{{ item.start_date }} — {{ item.end_date }}<br>{{ item.reason }}</p>{% if item.admin_note %}<p><strong>Yönetici notu:</strong> {{ item.admin_note }}</p>{% endif %}{% if item.status=='pending' %}<form method="post" action="{{ url_for('user_cancel_leave_request',leave_request_id=item.id) }}" onsubmit="return confirm('İzin talebi iptal edilsin mi?')"><button class="btn btn-danger" type="submit">Talebi İptal Et</button></form>{% endif %}</div>{% else %}<div class="empty">Henüz izin talebiniz yok.</div>{% endfor %}</div></article>
-
-        <article class="v23-box v23-span-12" data-dashboard-panel="overview">
-          <div class="v23-box-head">
-            <div>
-              <h3>Hızlı Erişim</h3>
-              <div class="sub">Yalnızca kullanacağınız bölümü açın; ayrıntılı paneller ana ekranda yer kaplamaz.</div>
-            </div>
-          </div>
-          <div class="v242-quick-grid">
-            <button class="v242-quick-card" type="button" data-dashboard-open="report">
-              <span class="v242-quick-icon">＋</span>
-              <span><strong>Yeni Rapor</strong><small>Rapor formunu ve BBCode alanını aç</small></span>
-            </button>
-            <a class="v242-quick-card" href="{{ url_for('user_report_center') }}">
-              <span class="v242-quick-icon">▤</span>
-              <span><strong>Raporlarım</strong><small>Arama, filtreleme ve rapor geçmişi</small></span>
-            </a>
-            <a class="v242-quick-card" href="{{ url_for('clinical_center') }}">
-              <span class="v242-quick-icon">⚕</span>
-              <span><strong>Klinik Merkez</strong><small>Görevler, hasta dosyaları ve teslim zinciri</small></span>
-            </a>
-            <button class="v242-quick-card" type="button" data-dashboard-open="leave">
-              <span class="v242-quick-icon">◷</span>
-              <span><strong>İzin ve Devamsızlık</strong><small>Talep oluştur ve karar geçmişini görüntüle</small></span>
-            </button>
-            <button class="v242-quick-card" type="button" data-dashboard-open="notifications">
-              <span class="v242-quick-icon">🔔</span>
-              <span><strong>Duyuru Merkezi</strong><small>Bildirimleri ve hastane duyurularını aç</small></span>
-              {% if unread_notification_count %}
-                <span class="v23-notification-count">{{ unread_notification_count }}</span>
-              {% endif %}
-            </button>
-          </div>
-        </article>
-      </section>
-    </section>
-
-    <section class="hero v242-report-intro" id="report-creator" data-dashboard-panel="report" hidden>
-      <h1>Rapor oluştur</h1>
-      <p>Rapor türünü seç, formu doldur ve BBCode çıktısını anlık olarak oluştur.</p>
+    <article class="his-card his-quick-card"><div class="his-card-head"><h3>Hızlı İşlemler</h3></div><div class="his-card-body">
+      <a class="his-quick-action" href="{{ url_for('panel') }}#report-creator">▤ Yeni Vaka Raporu</a>
+      <a class="his-quick-action cyan" href="{{ url_for('panel') }}#report-creator">⚖ Adli Vaka Raporu</a>
+      <a class="his-quick-action red" href="{{ url_for('panel') }}#report-creator">♡ Ölüm (Ex) Raporu</a>
+      <a class="his-quick-action" href="{{ url_for('panel') }}#report-creator">▱ EMS Saha Raporu</a>
+      <a class="his-quick-action cyan wide" href="{{ url_for('clinical_center',section='patients') }}">▧ Hasta Dosyası Aç</a>
+    </div></article>
+  </section>
+  <section class="his-main-grid">
+    <article class="his-card"><div class="his-card-head"><h3>Güncel Hasta Listesi</h3><a href="{{ url_for('clinical_center',section='patients') }}">Tümünü Gör ›</a></div><div class="his-card-body">
+      {% if dashboard_patients %}<table class="his-table"><thead><tr><th>Hasta Adı</th><th>Dosya No</th><th>Durum</th><th>Öncelik</th><th>Sorumlu Personel</th></tr></thead><tbody>{% for patient in dashboard_patients %}<tr><td><a href="{{ url_for('patient_file_view',patient_id=patient.id) }}">♙ {{ patient.full_name }}</a></td><td>{{ patient.patient_number }}</td><td><span class="his-status {{ patient.status }}">{{ patient_status_labels.get(patient.status,patient.status) }}</span></td><td><span class="his-priority {% if patient.status in ['observation','deceased'] or patient.risk_notes %}high{% elif patient.status=='active' %}normal{% else %}low{% endif %}">● {% if patient.status in ['observation','deceased'] or patient.risk_notes %}Yüksek{% elif patient.status=='active' %}Orta{% else %}Düşük{% endif %}</span></td><td>{{ patient.created_by_username }}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="his-empty">Henüz hasta dosyası bulunmuyor.</div>{% endif %}
+    </div></article>
+    <article class="his-card"><div class="his-card-head"><h3>Son Rapor Hareketleri</h3><a href="{{ url_for('user_report_center') }}">Tümünü Gör ›</a></div><div class="his-card-body his-report-list">{% for report in recent_reports[:5] %}<div class="his-report-item"><span class="his-list-icon">▤</span><div><strong>{{ report_type_labels.get(report.report_type,report.report_type) }} #{{ report.report_number }}</strong><small>{{ report.doctor_name }}</small></div><div class="his-report-time">{{ report.updated_at.strftime('%H:%M') if report.updated_at else '—' }}<span class="his-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,report.workflow_status) }}</span></div></div>{% else %}<div class="his-empty">Henüz rapor hareketi yok.</div>{% endfor %}</div></article>
+    <article class="his-card"><div class="his-card-head"><h3>Duyuru ve Bildirimler</h3><a href="{{ url_for('panel') }}#notifications">Tümünü Gör ›</a></div><div class="his-card-body his-message-list">{% for item in announcements[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag {% if loop.first %}important{% endif %}">{% if loop.first %}ÖNEMLİ{% else %}DUYURU{% endif %}</span>{{ item.title }}</strong><small>{{ item.body|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in notifications[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag">BİLDİRİM</span>{{ item.title }}</strong><small>{{ item.message|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not announcements and not notifications %}<div class="his-empty">Yeni duyuru veya bildirim bulunmuyor.</div>{% endif %}</div></article>
+  </section>
+  <section class="his-bottom-grid">
+    <article class="his-card"><div class="his-card-head"><h3>Hasta Teslim Zinciri</h3><a href="{{ url_for('clinical_center',section='handoffs') }}">Tümünü Gör ›</a></div><div class="his-card-body"><div class="his-handoff-flow">{% for handoff in dashboard_handoffs[:5] %}<div class="his-handoff-step {% if handoff.status=='pending' %}pending{% endif %}"><div class="his-handoff-dot">{% if handoff.status=='accepted' %}✓{% else %}⌁{% endif %}</div><strong>{{ handoff.from_unit }} → {{ handoff.to_unit }}</strong><small>{{ dashboard_patient_map.get(handoff.patient_file_id).full_name if dashboard_patient_map.get(handoff.patient_file_id) else 'Hasta Dosyası' }}</small><small>{{ handoff_status_labels.get(handoff.status,handoff.status) }}</small></div>{% else %}<div class="his-empty">Teslim zinciri kaydı bulunmuyor.</div>{% endfor %}</div></div></article>
+    <article class="his-card"><div class="his-card-head"><h3>Hasta Dosyası Önizleme</h3><a href="{{ url_for('clinical_center',section='patients') }}">Tüm Dosyaları Aç ›</a></div><div class="his-card-body">{% if dashboard_preview_patient %}<div class="his-patient-preview"><div class="his-patient-id"><span class="his-patient-avatar">♙</span><div><strong>{{ dashboard_preview_patient.full_name }}</strong><small>{{ dashboard_preview_patient.gender or '—' }} · {{ dashboard_preview_patient.date_of_birth or 'Doğum tarihi yok' }}</small><small>Dosya No: {{ dashboard_preview_patient.patient_number }}</small></div></div><div class="his-patient-detail"><div><strong>Alerjiler</strong><p>{{ dashboard_preview_patient.allergies or 'Kayıt yok' }}</p></div><div><strong>Tanı / Kronik Durum</strong><p>{{ dashboard_preview_patient.chronic_conditions or (dashboard_preview_entry.diagnosis if dashboard_preview_entry else 'Kayıt yok') }}</p></div><div><strong>İlaçlar</strong><p>{{ dashboard_preview_patient.current_medications or 'Kayıt yok' }}</p></div><div><strong>Son Klinik Not</strong><p>{{ dashboard_preview_entry.clinical_note|truncate(120) if dashboard_preview_entry else 'Klinik not bulunmuyor.' }}</p></div></div></div>{% else %}<div class="his-empty">Önizlenecek hasta dosyası bulunmuyor.</div>{% endif %}</div></article>
+  </section>
+</section>
+<section class="his-module" id="notifications" data-dashboard-panel="notifications" hidden>
+  <article class="his-card"><div class="his-card-head"><h2>Duyuru ve Bildirim Merkezi</h2><form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="his-topbar-action" type="submit">Tümünü Okundu İşaretle</button></form></div><div class="his-card-body his-message-list">{% for item in notifications %}<div class="his-message-item"><div><strong>{{ item.title }}</strong><small>{{ item.message }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in announcements %}<div class="his-message-item"><div><strong><span class="his-message-tag">DUYURU</span>{{ item.title }}</strong><small>{{ item.body }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not notifications and not announcements %}<div class="his-empty">Bildirim bulunmuyor.</div>{% endif %}</div></article>
+</section>
+<section class="his-module" id="leave-center" data-dashboard-panel="leave" hidden>
+  <div class="his-bottom-grid"><article class="his-card"><div class="his-card-head"><h2>İzin Talebi Oluştur</h2></div><div class="his-card-body"><form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form"><div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div><div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div><div class="field"><label>Bitiş Tarihi</label><input type="date" name="end_date" required></div><div class="field wide"><label>Açıklama</label><textarea name="reason" required></textarea></div><div class="wide"><button class="btn btn-primary" type="submit">İzin Talebini Gönder</button></div></form></div></article><article class="his-card"><div class="his-card-head"><h2>İzin Geçmişim</h2></div><div class="his-card-body his-message-list">{% for item in leave_requests %}<div class="his-message-item"><div><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><small>{{ item.start_date }} — {{ item.end_date }} · {{ item.reason }}</small></div><span class="his-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div>{% else %}<div class="his-empty">İzin talebiniz bulunmuyor.</div>{% endfor %}</div></article></div>
+</section>
+<div class="his-module" data-dashboard-panel="report" hidden>
+<section class="hero v242-report-intro" id="report-creator" data-dashboard-panel="report" hidden>
+      <h1>Klinik dokümantasyon</h1>
+      <p>Doküman türünü seçin, klinik bilgileri tamamlayın ve standart BBCode çıktısını oluşturun.</p>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
         <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
         <strong>{{ username }} — {{ user_rank or "Rütbe Atanmadı" }}</strong>
@@ -727,7 +75,7 @@ input:focus,select:focus,textarea:focus{
       </div>
     </section>
 
-    <section class="cards" data-dashboard-panel="report" hidden>
+    <section class="cards clsmc-medical-report-types" data-dashboard-panel="report" hidden>
       {% if "vaka" in allowed_report_types %}
       <div class="card {% if initial_report_type == 'vaka' %}active{% endif %}" data-type="vaka" onclick="setReportType('vaka', this)">
         <div class="icon">🩺</div>
@@ -765,10 +113,10 @@ input:focus,select:focus,textarea:focus{
       {% endif %}
     </section>
 
-    <section class="workspace" data-dashboard-panel="report" hidden>
+    <section class="workspace clsmc-medical-document-workspace" data-dashboard-panel="report" hidden>
       <div class="panel">
         <div class="panel-head">
-          <h3 id="formTitle">Vaka Raporu Formu</h3>
+          <h3 id="formTitle">Vaka Raporu — Klinik Form</h3>
           <span class="badge"><span class="dot"></span> Otomatik oluşturma açık</span>
         </div>
         <div class="panel-body">
@@ -797,7 +145,7 @@ input:focus,select:focus,textarea:focus{
 
       <div class="panel">
         <div class="panel-head">
-          <h3>BBCode Önizleme</h3>
+          <h3>Standart Belge Çıktısı</h3>
           <span id="saveStatus" class="status">Hazır</span>
         </div>
         <div class="panel-body">
@@ -810,14 +158,15 @@ input:focus,select:focus,textarea:focus{
         </div>
       </div>
     </section>
-  </main>
-
-</section>
+  
+</div>
+</main>
+</div>
 <script>
 const DASHBOARD_PANEL_INFO = {
   overview: {
-    title: 'Genel Bakış',
-    description: 'Güncel raporlarınız ve sık kullandığınız işlemler.',
+    title: 'Ana Sayfa',
+    description: 'Hastane çalışma konsolu.',
     hash: 'overview'
   },
   report: {
@@ -2368,6 +1717,29 @@ window.addEventListener('beforeunload', function(event){
 <div id="copyToast" class="v23-toast" role="status" aria-live="polite">✓ BBCode kopyalandı</div>
 
 <div class="developer-credit">Developer: Veyrath</div>
+
+
+<script id="clsmc-medical-clock-script">
+(function(){
+  function updateMedicalClock(){
+    var now=new Date();
+    var time=document.getElementById('clsmcMedicalClock');
+    var date=document.getElementById('clsmcMedicalDate');
+    if(time){
+      time.textContent=now.toLocaleTimeString('tr-TR',{
+        hour:'2-digit',minute:'2-digit',second:'2-digit'
+      });
+    }
+    if(date){
+      date.textContent=now.toLocaleDateString('tr-TR',{
+        day:'2-digit',month:'2-digit',year:'numeric'
+      });
+    }
+  }
+  updateMedicalClock();
+  window.setInterval(updateMedicalClock,1000);
+})();
+</script>
 
 </body>
 </html>

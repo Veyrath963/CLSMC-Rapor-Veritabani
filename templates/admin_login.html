@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="clsmc-auth-html" lang="tr">
+<html class="clsmc-auth-html" lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -334,8 +334,8 @@ body.clsmc-auth-page .developer-credit{
   }
 }
 </style>
-</head>
-<body class="clsmc-auth-page">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_auth_v250.css',v='25.0') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="clsmc-auth-page clsmc-medical-auth clsmc-medical-admin-auth">
 <main class="clsmc-auth-screen">
   <section class="clsmc-auth-container" aria-labelledby="admin-login-title">
     <header class="clsmc-auth-brand">
@@ -343,16 +343,16 @@ body.clsmc-auth-page .developer-credit{
         <img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu">
       </div>
       <div class="clsmc-auth-heading">
-        <h1 id="admin-login-title">CLSMC Yönetim Merkezi</h1>
-        <p>Kısıtlı yönetici erişimi</p>
+        <h1 id="admin-login-title">CLSMC Operasyon Komuta Merkezi</h1>
+        <p>Yetkili hastane yönetimi ve sistem denetimi</p>
       </div>
     </header>
 
     <div class="clsmc-auth-notice" role="note">
       <div class="clsmc-auth-notice-icon" aria-hidden="true">!</div>
       <div>
-        <strong>Yönetici Alanı</strong>
-        Bu bölüm yalnızca yetkili yönetici hesaplarına açıktır.
+        <strong>Güvenli Yönetim Oturumu</strong>
+        Erişim yalnızca yetkili hastane yöneticileri ve sistem sorumlularıyla sınırlandırılmıştır.
       </div>
     </div>
 
@@ -371,7 +371,7 @@ body.clsmc-auth-page .developer-credit{
         <label for="adminPassword">Şifre</label>
         <input id="adminPassword" name="password" type="password" autocomplete="current-password" required>
       </div>
-      <button class="clsmc-auth-submit" type="submit">Yönetici Girişi</button>
+      <button class="clsmc-auth-submit" type="submit">Operasyon Merkezine Giriş</button>
     </form>
 
     <div class="clsmc-auth-note">

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -169,13 +169,14 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_admin_v244.css',v='24.4') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1') }}"></head>
+<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage">
+{% include '_admin_his_sidebar.html' %}
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static',filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div><strong>Admin Hesapları</strong><div style="font-size:11px;color:var(--muted)">Oturum: {{ admin_username }}</div></div></div>
   <div class="actions"><a class="btn" href="{{ url_for('admin_dashboard') }}">← Yönetim Merkezi</a><a class="btn" href="{{ url_for('admin_hospital_management') }}">Hastane Yöneticisi</a></div>
 </header>
-<main class="shell">
+<main class="shell clsmc-admin-ops-shell">
   <section class="hero"><h2>Yönetici Hesap Merkezi</h2><p>Yeni yönetici oluşturun, şifre yenileyin ve erişimi güvenli biçimde aktif veya pasif yönetin. Parolalar hiçbir ekranda görüntülenmez.</p></section>
   {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
   <section class="metrics"><div class="metric"><span>Toplam Admin</span><strong>{{ accounts|length }}</strong></div><div class="metric"><span>Aktif Admin</span><strong>{{ active_admin_count }}</strong></div><div class="metric"><span>Pasif Admin</span><strong>{{ accounts|length-active_admin_count }}</strong></div></section>

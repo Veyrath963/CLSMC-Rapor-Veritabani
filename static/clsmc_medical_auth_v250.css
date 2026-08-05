@@ -1,0 +1,185 @@
+
+/* CLSMC V25.0 — Clinical authentication terminals */
+body.clsmc-medical-auth{
+  --auth-med-bg:#07111b;
+  --auth-med-panel:#101f2c;
+  --auth-med-panel-2:#152737;
+  --auth-med-line:#2a4255;
+  --auth-med-text:#edf5f7;
+  --auth-med-muted:#8da5b5;
+  --auth-med-cyan:#36b6c8;
+  --auth-med-green:#39b77d;
+  min-height:100vh!important;
+  background:
+    linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px),
+    radial-gradient(circle at 50% -10%,rgba(54,182,200,.18),transparent 38%),
+    var(--auth-med-bg)!important;
+  background-size:32px 32px,32px 32px,auto,auto!important;
+  color:var(--auth-med-text)!important;
+}
+body.clsmc-medical-admin-auth{
+  background:
+    linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px),
+    radial-gradient(circle at 50% -10%,rgba(216,160,59,.13),transparent 38%),
+    var(--auth-med-bg)!important;
+  background-size:32px 32px,32px 32px,auto,auto!important;
+}
+.clsmc-medical-auth .clsmc-auth-screen{
+  padding:34px 18px!important;
+}
+.clsmc-medical-auth .clsmc-auth-container{
+  width:min(440px,100%)!important;
+  max-width:440px!important;
+  min-height:0!important;
+  padding:24px!important;
+  border:1px solid var(--auth-med-line)!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(160deg,rgba(54,182,200,.06),transparent 42%),
+    var(--auth-med-panel)!important;
+  box-shadow:0 24px 60px rgba(0,0,0,.34)!important;
+  overflow:hidden!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-container{
+  background:
+    linear-gradient(160deg,rgba(216,160,59,.06),transparent 42%),
+    var(--auth-med-panel)!important;
+}
+.clsmc-medical-auth .clsmc-auth-container::before{
+  height:3px!important;
+  background:linear-gradient(90deg,transparent,var(--auth-med-cyan),transparent)!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-container::before{
+  background:linear-gradient(90deg,transparent,#d8a03b,transparent)!important;
+}
+.clsmc-medical-auth .clsmc-auth-brand{
+  align-items:center!important;
+  gap:12px!important;
+  margin-bottom:18px!important;
+}
+.clsmc-medical-auth .clsmc-auth-brand.is-centered{
+  flex-direction:row!important;
+  text-align:left!important;
+}
+.clsmc-medical-auth .clsmc-auth-logo-shell,
+.clsmc-medical-auth .clsmc-auth-brand.is-centered .clsmc-auth-logo-shell{
+  width:58px!important;
+  height:58px!important;
+  flex:0 0 58px!important;
+  padding:6px!important;
+  border:1px solid color-mix(in srgb,var(--auth-med-cyan) 60%,var(--auth-med-line))!important;
+  border-radius:12px!important;
+  background:#eff8f9!important;
+  box-shadow:0 0 0 5px rgba(54,182,200,.06)!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-logo-shell{
+  border-color:color-mix(in srgb,#d8a03b 60%,var(--auth-med-line))!important;
+  box-shadow:0 0 0 5px rgba(216,160,59,.06)!important;
+}
+.clsmc-medical-auth .clsmc-auth-heading{
+  text-align:left!important;
+}
+.clsmc-medical-auth .clsmc-auth-heading h1{
+  margin:0!important;
+  color:var(--auth-med-text)!important;
+  font-size:18px!important;
+  line-height:1.2!important;
+}
+.clsmc-medical-auth .clsmc-auth-heading p{
+  margin-top:5px!important;
+  color:var(--auth-med-muted)!important;
+  font-size:9px!important;
+  letter-spacing:.04em!important;
+}
+.clsmc-medical-auth .clsmc-auth-notice,
+.clsmc-medical-auth .clsmc-auth-example,
+.clsmc-medical-auth .clsmc-auth-note{
+  padding:11px 12px!important;
+  border:1px solid var(--auth-med-line)!important;
+  border-radius:9px!important;
+  background:var(--auth-med-panel-2)!important;
+  color:var(--auth-med-muted)!important;
+  font-size:9px!important;
+  line-height:1.55!important;
+}
+.clsmc-medical-auth .clsmc-auth-notice strong,
+.clsmc-medical-auth .clsmc-auth-example strong,
+.clsmc-medical-auth .clsmc-auth-note strong{
+  color:var(--auth-med-text)!important;
+}
+.clsmc-medical-auth .clsmc-auth-notice-icon{
+  width:27px!important;
+  height:27px!important;
+  flex:0 0 27px!important;
+  border:1px solid var(--auth-med-line)!important;
+  border-radius:8px!important;
+  background:rgba(54,182,200,.12)!important;
+  color:var(--auth-med-cyan)!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-notice-icon{
+  background:rgba(216,160,59,.12)!important;
+  color:#d8a03b!important;
+}
+.clsmc-medical-auth .clsmc-auth-field{
+  margin-bottom:12px!important;
+}
+.clsmc-medical-auth .clsmc-auth-field label{
+  color:var(--auth-med-muted)!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.09em!important;
+  text-transform:uppercase!important;
+}
+.clsmc-medical-auth .clsmc-auth-field input{
+  min-height:42px!important;
+  padding:10px 11px!important;
+  border:1px solid var(--auth-med-line)!important;
+  border-radius:8px!important;
+  background:#09141f!important;
+  color:var(--auth-med-text)!important;
+  font-size:11px!important;
+}
+.clsmc-medical-auth .clsmc-auth-field input:focus{
+  border-color:var(--auth-med-cyan)!important;
+  box-shadow:0 0 0 3px rgba(54,182,200,.13)!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-field input:focus{
+  border-color:#d8a03b!important;
+  box-shadow:0 0 0 3px rgba(216,160,59,.13)!important;
+}
+.clsmc-medical-auth .clsmc-auth-submit{
+  min-height:43px!important;
+  border:1px solid var(--auth-med-cyan)!important;
+  border-radius:8px!important;
+  background:linear-gradient(135deg,#168ba0,var(--auth-med-cyan))!important;
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+.clsmc-medical-admin-auth .clsmc-auth-submit{
+  border-color:#d8a03b!important;
+  background:linear-gradient(135deg,#9a6d18,#d8a03b)!important;
+}
+.clsmc-medical-auth .clsmc-auth-flash{
+  border-radius:8px!important;
+  font-size:9px!important;
+}
+.clsmc-medical-auth .developer-credit{
+  color:var(--auth-med-muted)!important;
+}
+@media(max-width:500px){
+  .clsmc-medical-auth .clsmc-auth-container{
+    padding:19px!important;
+  }
+  .clsmc-medical-auth .clsmc-auth-brand,
+  .clsmc-medical-auth .clsmc-auth-brand.is-centered{
+    align-items:center!important;
+    flex-direction:column!important;
+    text-align:center!important;
+  }
+  .clsmc-medical-auth .clsmc-auth-heading{
+    text-align:center!important;
+  }
+}

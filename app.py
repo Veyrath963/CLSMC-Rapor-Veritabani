@@ -1140,6 +1140,88 @@ def panel():
         .all()
     )
 
+    # V25.1: Ana hastane konsolu gerçek klinik verilerle beslenir.
+    dashboard_patients = (
+        PatientFile.query
+        .order_by(PatientFile.updated_at.desc(), PatientFile.id.desc())
+        .limit(5)
+        .all()
+    )
+    dashboard_patient_count = PatientFile.query.filter(
+        PatientFile.status.in_(["active", "observation"])
+    ).count()
+    dashboard_task_filter = db.or_(
+        ClinicalTask.assigned_user_id == user.id,
+        db.and_(ClinicalTask.assigned_user_id.is_(None), ClinicalTask.assigned_username == user.username),
+    )
+    dashboard_tasks = (
+        ClinicalTask.query
+        .filter(dashboard_task_filter)
+        .order_by(ClinicalTask.updated_at.desc(), ClinicalTask.id.desc())
+        .limit(5)
+        .all()
+    )
+    dashboard_open_task_count = ClinicalTask.query.filter(
+        dashboard_task_filter,
+        ClinicalTask.status.notin_(["completed", "cancelled"]),
+    ).count()
+    dashboard_handoff_filter = db.or_(
+        PatientHandoff.from_user_id == user.id,
+        PatientHandoff.to_user_id == user.id,
+        PatientHandoff.from_username == user.username,
+        PatientHandoff.to_username == user.username,
+    )
+    dashboard_handoffs = (
+        PatientHandoff.query
+        .filter(dashboard_handoff_filter)
+        .order_by(PatientHandoff.created_at.desc(), PatientHandoff.id.desc())
+        .limit(6)
+        .all()
+    )
+    dashboard_pending_handoff_count = PatientHandoff.query.filter(
+        dashboard_handoff_filter,
+        PatientHandoff.status == "pending",
+    ).count()
+    dashboard_patient_ids = {item.patient_file_id for item in dashboard_handoffs}
+    dashboard_patient_map = {
+        item.id: item
+        for item in PatientFile.query.filter(PatientFile.id.in_(dashboard_patient_ids)).all()
+    } if dashboard_patient_ids else {}
+    dashboard_preview_patient = dashboard_patients[0] if dashboard_patients else None
+    dashboard_preview_entry = None
+    if dashboard_preview_patient:
+        dashboard_preview_entry = (
+            PatientClinicalEntry.query
+            .filter_by(patient_file_id=dashboard_preview_patient.id)
+            .order_by(PatientClinicalEntry.created_at.desc(), PatientClinicalEntry.id.desc())
+            .first()
+        )
+
+    dashboard_now = datetime.now(timezone.utc) + timedelta(hours=3)
+    dashboard_hour = dashboard_now.hour
+    if 6 <= dashboard_hour < 14:
+        dashboard_shift_name, dashboard_shift_hours = "Gündüz Vardiyası", "06:00 - 14:00"
+        dashboard_shift_end_hour = 14
+    elif 14 <= dashboard_hour < 22:
+        dashboard_shift_name, dashboard_shift_hours = "Akşam Vardiyası", "14:00 - 22:00"
+        dashboard_shift_end_hour = 22
+    else:
+        dashboard_shift_name, dashboard_shift_hours = "Gece Vardiyası", "22:00 - 06:00"
+        dashboard_shift_end_hour = 30 if dashboard_hour >= 22 else 6
+    dashboard_shift_remaining_minutes = max(0, (dashboard_shift_end_hour * 60) - (dashboard_hour * 60 + dashboard_now.minute))
+    dashboard_department = (
+        "EMS / Saha Operasyonları" if (user.rank or "").strip() in EMS_USER_RANKS
+        else "Psikiyatri" if (user.rank or "").strip() == "Psychiatrist"
+        else "Acil Servis"
+    )
+    dashboard_day_names = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
+    dashboard_month_names = [
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+    ]
+    dashboard_date_label = (
+        f"{dashboard_now.day:02d} {dashboard_month_names[dashboard_now.month - 1]} {dashboard_now.year}"
+    )
 
     return render_template(
         "panel.html",
@@ -1162,6 +1244,26 @@ def panel():
         leave_requests=leave_requests,
         leave_status_labels=LEAVE_STATUS_LABELS,
         leave_type_labels=LEAVE_TYPE_LABELS,
+        dashboard_patients=dashboard_patients,
+        dashboard_patient_count=dashboard_patient_count,
+        dashboard_tasks=dashboard_tasks,
+        dashboard_open_task_count=dashboard_open_task_count,
+        dashboard_handoffs=dashboard_handoffs,
+        dashboard_pending_handoff_count=dashboard_pending_handoff_count,
+        dashboard_patient_map=dashboard_patient_map,
+        dashboard_preview_patient=dashboard_preview_patient,
+        dashboard_preview_entry=dashboard_preview_entry,
+        dashboard_now=dashboard_now,
+        dashboard_shift_name=dashboard_shift_name,
+        dashboard_shift_hours=dashboard_shift_hours,
+        dashboard_shift_remaining_minutes=dashboard_shift_remaining_minutes,
+        dashboard_department=dashboard_department,
+        dashboard_day_name=dashboard_day_names[dashboard_now.weekday()],
+        dashboard_date_label=dashboard_date_label,
+        patient_status_labels=PATIENT_STATUS_LABELS,
+        task_status_labels=TASK_STATUS_LABELS,
+        task_priority_labels=TASK_PRIORITY_LABELS,
+        handoff_status_labels=HANDOFF_STATUS_LABELS,
     )
 
 
@@ -2050,6 +2152,41 @@ def admin_dashboard():
     backup_age_days = (now_utc - latest_backup_at).days if latest_backup_at else None
     backup_warning = latest_backup is None or (backup_age_days is not None and backup_age_days >= 7)
 
+    # V25.1: Yönetim konsolunda gerçek klinik operasyon verileri.
+    admin_active_patient_count = PatientFile.query.filter(
+        PatientFile.status.in_(["active", "observation"])
+    ).count()
+    admin_open_task_count = ClinicalTask.query.filter(
+        ClinicalTask.status.notin_(["completed", "cancelled"])
+    ).count()
+    admin_pending_handoff_count = PatientHandoff.query.filter_by(status="pending").count()
+    admin_recent_patients = (
+        PatientFile.query.order_by(PatientFile.updated_at.desc(), PatientFile.id.desc()).limit(6).all()
+    )
+    admin_recent_tasks = (
+        ClinicalTask.query.order_by(ClinicalTask.updated_at.desc(), ClinicalTask.id.desc()).limit(6).all()
+    )
+    admin_recent_handoffs = (
+        PatientHandoff.query.order_by(PatientHandoff.created_at.desc(), PatientHandoff.id.desc()).limit(6).all()
+    )
+    admin_patient_ids = {item.patient_file_id for item in admin_recent_handoffs}
+    admin_patient_map = {
+        item.id: item
+        for item in PatientFile.query.filter(PatientFile.id.in_(admin_patient_ids)).all()
+    } if admin_patient_ids else {}
+    admin_pending_leave_requests = (
+        LeaveRequest.query
+        .filter_by(status="pending", is_archived=False)
+        .order_by(LeaveRequest.created_at.desc(), LeaveRequest.id.desc())
+        .limit(6)
+        .all()
+    )
+    admin_active_announcements = (
+        Announcement.query.filter_by(is_active=True)
+        .order_by(Announcement.created_at.desc(), Announcement.id.desc())
+        .limit(5).all()
+    )
+
     return render_template(
         "admin_dashboard.html",
         system_name=SYSTEM_NAME,
@@ -2083,6 +2220,21 @@ def admin_dashboard():
         latest_backup=latest_backup,
         backup_age_days=backup_age_days,
         backup_warning=backup_warning,
+        admin_active_patient_count=admin_active_patient_count,
+        admin_open_task_count=admin_open_task_count,
+        admin_pending_handoff_count=admin_pending_handoff_count,
+        admin_recent_patients=admin_recent_patients,
+        admin_recent_tasks=admin_recent_tasks,
+        admin_recent_handoffs=admin_recent_handoffs,
+        admin_patient_map=admin_patient_map,
+        admin_pending_leave_requests=admin_pending_leave_requests,
+        admin_active_announcements=admin_active_announcements,
+        patient_status_labels=PATIENT_STATUS_LABELS,
+        task_status_labels=TASK_STATUS_LABELS,
+        task_priority_labels=TASK_PRIORITY_LABELS,
+        handoff_status_labels=HANDOFF_STATUS_LABELS,
+        leave_status_labels=LEAVE_STATUS_LABELS,
+        leave_type_labels=LEAVE_TYPE_LABELS,
     )
 
 
@@ -2729,7 +2881,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V24.2",
+        "version": "V25.1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4439,4 +4591,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V24.2"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1"}, 200

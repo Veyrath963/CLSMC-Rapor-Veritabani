@@ -1,0 +1,23 @@
+<aside class="his-sidebar his-admin-sidebar">
+  <div class="his-sidebar-brand">
+    <img src="{{ url_for('static',filename='clsmc_logo.png') }}" alt="CLSMC logosu">
+    <div><strong>CLSMC</strong><small>Yönetim Merkezi</small></div>
+  </div>
+  <nav class="his-sidebar-nav">
+    <a class="{% if request.endpoint=='admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}"><span>⌂</span>Kontrol Paneli</a>
+    <a href="{{ url_for('admin_dashboard') }}#personnel"><span>♙</span>Kullanıcı Yönetimi</a>
+    <a class="{% if request.endpoint=='admin_accounts' %}active{% endif %}" href="{{ url_for('admin_accounts') }}"><span>♙</span>Admin Hesapları</a>
+    <a href="{{ url_for('admin_dashboard') }}#reports"><span>▤</span>Rapor Denetimi</a>
+    <a class="{% if request.endpoint=='admin_clinical_center' %}active{% endif %}" href="{{ url_for('admin_clinical_center',section='patients') }}"><span>▧</span>Hasta Dosyaları</a>
+    <a href="{{ url_for('admin_clinical_center',section='handoffs') }}"><span>⌁</span>Hasta Teslim Zinciri</a>
+    <a class="{% if request.endpoint in ['admin_hospital_management','admin_leave_calendar'] %}active{% endif %}" href="{{ url_for('admin_hospital_management') }}#leave-requests"><span>▱</span>İzin Yönetimi</a>
+    <a href="{{ url_for('admin_hospital_management') }}#announcements"><span>◁</span>Duyuru Merkezi{% if active_announcement_count|default(0) %}<b>{{ active_announcement_count }}</b>{% endif %}</a>
+    <a class="{% if request.endpoint in ['admin_archive','admin_archive_view'] %}active{% endif %}" href="{{ url_for('admin_archive') }}"><span>▣</span>Veri Arşivi</a>
+    <a class="{% if request.endpoint=='admin_user_statistics' %}active{% endif %}" href="{{ url_for('admin_user_statistics') }}"><span>⌁</span>İstatistikler</a>
+    <a class="{% if request.endpoint=='admin_audit_log' %}active{% endif %}" href="{{ url_for('admin_audit_log') }}"><span>⚙</span>Sistem Kayıtları</a>
+  </nav>
+  <div class="his-sidebar-footer">
+    <strong>CLSMC</strong><small>Central Los Santos<br>Medical Center</small>
+    <div><span>V25.1</span><span class="online">● Operasyonel</span></div>
+  </div>
+</aside>
