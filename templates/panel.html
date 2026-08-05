@@ -5,9 +5,9 @@
 <title>CLSMC Klinik Paneli</title>
 <script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script>
 <link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.1') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.1') }}">
-<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.1') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.2') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.2') }}">
+<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.2') }}"></script>
 </head>
 <body class="his-app-page his-user-app">
 {% from '_his_icons.html' import his_icon %}
@@ -16,7 +16,7 @@
 <header class="his-topbar">
   <div class="his-topbar-identity">
     <span class="his-topbar-logo-shell">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.1') }}" alt="CLSMC kurum logosu">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.2') }}" alt="CLSMC kurum logosu">
     </span>
     <div class="his-topbar-title"><h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1><p>Giriş yapan: <strong>{{ username }}</strong> — {{ user_rank or 'Rütbe Atanmadı' }}</p></div>
   </div>
@@ -149,7 +149,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel his-document-output-panel">
         <div class="panel-head">
           <h3>Standart Belge Çıktısı</h3>
           <span id="saveStatus" class="status">Hazır</span>

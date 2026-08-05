@@ -1,0 +1,41 @@
+CLSMC V25.1.2 — BBCODE OKUNABİLİRLİK DÜZELTMESİ
+====================================================
+
+Düzeltilen sorun:
+- Standart Belge Çıktısı alanı aydınlık tema kullanılmasına rağmen koyu görünüyordu.
+- Eski clsmc_modern.css kuralı, yeni aydınlık tema kuralından daha yüksek CSS
+  önceliğine sahipti.
+- BBCode metni koyu arka plan üzerinde çok düşük kontrastla görüntüleniyordu.
+- Küçük yazı boyutu uzun klinik raporların okunmasını zorlaştırıyordu.
+
+Yeni görünüm:
+- BBCode alanı açık gri/beyaz klinik kod yüzeyi kullanır.
+- Metin rengi koyu lacivert ve yüksek kontrastlıdır.
+- Yazı boyutu 11 px, satır yüksekliği 1.68 olarak ayarlandı.
+- Uzun satırlar güvenli biçimde sarılır.
+- Alanın yüksekliği 390–650 px arasında tutulur ve gerektiğinde kaydırılır.
+- Metin seçimi açık mavi renkle belirginleştirilir.
+- Standart Belge Çıktısı paneline mavi klinik vurgu çizgisi eklendi.
+- Mobil cihazlarda yazı ve alan boyutu ayrıca optimize edildi.
+
+Kapsam:
+- Canlı rapor oluşturma ekranındaki BBCode önizlemesi
+- Kullanıcı rapor detayındaki kayıtlı BBCode
+- Admin rapor görüntüleme kod alanı
+- Eski BBCode referans alanları
+- Rapor sürümü kod çıktıları
+
+Korunanlar:
+- BBCode oluşturma içeriği ve formatı
+- BBCode kopyalama
+- TXT indirme
+- Raporun veritabanına kaydedilmesi
+- Yalnızca aydınlık tema
+- Neon verileri ve mevcut rotalar
+
+Kontrol sınırı:
+- Python sözdizimi ve bütün Jinja şablonları statik kontrol edilmiştir.
+- Canlı Render tarayıcı testi yapılmamıştır.
+
+Sürüm: V25.1.2
+Developer: Veyrath

@@ -1,4 +1,4 @@
-/* CLSMC V25.1.1 — Light-only hospital information system */
+/* CLSMC V25.1.2 — Light-only hospital information system */
 :root{--his-bg:#f2f6f9;--his-white:#fff;--his-text:#102c4e;--his-muted:#657a93;--his-line:#dbe5ed;--his-blue:#1769d2;--his-blue2:#49a9dc;--his-green:#24a66a;--his-red:#eb4d55;--his-amber:#e79a25;--his-violet:#7045d8;--his-shadow:0 5px 18px rgba(27,70,105,.07);--sidebar:190px}
 html,html[data-theme="light"],html[data-theme="dark"]{color-scheme:light!important;background:var(--his-bg)!important}
 body,body.clsmc-medical-user-ui,body.clsmc-medical-admin-ui,body.clsmc-medical-auth{background:var(--his-bg)!important;color:var(--his-text)!important;font-family:Inter,Segoe UI,Arial,sans-serif!important}
@@ -341,5 +341,105 @@ body.clsmc-medical-auth{background:linear-gradient(135deg,#edf4f8,#f9fbfc)!impor
     width:42px;
     height:42px;
     flex-basis:42px;
+  }
+}
+
+
+/* CLSMC V25.1.2 — BBCode and clinical document output readability */
+html[data-theme="light"] body.his-app-page .his-module #bbcodePreview.bbcode,
+html[data-theme="light"] body.his-app-page .his-module .bbcode,
+html[data-theme="light"] body.his-app-page pre,
+html[data-theme="light"] body.his-app-page .legacy-code,
+body.his-app-page .his-module #bbcodePreview.bbcode,
+body.his-app-page .his-module .bbcode,
+body.his-app-page pre,
+body.his-app-page .legacy-code{
+  display:block !important;
+  background:#f8fbfd !important;
+  background-image:none !important;
+  color:#092b4c !important;
+  -webkit-text-fill-color:#092b4c !important;
+  caret-color:#1769d2 !important;
+  border:1px solid #b8ccdc !important;
+  border-radius:9px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 0 0 1px rgba(23,105,210,.025) !important;
+  opacity:1 !important;
+  filter:none !important;
+  text-shadow:none !important;
+  font-family:
+    "Cascadia Mono",
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  line-height:1.68 !important;
+  letter-spacing:0 !important;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+  tab-size:2 !important;
+  scrollbar-color:#9bb6ca #eef4f7;
+}
+
+body.his-app-page .his-module #bbcodePreview.bbcode{
+  min-height:390px !important;
+  max-height:650px !important;
+  padding:17px 18px !important;
+  overflow:auto !important;
+}
+
+body.his-app-page pre,
+body.his-app-page .legacy-code{
+  padding:16px 17px !important;
+  overflow:auto !important;
+}
+
+body.his-app-page .his-module #bbcodePreview.bbcode *,
+body.his-app-page .his-module .bbcode *,
+body.his-app-page pre *,
+body.his-app-page .legacy-code *{
+  color:inherit !important;
+  -webkit-text-fill-color:inherit !important;
+  text-shadow:none !important;
+}
+
+body.his-app-page .his-module #bbcodePreview.bbcode::selection,
+body.his-app-page .his-module .bbcode::selection,
+body.his-app-page pre::selection,
+body.his-app-page .legacy-code::selection{
+  background:#cfe3ff !important;
+  color:#062848 !important;
+  -webkit-text-fill-color:#062848 !important;
+}
+
+/* Output panel receives a subtle clinical-code identity without dark mode. */
+body.his-app-page .his-document-output-panel .panel-head{
+  border-bottom-color:#c9d9e5 !important;
+  background:#f4f8fb !important;
+}
+body.his-app-page .his-document-output-panel .panel-head::before{
+  content:"";
+  width:4px;
+  align-self:stretch;
+  margin:-13px 10px -13px -15px;
+  border-radius:0 4px 4px 0;
+  background:#1769d2;
+}
+body.his-app-page .his-document-output-panel .panel-head h3{
+  flex:1 1 auto;
+}
+
+@media(max-width:600px){
+  body.his-app-page .his-module #bbcodePreview.bbcode{
+    min-height:280px !important;
+    max-height:520px !important;
+    padding:14px !important;
+    font-size:10px !important;
+    line-height:1.62 !important;
   }
 }
