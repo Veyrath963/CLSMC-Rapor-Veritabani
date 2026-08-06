@@ -2197,6 +2197,16 @@ def admin_required(permission: str | None = None):
     return True
 
 
+def template_csrf_token() -> str:
+    """Return the CSRF token for the active Flask session.
+
+    The lower-level security helper intentionally accepts a session mapping so it
+    remains independently testable. Jinja templates call csrf_token() without
+    arguments, therefore this Flask-aware wrapper supplies the active session.
+    """
+    return generate_csrf_token(session)
+
+
 @app.context_processor
 def inject_access_context():
     admin = current_admin_account()
@@ -2207,7 +2217,7 @@ def inject_access_context():
         "current_admin_role": (admin.permission_level if admin else None),
         "report_form_field_labels": REPORT_FORM_FIELD_LABELS,
         "patient_priority_labels": PATIENT_PRIORITY_LABELS,
-        "csrf_token": generate_csrf_token,
+        "csrf_token": template_csrf_token,
     }
 
 
@@ -3360,7 +3370,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V26.0",
+        "version": "V26.0.1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -5061,14 +5071,14 @@ def health():
     try:
         db.session.execute(text("SELECT 1"))
         return {
-            "status": "ok", "service": SYSTEM_NAME, "version": "V26.0",
+            "status": "ok", "service": SYSTEM_NAME, "version": "V26.0.1",
             "database": "reachable",
         }, 200
     except Exception:
         db.session.rollback()
         logger.exception("HEALTH_DATABASE_CHECK_FAILED")
         return {
-            "status": "degraded", "service": SYSTEM_NAME, "version": "V26.0",
+            "status": "degraded", "service": SYSTEM_NAME, "version": "V26.0.1",
             "database": "unreachable",
         }, 503
 

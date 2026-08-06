@@ -1,0 +1,27 @@
+CLSMC V26.0.1 — INTERNAL SERVER ERROR / CSRF ACİL DÜZELTMESİ
+================================================================
+
+Hatanın kesin nedeni:
+- clsmc.security.generate_csrf_token fonksiyonu bir session parametresi bekliyordu.
+- Jinja şablonları güvenlik tokenını {{ csrf_token() }} biçiminde parametresiz çağırıyordu.
+- Context processor doğrudan generate_csrf_token fonksiyonunu şablona verdiği için
+  TypeError oluşuyordu:
+  generate_csrf_token() missing 1 required positional argument: 'session'
+- Giriş ekranı dahil CSRF token kullanan bütün şablonlar bu nedenle HTTP 500
+  Internal Server Error döndürebiliyordu.
+
+Düzeltme:
+- Flask'ın aktif session nesnesini güvenlik yardımcısına ileten
+  template_csrf_token() sarmalayıcısı eklendi.
+- Şablonlara artık bu parametresiz ve güvenli sarmalayıcı verilir.
+- Alt seviyedeki güvenlik fonksiyonu test edilebilir yapısını korur.
+- CSRF doğrulaması kaldırılmadı veya zayıflatılmadı.
+- Statik dosya önbellek sürümü V26.0.1 olarak yenilendi.
+
+Veri güvenliği:
+- Neon veritabanı şemasına dokunulmadı.
+- Kullanıcı, admin, rapor, hasta, izin ve arşiv kayıtları değiştirilmedi.
+- Migration gerekmez.
+
+Sürüm: V26.0.1
+Developer: Veyrath
