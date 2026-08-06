@@ -1,0 +1,606 @@
+/* CLSMC V26 Admin */
+
+/* CLSMC V24.4 — Admin Clinical Operations Center */
+:root{
+  --adm-bg:#070f18;
+  --adm-bg-2:#0b1622;
+  --adm-surface:#101e2b;
+  --adm-surface-2:#152535;
+  --adm-surface-3:#1b2d3e;
+  --adm-line:#2a4052;
+  --adm-line-soft:#1e3344;
+  --adm-text:#edf4f7;
+  --adm-muted:#8ca2b2;
+  --adm-cyan:#38b6c8;
+  --adm-cyan-soft:rgba(56,182,200,.14);
+  --adm-blue:#4d8fd4;
+  --adm-blue-soft:rgba(77,143,212,.14);
+  --adm-green:#39b77e;
+  --adm-green-soft:rgba(57,183,126,.14);
+  --adm-amber:#d8a03b;
+  --adm-amber-soft:rgba(216,160,59,.14);
+  --adm-red:#dc6572;
+  --adm-red-soft:rgba(220,101,114,.13);
+  --adm-violet:#8978d2;
+  --adm-shadow:0 16px 38px rgba(0,0,0,.24);
+}
+
+html[data-theme="light"]{
+  --adm-bg:#e8eff2;
+  --adm-bg-2:#f3f6f7;
+  --adm-surface:#ffffff;
+  --adm-surface-2:#f6f9fa;
+  --adm-surface-3:#ebf1f3;
+  --adm-line:#c5d4da;
+  --adm-line-soft:#d9e4e8;
+  --adm-text:#163042;
+  --adm-muted:#627a88;
+  --adm-cyan:#177f91;
+  --adm-cyan-soft:rgba(23,127,145,.10);
+  --adm-blue:#386fa9;
+  --adm-blue-soft:rgba(56,111,169,.10);
+  --adm-green:#27845e;
+  --adm-green-soft:rgba(39,132,94,.10);
+  --adm-amber:#a57613;
+  --adm-amber-soft:rgba(165,118,19,.11);
+  --adm-red:#b74b58;
+  --adm-red-soft:rgba(183,75,88,.10);
+  --adm-violet:#6758ad;
+  --adm-shadow:0 12px 28px rgba(33,59,72,.10);
+}
+
+body.clsmc-medical-admin-ui{
+  min-height:100vh;
+  background:
+    linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px),
+    radial-gradient(circle at 82% -8%,rgba(56,182,200,.11),transparent 32%),
+    var(--adm-bg)!important;
+  background-size:32px 32px,32px 32px,auto,auto!important;
+  color:var(--adm-text)!important;
+}
+
+.clsmc-medical-admin-ui a{color:inherit}
+.clsmc-medical-admin-ui .shell,
+.clsmc-medical-admin-ui .v24-shell,
+.clsmc-medical-admin-ui .v22-dashboard-shell,
+.clsmc-medical-admin-ui .clsmc-admin-ops-shell{
+  width:min(1500px,calc(100% - 36px))!important;
+  max-width:1500px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding:21px 0 76px!important;
+}
+
+/* Headers: old and v24 generations */
+.clsmc-medical-admin-ui .topbar,
+.clsmc-medical-admin-ui .v24-topbar{
+  position:sticky!important;
+  top:0!important;
+  z-index:90!important;
+  width:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  border-bottom:1px solid var(--adm-line)!important;
+  background:color-mix(in srgb,var(--adm-bg) 94%,transparent)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(18px)!important;
+  overflow:visible!important;
+}
+.clsmc-medical-admin-ui .topbar>.admin-header-inner,
+.clsmc-medical-admin-ui .v24-topbar>.v24-topbar-inner,
+.clsmc-medical-admin-ui .topbar:not(.admin-header-v2354){
+  width:min(1500px,calc(100% - 36px))!important;
+  max-width:1500px!important;
+  margin:auto!important;
+}
+.clsmc-medical-admin-ui .topbar:not(.admin-header-v2354){
+  min-height:68px!important;
+  padding:10px max(18px,calc((100vw - 1500px)/2))!important;
+}
+.clsmc-medical-admin-ui .admin-header-inner{
+  width:min(1500px,calc(100% - 36px))!important;
+  max-width:1500px!important;
+  min-height:76px!important;
+  margin:auto!important;
+  padding:9px 0!important;
+  display:grid!important;
+  grid-template-columns:minmax(300px,430px) minmax(0,1fr) auto!important;
+  grid-template-areas:"brand nav tools"!important;
+  align-items:center!important;
+  gap:14px!important;
+}
+.clsmc-medical-admin-ui .admin-header-brand{grid-area:brand}
+.clsmc-medical-admin-ui .admin-header-nav{grid-area:nav}
+.clsmc-medical-admin-ui .admin-header-tools{grid-area:tools}
+.clsmc-medical-admin-ui .admin-header-brand .logo,
+.clsmc-medical-admin-ui .topbar-logo-shell,
+.clsmc-medical-admin-ui .v24-brand img{
+  width:45px!important;
+  height:45px!important;
+  flex:0 0 45px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:4px!important;
+  border:1px solid color-mix(in srgb,var(--adm-cyan) 55%,var(--adm-line))!important;
+  border-radius:11px!important;
+  background:#f0f7f8!important;
+  object-fit:contain!important;
+}
+.clsmc-medical-admin-ui .admin-header-brand h1,
+.clsmc-medical-admin-ui .topbar-brand strong,
+.clsmc-medical-admin-ui .v24-brand strong{
+  color:var(--adm-text)!important;
+  font-size:14px!important;
+}
+.clsmc-admin-eyebrow{
+  display:block;
+  margin-bottom:3px;
+  color:var(--adm-cyan);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.15em;
+}
+.clsmc-medical-admin-ui .admin-header-brand small,
+.clsmc-medical-admin-ui .topbar-brand div,
+.clsmc-medical-admin-ui .v24-brand small{
+  color:var(--adm-muted)!important;
+  font-size:9px!important;
+}
+.clsmc-medical-admin-ui .admin-header-nav,
+.clsmc-medical-admin-ui .admin-header-tools,
+.clsmc-medical-admin-ui .actions,
+.clsmc-medical-admin-ui .v24-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  flex-wrap:wrap!important;
+  overflow:visible!important;
+}
+.clsmc-medical-admin-ui .btn,
+.clsmc-medical-admin-ui .admin-nav-button,
+.clsmc-medical-admin-ui .admin-tool-button{
+  min-height:34px!important;
+  height:auto!important;
+  padding:8px 10px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:8px!important;
+  background:var(--adm-surface-2)!important;
+  color:var(--adm-text)!important;
+  font-size:9px!important;
+  font-weight:820!important;
+  line-height:1.15!important;
+  box-shadow:none!important;
+}
+.clsmc-medical-admin-ui .btn:hover,
+.clsmc-medical-admin-ui .btn:focus,
+.clsmc-medical-admin-ui .admin-nav-button:hover{
+  transform:none!important;
+  border-color:var(--adm-cyan)!important;
+  background:var(--adm-cyan-soft)!important;
+}
+.clsmc-medical-admin-ui .btn-primary{
+  border-color:var(--adm-cyan)!important;
+  background:linear-gradient(135deg,#168ba0,var(--adm-cyan))!important;
+  color:#fff!important;
+}
+.clsmc-medical-admin-ui .btn-danger,
+.clsmc-medical-admin-ui .permanent-delete-button{
+  border:1px solid color-mix(in srgb,var(--adm-red) 55%,var(--adm-line))!important;
+  border-radius:8px!important;
+  background:var(--adm-red-soft)!important;
+  color:var(--adm-red)!important;
+}
+
+/* Command context */
+.clsmc-admin-command-context{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  margin:0 0 13px;
+  border:1px solid var(--adm-line);
+  border-radius:11px;
+  background:var(--adm-surface);
+  overflow:hidden;
+}
+.clsmc-admin-command-context>div{
+  min-width:0;
+  padding:10px 13px;
+  border-right:1px solid var(--adm-line-soft);
+}
+.clsmc-admin-command-context>div:last-child{border-right:0}
+.clsmc-admin-command-context small{
+  display:block;
+  color:var(--adm-muted);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.11em;
+}
+.clsmc-admin-command-context strong{
+  display:block;
+  margin-top:4px;
+  overflow:hidden;
+  color:var(--adm-text);
+  font-size:10px;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.clsmc-admin-command-context .is-online{color:var(--adm-green)}
+.clsmc-admin-command-context .is-online span{
+  display:inline-block;
+  width:7px;
+  height:7px;
+  margin-right:5px;
+  border-radius:50%;
+  background:var(--adm-green);
+}
+
+/* Hero / operational intro */
+.clsmc-medical-admin-ui .hero,
+.clsmc-medical-admin-ui .v24-hero,
+.clsmc-medical-admin-ui .v22-hero{
+  margin:0 0 13px!important;
+  padding:21px 23px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:13px!important;
+  background:
+    linear-gradient(105deg,var(--adm-cyan-soft),transparent 46%),
+    linear-gradient(160deg,var(--adm-surface),var(--adm-surface-2))!important;
+  box-shadow:var(--adm-shadow)!important;
+}
+.clsmc-medical-admin-ui .hero h2,
+.clsmc-medical-admin-ui .hero h1,
+.clsmc-medical-admin-ui .v24-hero h1,
+.clsmc-medical-admin-ui .v22-hero h2{
+  color:var(--adm-text)!important;
+  font-size:24px!important;
+  letter-spacing:-.02em!important;
+}
+.clsmc-medical-admin-ui .hero p,
+.clsmc-medical-admin-ui .v24-hero p,
+.clsmc-medical-admin-ui .v22-hero p{
+  color:var(--adm-muted)!important;
+  font-size:10px!important;
+}
+.clsmc-medical-admin-ui .v22-hero-kicker{
+  color:var(--adm-cyan)!important;
+  font-size:8px!important;
+  letter-spacing:.14em!important;
+}
+.clsmc-medical-admin-ui .v22-hero-meta{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+}
+
+/* Metrics */
+.clsmc-medical-admin-ui .metrics,
+.clsmc-medical-admin-ui .v22-metrics,
+.clsmc-medical-admin-ui .v24-metrics{
+  gap:9px!important;
+  margin:13px 0!important;
+}
+.clsmc-medical-admin-ui .metric,
+.clsmc-medical-admin-ui .v24-metric{
+  position:relative;
+  min-height:102px;
+  padding:14px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:11px!important;
+  background:var(--adm-surface)!important;
+  box-shadow:none!important;
+  overflow:hidden;
+}
+.clsmc-medical-admin-ui .metric::before,
+.clsmc-medical-admin-ui .v24-metric::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:13px;
+  bottom:13px;
+  width:3px;
+  border-radius:0 4px 4px 0;
+  background:var(--adm-cyan);
+}
+.clsmc-medical-admin-ui .metric:nth-child(2)::before,
+.clsmc-medical-admin-ui .v24-metric:nth-child(2)::before{background:var(--adm-blue)}
+.clsmc-medical-admin-ui .metric:nth-child(3)::before,
+.clsmc-medical-admin-ui .v24-metric:nth-child(3)::before{background:var(--adm-green)}
+.clsmc-medical-admin-ui .metric:nth-child(4)::before,
+.clsmc-medical-admin-ui .v24-metric:nth-child(4)::before{background:var(--adm-amber)}
+.clsmc-medical-admin-ui .metric:nth-child(5)::before{background:var(--adm-violet)}
+.clsmc-medical-admin-ui .metric:nth-child(6)::before{background:var(--adm-red)}
+.clsmc-medical-admin-ui .metric span,
+.clsmc-medical-admin-ui .v24-metric span{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.09em!important;
+}
+.clsmc-medical-admin-ui .metric strong,
+.clsmc-medical-admin-ui .v24-metric strong{
+  color:var(--adm-text)!important;
+  font-size:24px!important;
+}
+.clsmc-medical-admin-ui .v22-metric-foot{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+}
+.clsmc-medical-admin-ui .v22-metric-icon{
+  background:var(--adm-surface-3)!important;
+  color:var(--adm-cyan)!important;
+  border-radius:8px!important;
+}
+
+/* Tabs */
+.clsmc-medical-admin-ui .v22-tabs,
+.clsmc-medical-admin-ui .v24-tabs{
+  gap:5px!important;
+  margin:13px 0!important;
+  padding:6px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:10px!important;
+  background:var(--adm-surface)!important;
+}
+.clsmc-medical-admin-ui .v22-tab,
+.clsmc-medical-admin-ui .v24-tab{
+  min-height:35px!important;
+  padding:8px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:7px!important;
+  background:transparent!important;
+  color:var(--adm-muted)!important;
+  font-size:9px!important;
+  font-weight:850!important;
+}
+.clsmc-medical-admin-ui .v22-tab.active,
+.clsmc-medical-admin-ui .v24-tab.active{
+  border-color:var(--adm-line)!important;
+  background:var(--adm-cyan-soft)!important;
+  color:var(--adm-cyan)!important;
+  box-shadow:inset 3px 0 0 var(--adm-cyan)!important;
+}
+
+/* Panels */
+.clsmc-medical-admin-ui .panel,
+.clsmc-medical-admin-ui .v24-panel{
+  padding:15px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:11px!important;
+  background:var(--adm-surface)!important;
+  box-shadow:none!important;
+}
+.clsmc-medical-admin-ui .v22-grid,
+.clsmc-medical-admin-ui .v24-grid,
+.clsmc-medical-admin-ui .grid{
+  gap:11px!important;
+}
+.clsmc-medical-admin-ui .panel h3,
+.clsmc-medical-admin-ui .panel h2,
+.clsmc-medical-admin-ui .v24-panel h2,
+.clsmc-medical-admin-ui .v24-panel h3{
+  color:var(--adm-text)!important;
+  font-size:12px!important;
+}
+.clsmc-medical-admin-ui .sub,
+.clsmc-medical-admin-ui .v24-sub,
+.clsmc-medical-admin-ui .v22-panel-head .sub{
+  color:var(--adm-muted)!important;
+  font-size:9px!important;
+}
+.clsmc-medical-admin-ui .v22-panel-head,
+.clsmc-medical-admin-ui .v24-item-head{
+  padding-bottom:10px;
+  border-bottom:1px solid var(--adm-line-soft);
+}
+.clsmc-medical-admin-ui .v22-panel-badge,
+.clsmc-medical-admin-ui .badge,
+.clsmc-medical-admin-ui .v24-badge{
+  border:1px solid var(--adm-line)!important;
+  border-radius:99px!important;
+  background:var(--adm-surface-3)!important;
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+}
+
+/* Quick cards */
+.clsmc-medical-admin-ui .v22-quick-grid{gap:7px!important}
+.clsmc-medical-admin-ui .v22-quick-card{
+  min-height:76px!important;
+  padding:11px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:9px!important;
+  background:var(--adm-surface-2)!important;
+  color:var(--adm-text)!important;
+}
+.clsmc-medical-admin-ui .v22-quick-card:hover{
+  transform:none!important;
+  border-color:var(--adm-cyan)!important;
+  background:var(--adm-cyan-soft)!important;
+}
+.clsmc-medical-admin-ui .v22-quick-icon{
+  background:var(--adm-surface-3)!important;
+  color:var(--adm-cyan)!important;
+  border-radius:8px!important;
+}
+.clsmc-medical-admin-ui .v22-quick-card strong{font-size:9px!important}
+.clsmc-medical-admin-ui .v22-quick-card small{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+}
+
+/* Tables */
+.clsmc-medical-admin-ui .table-wrap,
+.clsmc-medical-admin-ui .v24-table-wrap{
+  border:1px solid var(--adm-line)!important;
+  border-radius:9px!important;
+  background:var(--adm-surface-2)!important;
+}
+.clsmc-medical-admin-ui table{
+  color:var(--adm-text)!important;
+}
+.clsmc-medical-admin-ui th{
+  padding:9px!important;
+  border-color:var(--adm-line)!important;
+  background:var(--adm-surface-3)!important;
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.07em!important;
+  text-transform:uppercase;
+}
+.clsmc-medical-admin-ui td{
+  padding:9px!important;
+  border-color:var(--adm-line-soft)!important;
+  color:var(--adm-text)!important;
+  font-size:9px!important;
+}
+.clsmc-medical-admin-ui tbody tr:hover{
+  background:var(--adm-cyan-soft)!important;
+}
+.clsmc-medical-admin-ui .edit,
+.clsmc-medical-admin-ui .v22-link-button{
+  color:var(--adm-cyan)!important;
+  font-size:8px!important;
+  font-weight:850!important;
+}
+
+/* Forms */
+.clsmc-medical-admin-ui label{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase;
+}
+.clsmc-medical-admin-ui input,
+.clsmc-medical-admin-ui select,
+.clsmc-medical-admin-ui textarea{
+  min-height:36px!important;
+  padding:9px 10px!important;
+  border:1px solid var(--adm-line)!important;
+  border-radius:8px!important;
+  background:var(--adm-bg-2)!important;
+  color:var(--adm-text)!important;
+  font-size:9px!important;
+}
+.clsmc-medical-admin-ui textarea{min-height:82px!important}
+.clsmc-medical-admin-ui input:focus,
+.clsmc-medical-admin-ui select:focus,
+.clsmc-medical-admin-ui textarea:focus{
+  border-color:var(--adm-cyan)!important;
+  box-shadow:0 0 0 3px var(--adm-cyan-soft)!important;
+}
+
+/* Lists, health, alerts */
+.clsmc-medical-admin-ui .v24-item,
+.clsmc-medical-admin-ui .v22-health-item,
+.clsmc-medical-admin-ui .v22-alert,
+.clsmc-medical-admin-ui .v23-item{
+  border:1px solid var(--adm-line)!important;
+  border-radius:8px!important;
+  background:var(--adm-surface-2)!important;
+  color:var(--adm-text)!important;
+}
+.clsmc-medical-admin-ui .v24-item p,
+.clsmc-medical-admin-ui .v24-meta,
+.clsmc-medical-admin-ui .v22-alert p{
+  color:var(--adm-muted)!important;
+  font-size:8px!important;
+}
+.clsmc-medical-admin-ui .v22-health-good,
+.clsmc-medical-admin-ui .active,
+.clsmc-medical-admin-ui .approved,
+.clsmc-medical-admin-ui .completed{color:var(--adm-green)!important}
+.clsmc-medical-admin-ui .warning,
+.clsmc-medical-admin-ui .pending{color:var(--adm-amber)!important}
+.clsmc-medical-admin-ui .error,
+.clsmc-medical-admin-ui .danger,
+.clsmc-medical-admin-ui .rejected,
+.clsmc-medical-admin-ui .cancelled{color:var(--adm-red)!important}
+.clsmc-medical-admin-ui .notice,
+.clsmc-medical-admin-ui .v24-alert,
+.clsmc-medical-admin-ui .flash{
+  border:1px solid var(--adm-line)!important;
+  border-radius:8px!important;
+  background:var(--adm-surface-2)!important;
+  color:var(--adm-text)!important;
+  font-size:9px!important;
+}
+.clsmc-medical-admin-ui .v24-progress{
+  background:var(--adm-surface-3)!important;
+}
+.clsmc-medical-admin-ui .v24-progress>span{
+  background:var(--adm-cyan)!important;
+}
+.clsmc-medical-admin-ui .v22-chart-track{
+  background:var(--adm-surface-3)!important;
+}
+.clsmc-medical-admin-ui .v22-chart-fill{
+  background:linear-gradient(90deg,var(--adm-cyan),var(--adm-blue))!important;
+}
+
+/* Credit */
+.clsmc-medical-admin-ui .developer-credit{
+  color:var(--adm-muted)!important;
+  opacity:.7;
+}
+
+@media(max-width:1220px){
+  .clsmc-medical-admin-ui .admin-header-inner{
+    grid-template-columns:1fr auto!important;
+    grid-template-areas:"brand tools" "nav nav"!important;
+  }
+  .clsmc-admin-command-context{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .clsmc-admin-command-context>div:nth-child(3){border-right:0}
+  .clsmc-admin-command-context>div:nth-child(-n+3){border-bottom:1px solid var(--adm-line-soft)}
+}
+@media(max-width:800px){
+  .clsmc-medical-admin-ui .shell,
+  .clsmc-medical-admin-ui .v24-shell,
+  .clsmc-medical-admin-ui .v22-dashboard-shell,
+  .clsmc-medical-admin-ui .clsmc-admin-ops-shell,
+  .clsmc-medical-admin-ui .admin-header-inner,
+  .clsmc-medical-admin-ui .v24-topbar-inner{
+    width:calc(100% - 22px)!important;
+  }
+  .clsmc-medical-admin-ui .admin-header-inner{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"brand" "tools" "nav"!important;
+  }
+  .clsmc-medical-admin-ui .admin-header-nav,
+  .clsmc-medical-admin-ui .admin-header-tools,
+  .clsmc-medical-admin-ui .actions,
+  .clsmc-medical-admin-ui .v24-actions{
+    justify-content:flex-start!important;
+    overflow-x:auto!important;
+    flex-wrap:nowrap!important;
+    scrollbar-width:none;
+  }
+  .clsmc-admin-command-context{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .clsmc-admin-command-context>div{
+    border-right:1px solid var(--adm-line-soft)!important;
+    border-bottom:1px solid var(--adm-line-soft)!important;
+  }
+  .clsmc-admin-command-context>div:nth-child(2n){border-right:0!important}
+  .clsmc-medical-admin-ui .metrics,
+  .clsmc-medical-admin-ui .v22-metrics,
+  .clsmc-medical-admin-ui .v24-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:480px){
+  .clsmc-admin-command-context{
+    grid-template-columns:1fr;
+  }
+  .clsmc-admin-command-context>div{
+    border-right:0!important;
+  }
+  .clsmc-medical-admin-ui .metrics,
+  .clsmc-medical-admin-ui .v22-metrics,
+  .clsmc-medical-admin-ui .v24-metrics{
+    grid-template-columns:1fr!important;
+  }
+}

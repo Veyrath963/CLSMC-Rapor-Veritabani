@@ -1,0 +1,62 @@
+CLSMC V26.0 — STABİLİZASYON, GÜVENLİK VE HASTA MERKEZLİ SİSTEM
+=================================================================
+
+ARAYÜZ
+- 13 eski/çakışan stil dosyası beş kontrollü katmanda birleştirildi:
+  his_core.css, his_components.css, his_user.css, his_admin.css, his_responsive.css.
+- Koyu tema ve tema değiştirme JavaScript'i tamamen kaldırıldı.
+- Klavye odağı, içerik atlama bağlantısı, minimum buton/form ölçüleri ve daha okunabilir
+  yazı boyutları eklendi.
+
+HASTA MERKEZLİ YAPI
+- Raporlar artık isteğe bağlı olarak ana hasta dosyasına bağlanır.
+- Rapor formundaki hasta seçimi ad, kimlik, doğum tarihi, cinsiyet, telefon ve adresi
+  otomatik doldurur.
+- Hasta dosyasında bağlı raporlar kronolojik listelenir.
+- Kimlik numarası veya ad+doğum tarihi eşleşmesinde mükerrer dosya oluşturulmaz.
+- Klinik öncelik: Stabil, Yakın Takip, Kritik.
+- Taburcu özeti, reçete/tedavi önerisi ve kontrol tarihi alanları eklendi.
+
+ADMIN KARAR MERKEZİ
+- Bekleyen izin, geciken görev, kritik hasta ve askıya alınan hesap özetleri eklendi.
+- Değişiklik öncesi/sonrası değerleri, aktör, IP ve oturum referansını saklayan
+  yapılandırılmış audit_events tablosu eklendi.
+
+GÜVENLİK
+- Tüm POST/PUT/PATCH/DELETE isteklerinde CSRF doğrulaması.
+- 30 dakika işlem yapılmayan kullanıcı/admin oturumlarında otomatik zaman aşımı.
+- Kullanıcı ve admin girişlerinde hız sınırlaması, 5 hatada 15 dakikalık hesap kilidi.
+- Admin hesapları için standart TOTP iki aşamalı doğrulama.
+- Şifre sıfırlanan hesaplarda ilk girişte şifre değiştirme zorunluluğu.
+- Kritik yönetici işlemlerinde yakın zamanda doğrulanmış oturum şartı.
+
+MİMARİ VE TEST
+- Güvenlik, hasta ve audit yardımcıları clsmc/ servis paketine ayrıldı.
+- create_app test/deploy köprüsü eklendi.
+- pytest tabanlı CSRF, TOTP, hasta normalizasyonu ve sağlık testleri eklendi.
+- Bu sürüm güvenli geçiş yaklaşımı kullanır: mevcut rotalar kırılmaması için app.py içinde
+  korunur; yeni kurallar test edilebilir servis modüllerindedir.
+
+VERİ GÜVENLİĞİ
+- Mevcut Neon kayıtları silinmez.
+- Yeni alanlar nullable veya güvenli varsayılanlarla eklenir.
+- Rapor/hasta bağlantısı geriye uyumludur; eski raporlar bağlantısız çalışır.
+
+Sürüm: V26.0
+Developer: Veyrath
+
+
+SON GÜVENLİK VE KALİTE DÜZELTMELERİ
+- Kaynak kod içindeki varsayılan admin parola özeti kaldırıldı.
+- İlk kurulum için yalnızca Environment tabanlı güvenli admin oluşturma eklendi.
+- Kritik admin işlemleri için çalışan yeniden doğrulama ekranı eklendi.
+- Kullanıcı ve admin için yeni/değiştirilen parolalarda minimum 10 karakter zorunlu.
+- Yönetici tarafından verilen geçici parolalarda ilk girişte değişiklik zorunlu.
+- CSP, HSTS, X-Frame-Options, nosniff ve Permissions-Policy başlıkları eklendi.
+- Sağlık kontrolü veritabanına SELECT 1 sorgusu yapar ve sorun halinde 503 döndürür.
+- Dışa aktarıma hasta bağlantısı, klinik öncelik ve taburcu alanları eklendi.
+- Koyu tema kuralları ve tema düğmesi kaldırıldı; V26 yalnızca aydınlık temadır.
+
+MİMARİ SINIR
+- Yeni güvenlik/hasta/denetim mantığı servis katmanına ayrıldı ve create_app köprüsü eklendi.
+- Canlı url_for bağlantılarını korumak için tüm eski rotaların Blueprint'lere fiziksel taşınması bu sürümde yapılmadı. Ayrıntı MIMARI_NOT_V26_0.md dosyasındadır.

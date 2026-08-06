@@ -63,24 +63,17 @@ th{color:#cfd9f0;font-size:12px}.table-wrap{overflow:auto}.badge{display:inline-
 }
 
 </style>
-<script>
-(function(){
-  var selected = "dark";
-  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
-  document.documentElement.dataset.theme = selected;
-  document.documentElement.style.colorScheme = selected;
-})();
-</script>
-<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
+
+
+
+
+
+
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+
+
 <style id="clsmc-critical-layout-v234">
 html{
   width:100%;
@@ -233,8 +226,8 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_user_v243.css',v='25.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_portal_v250.css',v='25.0') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.2') }}"></head>
-<body class="his-app-page his-user-subpage clsmc-medical-ui clsmc-medical-user-ui clsmc-medical-portal-page">
+<script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_core.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_components.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_user.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_admin.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_responsive.css',v='26.0') }}"></head>
+<body class="his-app-page his-user-subpage clsmc-medical-ui clsmc-medical-user-ui clsmc-medical-portal-page"><a class="his-skip-link" href="#main-content">Ana içeriğe geç</a>
 {% include '_user_his_sidebar.html' %}
 <header class="topbar">
   <div class="brand">
@@ -247,7 +240,7 @@ input:focus,select:focus,textarea:focus{
   </div>
 </header>
 
-<main class="shell clsmc-medical-portal-shell">
+<main id="main-content" class="shell clsmc-medical-portal-shell">
   <section class="hero">
     <h2>İstatistikler</h2>
     <p>BBCode'u Kopyala işlemiyle otomatik kaydedilen raporlar.</p>

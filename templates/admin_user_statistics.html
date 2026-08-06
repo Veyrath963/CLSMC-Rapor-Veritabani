@@ -74,24 +74,17 @@ tr:last-child td{border-bottom:0}
 @media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{position:static}.user-list{grid-template-columns:repeat(2,1fr);max-height:none}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.user-list,.metrics{grid-template-columns:1fr}.shell{padding:20px 13px 50px}.topbar{align-items:flex-start;gap:10px}}
 </style>
-<script>
-(function(){
-  var selected = "dark";
-  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
-  document.documentElement.dataset.theme = selected;
-  document.documentElement.style.colorScheme = selected;
-})();
-</script>
-<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
+
+
+
+
+
+
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+
+
 <style id="clsmc-critical-layout-v234">
 html{
   width:100%;
@@ -244,8 +237,8 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_admin_v244.css',v='24.4') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.2') }}"></head>
-<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage">
+<script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_core.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_components.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_user.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_admin.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_responsive.css',v='26.0') }}"></head>
+<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage"><a class="his-skip-link" href="#main-content">Ana içeriğe geç</a>
 {% include '_admin_his_sidebar.html' %}
 <header class="topbar">
   <div class="brand">
@@ -254,13 +247,13 @@ input:focus,select:focus,textarea:focus{
   </div>
   <div class="actions">
     <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
-    <form method="post" action="{{ url_for('admin_logout') }}" style="margin:0">
+    <form method="post" action="{{ url_for('admin_logout') }}" style="margin:0"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">Admin Çıkışı</button>
     </form>
   </div>
 </header>
 
-<main class="shell clsmc-admin-ops-shell">
+<main id="main-content" class="shell clsmc-admin-ops-shell">
   <section class="hero">
     <h2>Kullanıcı Rapor Merkezi</h2>
     <p>Kullanıcıyı seçin; yazdığı bütün raporları kategori bazında görüntüleyin ve yönetin.</p>
@@ -354,7 +347,7 @@ input:focus,select:focus,textarea:focus{
                             <a class="btn btn-primary" href="{{ url_for('admin_view_report', report_id=report.id) }}">Görüntüle</a>
                             <form method="post"
                                   action="{{ url_for('admin_delete_report', report_id=report.id) }}"
-                                  onsubmit="return confirm('{{ report.report_number }} numaralı rapor kalıcı olarak silinsin mi? Bu işlem geri alınamaz.');">
+                                  onsubmit="return confirm('{{ report.report_number }} numaralı rapor kalıcı olarak silinsin mi? Bu işlem geri alınamaz.');"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                               <button class="btn btn-danger" type="submit">Sil</button>
                             </form>
                           </div>

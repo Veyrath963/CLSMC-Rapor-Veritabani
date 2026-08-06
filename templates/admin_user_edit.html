@@ -48,24 +48,17 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91
 .flash.error{background:rgba(255,107,122,.12);border:1px solid rgba(255,107,122,.45);color:#ffb5bd}
 .developer-credit{position:fixed;right:14px;bottom:10px;color:var(--muted);font-size:11px;font-weight:600;opacity:.78;pointer-events:none}
 </style>
-<script>
-(function(){
-  var selected = "dark";
-  try{ selected = localStorage.getItem("clsmc-interface-theme") === "light" ? "light" : "dark"; }catch(error){}
-  document.documentElement.dataset.theme = selected;
-  document.documentElement.style.colorScheme = selected;
-})();
-</script>
-<link id="clsmc-light-theme" rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme.css') }}" media="not all">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_theme_toggle.css', v='23.4') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v22.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_v23.css') }}">
+
+
+
+
+
+
 <script>
   document.getElementById("clsmc-light-theme").media = document.documentElement.dataset.theme === "light" ? "all" : "not all";
 </script>
-<script defer src="{{ url_for('static', filename='clsmc_theme_toggle.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='clsmc_layout_stability.css', v='23.4') }}">
+
+
 <style id="clsmc-critical-layout-v234">
 html{
   width:100%;
@@ -218,8 +211,8 @@ input:focus,select:focus,textarea:focus{
   }
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_medical_admin_v244.css',v='24.4') }}"><script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.2') }}"></head>
-<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage">
+<script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_core.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_components.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_user.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_admin.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_responsive.css',v='26.0') }}"></head>
+<body class="his-app-page his-admin-subpage clsmc-medical-admin-ui clsmc-admin-subpage"><a class="his-skip-link" href="#main-content">Ana içeriğe geç</a>
 {% include '_admin_his_sidebar.html' %}
 <header class="topbar">
   <div class="topbar-brand"><div class="topbar-logo-shell"><img src="{{ url_for('static', filename='clsmc_logo.png') }}" alt="CLSMC logosu"></div><div>
@@ -229,7 +222,7 @@ input:focus,select:focus,textarea:focus{
   <a class="btn" href="{{ url_for('admin_dashboard') }}">← Admin Paneli</a>
 </header>
 
-<main class="shell clsmc-admin-ops-shell">
+<main id="main-content" class="shell clsmc-admin-ops-shell">
   <section class="hero">
     <h1>{{ user.username }}</h1>
     <p>Kullanıcının giriş adını ve raporlarda kullanılacak rütbesini belirle; gerekirse şifresini sıfırla.</p>
@@ -241,7 +234,7 @@ input:focus,select:focus,textarea:focus{
     {% endfor %}
   {% endwith %}
 
-  <form class="panel" method="post" action="{{ url_for('admin_edit_user', user_id=user.id) }}">
+  <form class="panel" method="post" action="{{ url_for('admin_edit_user', user_id=user.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     <div class="field">
       <label>Kullanıcı Adı</label>
       <input name="username" value="{{ user.username }}" autocomplete="off" required>
@@ -267,7 +260,7 @@ input:focus,select:focus,textarea:focus{
         name="new_password"
         type="password"
         autocomplete="new-password"
-        minlength="6"
+        minlength="10"
         placeholder="Şifreyi değiştirmeyecekseniz boş bırakın"
       >
     </div>
@@ -278,7 +271,7 @@ input:focus,select:focus,textarea:focus{
         name="new_password_repeat"
         type="password"
         autocomplete="new-password"
-        minlength="6"
+        minlength="10"
         placeholder="Yeni şifreyi tekrar girin"
       >
     </div>

@@ -4,15 +4,25 @@ import calendar
 import json
 import logging
 import os
+import time
+import secrets
 from datetime import date, datetime, timedelta, timezone
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, session, url_for
+from clsmc.security import (AttemptLimiter, generate_csrf_token, generate_totp_secret, validate_csrf_token, verify_totp)
+from clsmc.services.audit import json_text
+from clsmc.services.patients import (duplicate_patient_query, normalize_birth_date, normalize_identity, patient_payload)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-me")
+secret_key = os.environ.get("SECRET_KEY", "").strip()
+if not secret_key and os.environ.get("RENDER"):
+    raise RuntimeError("SECRET_KEY is required on Render.")
+if not secret_key:
+    secret_key = secrets.token_urlsafe(48)
+app.config["SECRET_KEY"] = secret_key
 
 database_url = os.environ.get("DATABASE_URL", "").strip()
 if not database_url:
@@ -31,6 +41,9 @@ if database_url.startswith("postgres://"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
 
 # Neon gibi yönetilen PostgreSQL servislerinde uyku/yeniden bağlantı sonrası eski
 # bağlantıları otomatik doğrula. Bu ayar bağlantı bilgisini/logları açığa çıkarmaz.
@@ -64,7 +77,10 @@ class User(db.Model):
         default=lambda: datetime.now(timezone.utc),
     )
     last_login_at = db.Column(db.DateTime(timezone=True), nullable=True)
-
+    failed_login_count = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
+    must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    password_changed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
 
 class DeletedUser(db.Model):
@@ -94,10 +110,8 @@ ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", RENAMED_ADMIN_USERNAME).strip(
 if not ADMIN_USERNAME or ADMIN_USERNAME.casefold() == LEGACY_ADMIN_USERNAME.casefold():
     ADMIN_USERNAME = RENAMED_ADMIN_USERNAME
 
-DEFAULT_ADMIN_PASSWORD_HASH = os.environ.get(
-    "ADMIN_PASSWORD_HASH",
-    "pbkdf2:sha256:600000$635c0576bd5c09ff4ec55048337f9610$e34636540b30e59930fa6ed88661c20e72a06cc652cf2b37969485149c50d7be",
-)
+DEFAULT_ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+INITIAL_ADMIN_PASSWORD = os.environ.get("INITIAL_ADMIN_PASSWORD", "")
 
 
 class AdminAccount(db.Model):
@@ -117,6 +131,12 @@ class AdminAccount(db.Model):
         default=lambda: datetime.now(timezone.utc),
     )
     last_login_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    failed_login_count = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
+    must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    password_changed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    totp_secret = db.Column(db.String(80), nullable=True)
+    totp_enabled = db.Column(db.Boolean, nullable=False, default=False)
 
 class AppLog(db.Model):
     __tablename__ = "app_logs"
@@ -134,6 +154,22 @@ class AppLog(db.Model):
 
 
 
+class AuditEvent(db.Model):
+    __tablename__ = "audit_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    actor_type = db.Column(db.String(30), nullable=False, index=True)
+    actor_username = db.Column(db.String(120), nullable=False, index=True)
+    action = db.Column(db.String(100), nullable=False, index=True)
+    target_type = db.Column(db.String(80), nullable=False, index=True)
+    target_id = db.Column(db.String(80), nullable=True, index=True)
+    previous_json = db.Column(db.Text, nullable=True)
+    new_json = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(80), nullable=True)
+    session_reference = db.Column(db.String(80), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
 class Report(db.Model):
     __tablename__ = "reports"
 
@@ -146,6 +182,7 @@ class Report(db.Model):
     bbcode = db.Column(db.Text, nullable=False)
     form_data = db.Column(db.Text, nullable=True)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+    patient_file_id = db.Column(db.Integer, db.ForeignKey("patient_files.id"), nullable=True, index=True)
     created_by_username = db.Column(db.String(120), nullable=False, index=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -178,6 +215,7 @@ class ReportArchive(db.Model):
     bbcode = db.Column(db.Text, nullable=False)
     form_data = db.Column(db.Text, nullable=True)
     created_by_user_id = db.Column(db.Integer, nullable=True, index=True)
+    patient_file_id = db.Column(db.Integer, nullable=True, index=True)
     created_by_username = db.Column(db.String(120), nullable=False, index=True)
     # Bu arşiv sürümünü gerçekten kaydeden kullanıcı. Rapor sahibi bilgisi
     # yukarıdaki created_by alanlarında ayrıca korunur.
@@ -315,6 +353,11 @@ class PatientFile(db.Model):
     emergency_contact = db.Column(db.String(180), nullable=True)
     emergency_phone = db.Column(db.String(80), nullable=True)
     risk_notes = db.Column(db.Text, nullable=True)
+    clinical_priority = db.Column(db.String(30), nullable=False, default="stable", index=True)
+    discharge_summary = db.Column(db.Text, nullable=True)
+    prescription_plan = db.Column(db.Text, nullable=True)
+    follow_up_date = db.Column(db.String(10), nullable=True)
+    discharged_at = db.Column(db.DateTime(timezone=True), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="active", index=True)
     created_by_username = db.Column(db.String(120), nullable=False)
     created_at = db.Column(
@@ -505,6 +548,11 @@ TASK_CATEGORY_LABELS = {
     "procedure": "Tıbbi İşlem",
     "coordination": "Koordinasyon",
 }
+PATIENT_PRIORITY_LABELS = {
+    "stable": "Stabil",
+    "monitor": "Yakın Takip",
+    "critical": "Kritik",
+}
 PATIENT_STATUS_LABELS = {
     "active": "Aktif Dosya",
     "observation": "Gözlemde",
@@ -530,6 +578,92 @@ HANDOFF_STATUS_LABELS = {
     "rejected": "Reddedildi",
     "cancelled": "İptal Edildi",
 }
+
+
+LOGIN_ATTEMPT_LIMITER = AttemptLimiter(limit=8, window_seconds=900)
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCK_MINUTES = 15
+SESSION_IDLE_SECONDS = 30 * 60
+RECENT_ADMIN_AUTH_SECONDS = 15 * 60
+
+
+def account_locked(account) -> bool:
+    locked_until = getattr(account, "locked_until", None)
+    if not locked_until:
+        return False
+    if locked_until.tzinfo is None:
+        locked_until = locked_until.replace(tzinfo=timezone.utc)
+    return locked_until > datetime.now(timezone.utc)
+
+
+def register_failed_login(account) -> None:
+    account.failed_login_count = int(account.failed_login_count or 0) + 1
+    if account.failed_login_count >= LOGIN_MAX_FAILURES:
+        account.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOGIN_LOCK_MINUTES)
+        account.failed_login_count = 0
+    db.session.commit()
+
+
+def clear_failed_login(account) -> None:
+    account.failed_login_count = 0
+    account.locked_until = None
+    db.session.commit()
+
+
+def record_audit_event(action: str, target_type: str, target_id=None, previous=None, new=None, actor_type=None, actor_username=None) -> None:
+    resolved_actor_type = actor_type or ("admin" if session.get("admin_id") else "user" if session.get("user_id") else "system")
+    resolved_actor_username = actor_username or session.get("admin_username") or session.get("username") or "Sistem"
+    session_reference = session.get("audit_session_ref")
+    if not session_reference:
+        session_reference = secrets.token_hex(8)
+        session["audit_session_ref"] = session_reference
+    event = AuditEvent(
+        actor_type=resolved_actor_type,
+        actor_username=resolved_actor_username,
+        action=action,
+        target_type=target_type,
+        target_id=str(target_id) if target_id is not None else None,
+        previous_json=json_text(previous),
+        new_json=json_text(new),
+        ip_address=(request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()[:80]),
+        session_reference=session_reference,
+    )
+    db.session.add(event)
+
+
+def require_recent_admin_auth() -> bool:
+    authenticated_at = float(session.get("admin_authenticated_at", 0) or 0)
+    return bool(authenticated_at and time.time() - authenticated_at <= RECENT_ADMIN_AUTH_SECONDS)
+
+
+def safe_admin_next(value: str | None) -> str:
+    candidate = (value or "").strip()
+    if candidate.startswith("/admin") and not candidate.startswith("//"):
+        return candidate
+    return url_for("admin_accounts")
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=()",
+    )
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; img-src 'self' data:; "
+        "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; "
+        "connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        "frame-ancestors 'none'; form-action 'self'",
+    )
+    if request.is_secure or os.environ.get("RENDER"):
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    return response
 
 
 def create_user_notification(
@@ -596,6 +730,7 @@ def add_report_archive_snapshot(
         bbcode=report.bbcode,
         form_data=report.form_data,
         created_by_user_id=report.created_by_user_id,
+        patient_file_id=report.patient_file_id,
         created_by_username=report.created_by_username,
         submitted_by_user_id=(
             submitted_by_user_id
@@ -744,6 +879,33 @@ def auto_archive_expired_leave_requests() -> int:
 _leave_archive_check_state = {"last_checked_at": None}
 
 
+
+@app.before_request
+def enforce_v26_security_controls():
+    if request.endpoint == "static":
+        return None
+
+    now_ts = time.time()
+    if session.get("user_id") or session.get("admin_id"):
+        last_activity = float(session.get("last_activity_at", now_ts) or now_ts)
+        if now_ts - last_activity > SESSION_IDLE_SECONDS:
+            session.clear()
+            if request.path.startswith("/api/"):
+                return jsonify({"ok": False, "message": "Oturum zaman aşımına uğradı."}), 401
+            flash("Güvenlik nedeniyle oturumunuz zaman aşımına uğradı.", "error")
+            return redirect(url_for("admin_login" if request.path.startswith("/admin") else "login_page"))
+        session["last_activity_at"] = now_ts
+
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        submitted = request.form.get("_csrf_token") or request.headers.get("X-CSRF-Token")
+        if not validate_csrf_token(session, submitted):
+            write_log("WARNING", "CSRF_REJECTED", f"endpoint={request.endpoint}; path={request.path}")
+            if request.path.startswith("/api/"):
+                return jsonify({"ok": False, "message": "Güvenlik doğrulaması başarısız. Sayfayı yenileyin."}), 400
+            abort(400, description="Güvenlik doğrulaması başarısız. Sayfayı yenileyin.")
+    return None
+
+
 @app.before_request
 def check_expired_leave_archive_on_activity():
     """Site kullanıldığında en fazla saatte bir süresi dolan izinleri kontrol eder."""
@@ -775,6 +937,18 @@ with app.app_context():
     if "last_login_at" not in user_columns:
         with db.engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP"))
+    for column_name, column_sql in {
+        "failed_login_count": "INTEGER DEFAULT 0",
+        "locked_until": "TIMESTAMP",
+        "must_change_password": "BOOLEAN DEFAULT FALSE",
+        "password_changed_at": "TIMESTAMP",
+    }.items():
+        if column_name not in user_columns:
+            with db.engine.begin() as connection:
+                connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_sql}"))
+    with db.engine.begin() as connection:
+        connection.execute(text("UPDATE users SET failed_login_count=0 WHERE failed_login_count IS NULL"))
+        connection.execute(text("UPDATE users SET must_change_password=FALSE WHERE must_change_password IS NULL"))
 
     # Yeni seçmeli admin rapor düzenleyicisi için form verilerini JSON olarak sakla.
     report_columns = {column["name"] for column in inspect(db.engine).get_columns("reports")}
@@ -841,6 +1015,29 @@ with app.app_context():
             )
         )
 
+    # V26.0: Patient-centred reports, clinical priority, discharge data and audit trail.
+    report_columns = {column["name"] for column in inspect(db.engine).get_columns("reports")}
+    if "patient_file_id" not in report_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE reports ADD COLUMN patient_file_id INTEGER"))
+    archive_columns = {column["name"] for column in inspect(db.engine).get_columns("report_archives")}
+    if "patient_file_id" not in archive_columns:
+        with db.engine.begin() as connection:
+            connection.execute(text("ALTER TABLE report_archives ADD COLUMN patient_file_id INTEGER"))
+    patient_columns = {column["name"] for column in inspect(db.engine).get_columns("patient_files")}
+    for column_name, column_sql in {
+        "clinical_priority": "VARCHAR(30) DEFAULT 'stable'",
+        "discharge_summary": "TEXT",
+        "prescription_plan": "TEXT",
+        "follow_up_date": "VARCHAR(10)",
+        "discharged_at": "TIMESTAMP",
+    }.items():
+        if column_name not in patient_columns:
+            with db.engine.begin() as connection:
+                connection.execute(text(f"ALTER TABLE patient_files ADD COLUMN {column_name} {column_sql}"))
+    with db.engine.begin() as connection:
+        connection.execute(text("UPDATE patient_files SET clinical_priority='stable' WHERE clinical_priority IS NULL OR clinical_priority=''"))
+
     # V23.1: Birden fazla yönetici hesabı ve hesap durum takibi.
     admin_columns = {
         column["name"] for column in inspect(db.engine).get_columns("admin_accounts")
@@ -865,6 +1062,17 @@ with app.app_context():
             connection.execute(
                 text("ALTER TABLE admin_accounts ADD COLUMN permission_level VARCHAR(40) DEFAULT 'system_admin'")
             )
+    for column_name, column_sql in {
+        "failed_login_count": "INTEGER DEFAULT 0",
+        "locked_until": "TIMESTAMP",
+        "must_change_password": "BOOLEAN DEFAULT FALSE",
+        "password_changed_at": "TIMESTAMP",
+        "totp_secret": "VARCHAR(80)",
+        "totp_enabled": "BOOLEAN DEFAULT FALSE",
+    }.items():
+        if column_name not in admin_columns:
+            with db.engine.begin() as connection:
+                connection.execute(text(f"ALTER TABLE admin_accounts ADD COLUMN {column_name} {column_sql}"))
     with db.engine.begin() as connection:
         connection.execute(
             text("UPDATE admin_accounts SET is_active=TRUE WHERE is_active IS NULL")
@@ -872,6 +1080,9 @@ with app.app_context():
         connection.execute(
             text("UPDATE admin_accounts SET permission_level='system_admin' WHERE permission_level IS NULL OR permission_level=''")
         )
+        connection.execute(text("UPDATE admin_accounts SET failed_login_count=0 WHERE failed_login_count IS NULL"))
+        connection.execute(text("UPDATE admin_accounts SET must_change_password=FALSE WHERE must_change_password IS NULL"))
+        connection.execute(text("UPDATE admin_accounts SET totp_enabled=FALSE WHERE totp_enabled IS NULL"))
 
     # V23.5.5: Eski Veyrath admin hesabını kimliği ve parolası korunarak
     # Darius Blackwell adına taşır. Normal kullanıcı tablosundaki aynı isim,
@@ -927,11 +1138,20 @@ with app.app_context():
         db.func.lower(AdminAccount.username) == ADMIN_USERNAME.lower()
     ).first()
     if not existing_admin:
+        bootstrap_hash = DEFAULT_ADMIN_PASSWORD_HASH
+        if not bootstrap_hash and len(INITIAL_ADMIN_PASSWORD) >= 10:
+            bootstrap_hash = generate_password_hash(INITIAL_ADMIN_PASSWORD)
+        if not bootstrap_hash:
+            raise RuntimeError(
+                "No admin account exists. Set ADMIN_PASSWORD_HASH or an "
+                "INITIAL_ADMIN_PASSWORD of at least 10 characters for the first deployment."
+            )
         db.session.add(
             AdminAccount(
                 username=ADMIN_USERNAME,
-                password_hash=DEFAULT_ADMIN_PASSWORD_HASH,
+                password_hash=bootstrap_hash,
                 is_active=True,
+                must_change_password=bool(INITIAL_ADMIN_PASSWORD),
                 created_by_admin="Sistem",
             )
         )
@@ -975,6 +1195,11 @@ def login_page():
 def login():
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
+    attempt_key = f"user:{username.casefold()}:{request.remote_addr or ''}"
+
+    if LOGIN_ATTEMPT_LIMITER.blocked(attempt_key):
+        flash("Çok fazla giriş denemesi yapıldı. 15 dakika sonra tekrar deneyin.", "error")
+        return render_template("login.html", prefill_username=username), 429
 
     if not username or not password:
         flash("Kullanıcı adı ve şifre zorunludur.", "error")
@@ -984,12 +1209,24 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         # Aktif hesap varsa normal giriş kontrolü uygulanır.
+        if user and account_locked(user):
+            flash("Hesap geçici olarak kilitlendi. 15 dakika sonra tekrar deneyin.", "error")
+            return render_template("login.html", prefill_username=username), 429
+
         if user and check_password_hash(user.password_hash, password):
             session.clear()
+            session.permanent = True
             session["user_id"] = user.id
             session["username"] = user.username
+            session["last_activity_at"] = time.time()
+            session["audit_session_ref"] = secrets.token_hex(8)
             user.last_login_at = datetime.now(timezone.utc)
+            clear_failed_login(user)
+            LOGIN_ATTEMPT_LIMITER.clear(attempt_key)
             write_log("INFO", "LOGIN_SUCCESS", f"username={username}")
+            if user.must_change_password:
+                flash("Yönetici tarafından sıfırlanan şifrenizi değiştirmeniz gerekiyor.", "warning")
+                return redirect(url_for("settings"))
             return redirect(url_for("panel"))
 
         # Aktif hesap bulunmuyorsa Silinen Üyelikler arşivi kontrol edilir.
@@ -1016,6 +1253,9 @@ def login():
                     prefill_username=username,
                 ), 403
 
+        LOGIN_ATTEMPT_LIMITER.record(attempt_key)
+        if user:
+            register_failed_login(user)
         write_log("WARNING", "LOGIN_FAILED", f"username={username}")
         flash("Kullanıcı adı veya şifre hatalı.", "error")
         return render_template("login.html", prefill_username=username), 401
@@ -1201,6 +1441,11 @@ def panel():
         f"{dashboard_now.day:02d} {dashboard_month_names[dashboard_now.month - 1]} {dashboard_now.year}"
     )
 
+    report_patients = PatientFile.query.filter(
+        PatientFile.status.notin_(["archived"])
+    ).order_by(PatientFile.full_name.asc(), PatientFile.id.asc()).all()
+    report_patient_options = [patient_payload(item) for item in report_patients]
+
     return render_template(
         "panel.html",
         system_name=SYSTEM_NAME,
@@ -1228,6 +1473,7 @@ def panel():
         dashboard_open_task_count=dashboard_open_task_count,
         dashboard_preview_patient=dashboard_preview_patient,
         dashboard_preview_entry=dashboard_preview_entry,
+        report_patient_options=report_patient_options,
         dashboard_now=dashboard_now,
         dashboard_shift_name=dashboard_shift_name,
         dashboard_shift_hours=dashboard_shift_hours,
@@ -1236,6 +1482,7 @@ def panel():
         dashboard_day_name=dashboard_day_names[dashboard_now.weekday()],
         dashboard_date_label=dashboard_date_label,
         patient_status_labels=PATIENT_STATUS_LABELS,
+        patient_priority_labels=PATIENT_PRIORITY_LABELS,
         task_status_labels=TASK_STATUS_LABELS,
         task_priority_labels=TASK_PRIORITY_LABELS,
     )
@@ -1365,6 +1612,7 @@ def save_report():
     report_date = str(data.get("report_date", "")).strip()
     bbcode = str(data.get("bbcode", "")).strip()
     form_data_raw = data.get("form_data", {})
+    patient_file_id_raw = data.get("patient_file_id")
     if not isinstance(form_data_raw, dict):
         form_data_raw = {}
 
@@ -1382,6 +1630,22 @@ def save_report():
         return {"ok": False, "message": "Geçersiz rapor türü."}, 400
 
     form_data_raw = normalize_report_form_data(report_type, form_data_raw)
+    patient_file = None
+    if patient_file_id_raw not in (None, ""):
+        try:
+            patient_file = db.session.get(PatientFile, int(patient_file_id_raw))
+        except (TypeError, ValueError):
+            patient_file = None
+        if not patient_file:
+            return {"ok": False, "message": "Seçilen hasta dosyası bulunamadı."}, 400
+        living_field_map = {
+            "vaka": {"adsoyad": "full_name", "kimlik_no": "identity_number", "dogum_tarihi": "date_of_birth", "cinsiyet": "gender", "telefon": "phone", "adres": "address"},
+            "adli": {"adli_adsoyad": "full_name", "adli_kimlik_no": "identity_number", "adli_dogum_tarihi": "date_of_birth", "adli_cinsiyet": "gender", "adli_telefon": "phone", "adli_adres": "address"},
+            "ems": {"ems_adsoyad": "full_name", "ems_kimlik_no": "identity_number", "ems_dogum_tarihi": "date_of_birth"},
+        }
+        for form_key, patient_attr in living_field_map.get(report_type, {}).items():
+            if not str(form_data_raw.get(form_key, "") or "").strip():
+                form_data_raw[form_key] = getattr(patient_file, patient_attr, "") or ""
     form_data_json = json.dumps(form_data_raw, ensure_ascii=False)
 
     allowed_report_types = allowed_report_types_for_rank(doctor_rank)
@@ -1427,6 +1691,7 @@ def save_report():
                 bbcode=bbcode,
                 form_data=form_data_json,
                 created_by_user_id=session["user_id"],
+                patient_file_id=patient_file.id if patient_file else None,
                 created_by_username=session.get("username", ""),
                 workflow_status="completed",
             )
@@ -1442,6 +1707,7 @@ def save_report():
             report.report_date = report_date or None
             report.bbcode = bbcode
             report.form_data = form_data_json
+            report.patient_file_id = patient_file.id if patient_file else report.patient_file_id
             # Kullanıcı kaydı anında tamamlanır; ayrıca yönetici/rütbeli onayı beklemez.
             report.workflow_status = "completed"
 
@@ -1817,8 +2083,8 @@ def settings():
             username=session.get("username", ""),
         ), 400
 
-    if len(new_password) < 6:
-        flash("Yeni şifre en az 6 karakter olmalıdır.", "error")
+    if len(new_password) < 10:
+        flash("Yeni şifre en az 10 karakter olmalıdır.", "error")
         write_log(
             "WARNING",
             "PASSWORD_CHANGE_FAILED",
@@ -1867,6 +2133,9 @@ def settings():
             ), 400
 
         user.password_hash = generate_password_hash(new_password)
+        user.must_change_password = False
+        user.password_changed_at = datetime.now(timezone.utc)
+        record_audit_event("USER_PASSWORD_CHANGED", "user", user.id, None, {"password_changed": True})
         db.session.commit()
 
         write_log(
@@ -1937,6 +2206,8 @@ def inject_access_context():
         "admin_role_labels": ADMIN_ROLE_LABELS,
         "current_admin_role": (admin.permission_level if admin else None),
         "report_form_field_labels": REPORT_FORM_FIELD_LABELS,
+        "patient_priority_labels": PATIENT_PRIORITY_LABELS,
+        "csrf_token": generate_csrf_token,
     }
 
 
@@ -1950,6 +2221,12 @@ def admin_login():
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
+    otp_code = request.form.get("otp_code", "").strip()
+    attempt_key = f"admin:{username.casefold()}:{request.remote_addr or ''}"
+
+    if LOGIN_ATTEMPT_LIMITER.blocked(attempt_key):
+        flash("Çok fazla yönetici giriş denemesi yapıldı. 15 dakika sonra tekrar deneyin.", "error")
+        return render_template("admin_login.html", username=username), 429
 
     if not username or not password:
         flash("Yönetici kullanıcı adı ve şifre zorunludur.", "error")
@@ -1958,20 +2235,41 @@ def admin_login():
     try:
         admin = AdminAccount.query.filter_by(username=username).first()
 
+        if admin and account_locked(admin):
+            flash("Yönetici hesabı geçici olarak kilitlendi. 15 dakika sonra tekrar deneyin.", "error")
+            return render_template("admin_login.html", username=username), 429
+
         if admin and not admin.is_active:
             write_log("WARNING", "ADMIN_LOGIN_INACTIVE", f"username={username}")
             flash("Bu yönetici hesabı pasif durumdadır.", "error")
             return render_template("admin_login.html", username=username), 403
 
         if admin and check_password_hash(admin.password_hash, password):
+            if admin.totp_enabled and not verify_totp(admin.totp_secret or "", otp_code):
+                LOGIN_ATTEMPT_LIMITER.record(attempt_key)
+                register_failed_login(admin)
+                write_log("WARNING", "ADMIN_2FA_FAILED", f"username={username}")
+                flash("Yönetici kullanıcı adı, şifre veya doğrulama kodu hatalı.", "error")
+                return render_template("admin_login.html", username=username), 401
             session.clear()
+            session.permanent = True
             session["admin_id"] = admin.id
             session["admin_username"] = admin.username
+            session["last_activity_at"] = time.time()
+            session["admin_authenticated_at"] = time.time()
+            session["audit_session_ref"] = secrets.token_hex(8)
             admin.last_login_at = datetime.now(timezone.utc)
-            db.session.commit()
+            clear_failed_login(admin)
+            LOGIN_ATTEMPT_LIMITER.clear(attempt_key)
             write_log("INFO", "ADMIN_LOGIN_SUCCESS", f"admin={admin.username}")
+            if admin.must_change_password:
+                flash("Güvenlik için geçici şifrenizi değiştirin.", "warning")
+                return redirect(url_for("admin_accounts"))
             return redirect(url_for("admin_dashboard"))
 
+        LOGIN_ATTEMPT_LIMITER.record(attempt_key)
+        if admin:
+            register_failed_login(admin)
         write_log("WARNING", "ADMIN_LOGIN_FAILED", f"username={username}")
         flash("Yönetici kullanıcı adı veya şifre hatalı.", "error")
         return render_template("admin_login.html", username=username), 401
@@ -1989,6 +2287,58 @@ def admin_login():
             pass
         flash("Admin girişi sırasında bir hata oluştu.", "error")
         return render_template("admin_login.html", username=username), 500
+
+
+@app.route("/admin/re-auth", methods=["GET", "POST"])
+def admin_reauth():
+    admin = current_admin_account()
+    if not admin or not admin.is_active:
+        session.clear()
+        return redirect(url_for("admin_login"))
+
+    next_url = safe_admin_next(request.values.get("next"))
+    if request.method == "GET":
+        return render_template(
+            "admin_reauth.html",
+            admin_username=admin.username,
+            next_url=next_url,
+            totp_required=bool(admin.totp_enabled),
+        )
+
+    attempt_key = f"admin-reauth:{admin.id}:{request.remote_addr or ''}"
+    if LOGIN_ATTEMPT_LIMITER.blocked(attempt_key):
+        flash("Çok fazla doğrulama denemesi yapıldı. 15 dakika sonra tekrar deneyin.", "error")
+        return render_template(
+            "admin_reauth.html", admin_username=admin.username, next_url=next_url,
+            totp_required=bool(admin.totp_enabled),
+        ), 429
+
+    password = request.form.get("password", "")
+    otp_code = request.form.get("otp_code", "").strip()
+    password_valid = check_password_hash(admin.password_hash, password)
+    otp_valid = (not admin.totp_enabled) or verify_totp(admin.totp_secret or "", otp_code)
+    if not password_valid or not otp_valid:
+        LOGIN_ATTEMPT_LIMITER.record(attempt_key)
+        record_audit_event(
+            "ADMIN_REAUTH_FAILED", "admin_account", admin.id, None,
+            {"password_valid": bool(password_valid), "otp_required": bool(admin.totp_enabled)},
+        )
+        db.session.commit()
+        flash("Yönetici şifresi veya doğrulama kodu hatalı.", "error")
+        return render_template(
+            "admin_reauth.html", admin_username=admin.username, next_url=next_url,
+            totp_required=bool(admin.totp_enabled),
+        ), 401
+
+    LOGIN_ATTEMPT_LIMITER.clear(attempt_key)
+    session["admin_authenticated_at"] = time.time()
+    record_audit_event(
+        "ADMIN_REAUTH_SUCCESS", "admin_account", admin.id, None,
+        {"recent_auth_valid_for_seconds": RECENT_ADMIN_AUTH_SECONDS},
+    )
+    db.session.commit()
+    flash("Yönetici kimliğiniz yeniden doğrulandı. Kritik işlemi tekrar uygulayabilirsiniz.", "success")
+    return redirect(next_url)
 
 
 @app.get("/admin")
@@ -2160,6 +2510,15 @@ def admin_dashboard():
             "detail": f"{reports_without_date} raporda rapor tarihi alanı boş.",
             "target": "reports",
         })
+    overdue_task_count_for_alert = ClinicalTask.query.filter(
+        ClinicalTask.status.notin_(["completed", "cancelled"]),
+        ClinicalTask.due_at.isnot(None), ClinicalTask.due_at < now_utc,
+    ).count()
+    critical_patient_count_for_alert = PatientFile.query.filter_by(clinical_priority="critical").count()
+    if overdue_task_count_for_alert:
+        system_alerts.append({"level": "danger", "title": "Geciken klinik görevler", "detail": f"{overdue_task_count_for_alert} görev son tarihini geçti.", "target": "clinical"})
+    if critical_patient_count_for_alert:
+        system_alerts.append({"level": "warning", "title": "Kritik hasta takibi", "detail": f"{critical_patient_count_for_alert} hasta kritik öncelikte.", "target": "clinical"})
     if not system_alerts:
         system_alerts.append({
             "level": "success",
@@ -2191,6 +2550,14 @@ def admin_dashboard():
     admin_open_task_count = ClinicalTask.query.filter(
         ClinicalTask.status.notin_(["completed", "cancelled"])
     ).count()
+    admin_critical_patient_count = PatientFile.query.filter_by(clinical_priority="critical").count()
+    admin_overdue_task_count = ClinicalTask.query.filter(
+        ClinicalTask.status.notin_(["completed", "cancelled"]),
+        ClinicalTask.due_at.isnot(None),
+        ClinicalTask.due_at < now_utc,
+    ).count()
+    admin_suspended_user_count = DeletedUser.query.count()
+    admin_recent_audit_events = AuditEvent.query.order_by(AuditEvent.created_at.desc()).limit(8).all()
     admin_recent_patients = (
         PatientFile.query.order_by(PatientFile.updated_at.desc(), PatientFile.id.desc()).limit(6).all()
     )
@@ -2245,6 +2612,10 @@ def admin_dashboard():
         backup_warning=backup_warning,
         admin_active_patient_count=admin_active_patient_count,
         admin_open_task_count=admin_open_task_count,
+        admin_critical_patient_count=admin_critical_patient_count,
+        admin_overdue_task_count=admin_overdue_task_count,
+        admin_suspended_user_count=admin_suspended_user_count,
+        admin_recent_audit_events=admin_recent_audit_events,
         admin_recent_patients=admin_recent_patients,
         admin_recent_tasks=admin_recent_tasks,
         admin_pending_leave_requests=admin_pending_leave_requests,
@@ -2274,8 +2645,8 @@ def admin_accounts():
 
         if len(username) < 3 or len(username) > 120:
             flash("Admin kullanıcı adı 3 ile 120 karakter arasında olmalıdır.", "error")
-        elif len(password) < 8:
-            flash("Admin şifresi en az 8 karakter olmalıdır.", "error")
+        elif len(password) < 10:
+            flash("Admin şifresi en az 10 karakter olmalıdır.", "error")
         elif password != password_confirm:
             flash("Admin şifreleri eşleşmiyor.", "error")
         elif AdminAccount.query.filter_by(username=username).first():
@@ -2289,9 +2660,15 @@ def admin_accounts():
                     password_hash=generate_password_hash(password),
                     is_active=True,
                     permission_level=permission_level,
+                    must_change_password=True,
                     created_by_admin=session.get("admin_username", ""),
                 )
                 db.session.add(account)
+                db.session.flush()
+                record_audit_event(
+                    "ADMIN_ACCOUNT_CREATED", "admin_account", account.id, None,
+                    {"username": account.username, "permission_level": permission_level, "must_change_password": True},
+                )
                 db.session.commit()
                 write_log(
                     "INFO",
@@ -2323,7 +2700,77 @@ def admin_accounts():
         accounts=accounts,
         active_admin_count=active_admin_count,
         admin_role_labels=ADMIN_ROLE_LABELS,
+        current_admin_account_obj=current_admin_account(),
+        pending_totp_secret=session.get("pending_totp_secret"),
     )
+
+
+@app.post("/admin/security/2fa/setup")
+def admin_2fa_setup():
+    admin = current_admin_account()
+    if not admin_required("admin_accounts") or not admin:
+        return redirect(url_for("admin_login"))
+    secret = generate_totp_secret()
+    session["pending_totp_secret"] = secret
+    flash("Doğrulayıcı uygulamanıza aşağıdaki anahtarı ekleyip 6 haneli kodu doğrulayın.", "info")
+    return redirect(url_for("admin_accounts") + "#security")
+
+
+@app.post("/admin/security/2fa/confirm")
+def admin_2fa_confirm():
+    admin = current_admin_account()
+    secret = session.get("pending_totp_secret", "")
+    code = request.form.get("otp_code", "")
+    if not admin or not secret or not verify_totp(secret, code):
+        flash("Doğrulama kodu geçersiz.", "error")
+        return redirect(url_for("admin_accounts") + "#security")
+    before = {"totp_enabled": bool(admin.totp_enabled)}
+    admin.totp_secret = secret
+    admin.totp_enabled = True
+    session.pop("pending_totp_secret", None)
+    record_audit_event("ADMIN_2FA_ENABLED", "admin_account", admin.id, before, {"totp_enabled": True})
+    db.session.commit()
+    flash("İki aşamalı doğrulama etkinleştirildi.", "success")
+    return redirect(url_for("admin_accounts") + "#security")
+
+
+@app.post("/admin/security/2fa/disable")
+def admin_2fa_disable():
+    admin = current_admin_account()
+    password = request.form.get("current_password", "")
+    code = request.form.get("otp_code", "")
+    if not admin or not check_password_hash(admin.password_hash, password) or not verify_totp(admin.totp_secret or "", code):
+        flash("Şifre veya doğrulama kodu hatalı.", "error")
+        return redirect(url_for("admin_accounts") + "#security")
+    admin.totp_secret = None
+    admin.totp_enabled = False
+    record_audit_event("ADMIN_2FA_DISABLED", "admin_account", admin.id, {"totp_enabled": True}, {"totp_enabled": False})
+    db.session.commit()
+    flash("İki aşamalı doğrulama kapatıldı.", "success")
+    return redirect(url_for("admin_accounts") + "#security")
+
+
+@app.post("/admin/security/password")
+def admin_change_own_password():
+    admin = current_admin_account()
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm = request.form.get("new_password_confirm", "")
+    if not admin or not check_password_hash(admin.password_hash, current_password):
+        flash("Mevcut şifre hatalı.", "error")
+    elif len(new_password) < 10:
+        flash("Yeni yönetici şifresi en az 10 karakter olmalıdır.", "error")
+    elif new_password != confirm:
+        flash("Yeni şifreler eşleşmiyor.", "error")
+    else:
+        admin.password_hash = generate_password_hash(new_password)
+        admin.must_change_password = False
+        admin.password_changed_at = datetime.now(timezone.utc)
+        session["admin_authenticated_at"] = time.time()
+        record_audit_event("ADMIN_PASSWORD_CHANGED", "admin_account", admin.id, None, {"password_changed": True})
+        db.session.commit()
+        flash("Yönetici şifreniz güncellendi.", "success")
+    return redirect(url_for("admin_accounts") + "#security")
 
 
 @app.post("/admin/accounts/<int:admin_id>/role")
@@ -2345,6 +2792,7 @@ def admin_change_account_role(admin_id: int):
             return redirect(url_for("admin_accounts"))
     old_level = account.permission_level or "system_admin"
     account.permission_level = permission_level
+    record_audit_event("ADMIN_ROLE_CHANGED", "admin_account", account.id, {"permission_level": old_level}, {"permission_level": permission_level})
     db.session.commit()
     write_log(
         "WARNING", "ADMIN_ROLE_CHANGED",
@@ -2359,6 +2807,9 @@ def admin_reset_account_password(admin_id: int):
     if not admin_required("admin_accounts"):
         return redirect(url_for("admin_login"))
 
+    if not require_recent_admin_auth():
+        flash("Bu kritik işlem için yönetici kimliğinizi yeniden doğrulayın.", "warning")
+        return redirect(url_for("admin_reauth", next=url_for("admin_accounts")))
     account = db.session.get(AdminAccount, admin_id)
     if not account:
         flash("Yönetici hesabı bulunamadı.", "error")
@@ -2366,8 +2817,8 @@ def admin_reset_account_password(admin_id: int):
 
     password = request.form.get("new_password", "")
     password_confirm = request.form.get("new_password_confirm", "")
-    if len(password) < 8:
-        flash("Yeni admin şifresi en az 8 karakter olmalıdır.", "error")
+    if len(password) < 10:
+        flash("Yeni admin şifresi en az 10 karakter olmalıdır.", "error")
         return redirect(url_for("admin_accounts"))
     if password != password_confirm:
         flash("Yeni admin şifreleri eşleşmiyor.", "error")
@@ -2377,6 +2828,9 @@ def admin_reset_account_password(admin_id: int):
         return redirect(url_for("admin_accounts"))
 
     account.password_hash = generate_password_hash(password)
+    account.must_change_password = True
+    account.password_changed_at = datetime.now(timezone.utc)
+    record_audit_event("ADMIN_PASSWORD_RESET", "admin_account", account.id, None, {"must_change_password": True})
     db.session.commit()
     write_log(
         "INFO",
@@ -2406,7 +2860,9 @@ def admin_toggle_account(admin_id: int):
             flash("Sistemde en az bir aktif yönetici hesabı bulunmalıdır.", "error")
             return redirect(url_for("admin_accounts"))
 
+    old_active = bool(account.is_active)
     account.is_active = not account.is_active
+    record_audit_event("ADMIN_STATUS_CHANGED", "admin_account", account.id, {"is_active": old_active}, {"is_active": bool(account.is_active)})
     db.session.commit()
     write_log(
         "INFO",
@@ -2424,6 +2880,9 @@ def admin_toggle_account(admin_id: int):
 def admin_delete_account(admin_id: int):
     if not admin_required("admin_accounts"):
         return redirect(url_for("admin_login"))
+    if not require_recent_admin_auth():
+        flash("Bu kritik işlem için yönetici kimliğinizi yeniden doğrulayın.", "warning")
+        return redirect(url_for("admin_reauth", next=url_for("admin_accounts")))
 
     account = db.session.get(AdminAccount, admin_id)
     if not account:
@@ -2437,6 +2896,7 @@ def admin_delete_account(admin_id: int):
         return redirect(url_for("admin_accounts"))
 
     deleted_username = account.username
+    record_audit_event("ADMIN_ACCOUNT_DELETED", "admin_account", account.id, {"username": account.username, "is_active": bool(account.is_active)}, None)
     db.session.delete(account)
     db.session.commit()
     write_log(
@@ -2900,7 +3360,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V25.1.5",
+        "version": "V26.0",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -2948,6 +3408,7 @@ def admin_export_system_data():
                 "report_date": report.report_date,
                 "form_data": form_data_value(report.form_data),
                 "bbcode": report.bbcode,
+                "patient_file_id": report.patient_file_id,
                 "created_by_user_id": report.created_by_user_id,
                 "created_by_username": report.created_by_username,
                 "created_at": iso(report.created_at),
@@ -2969,6 +3430,7 @@ def admin_export_system_data():
                 "report_date": archive.report_date,
                 "form_data": form_data_value(archive.form_data),
                 "bbcode": archive.bbcode,
+                "patient_file_id": archive.patient_file_id,
                 "created_by_user_id": archive.created_by_user_id,
                 "created_by_username": archive.created_by_username,
                 "submitted_by_user_id": archive.submitted_by_user_id,
@@ -3037,6 +3499,11 @@ def admin_export_system_data():
                 "medical_history": item.medical_history,
                 "emergency_contact": item.emergency_contact, "emergency_phone": item.emergency_phone,
                 "risk_notes": item.risk_notes, "status": item.status,
+                "clinical_priority": item.clinical_priority,
+                "discharge_summary": item.discharge_summary,
+                "prescription_plan": item.prescription_plan,
+                "follow_up_date": item.follow_up_date,
+                "discharged_at": iso(item.discharged_at),
                 "created_by_username": item.created_by_username,
                 "created_at": iso(item.created_at), "updated_at": iso(item.updated_at),
             } for item in patient_files
@@ -3434,8 +3901,8 @@ def admin_create_user():
             admin_username=session.get("admin_username", ""),
         ), 400
 
-    if len(password) < 6:
-        flash("Şifre en az 6 karakter olmalıdır.", "error")
+    if len(password) < 10:
+        flash("Şifre en az 10 karakter olmalıdır.", "error")
         return render_template(
             "admin_user_create.html",
             admin_username=session.get("admin_username", ""),
@@ -3471,8 +3938,14 @@ def admin_create_user():
             username=username,
             password_hash=generate_password_hash(password),
             rank=rank,
+            must_change_password=True,
         )
         db.session.add(user)
+        db.session.flush()
+        record_audit_event(
+            "USER_ACCOUNT_CREATED", "user", user.id, None,
+            {"username": user.username, "rank": user.rank, "must_change_password": True},
+        )
         db.session.commit()
 
         write_log(
@@ -3557,8 +4030,8 @@ def admin_edit_user(user_id: int):
                 user=user,
             ), 400
 
-        if len(new_password) < 6:
-            flash("Yeni şifre en az 6 karakter olmalıdır.", "error")
+        if len(new_password) < 10:
+            flash("Yeni şifre en az 10 karakter olmalıdır.", "error")
             return render_template(
                 "admin_user_edit.html",
                 admin_username=session.get("admin_username", ""),
@@ -3613,6 +4086,8 @@ def admin_edit_user(user_id: int):
 
         if password_changed:
             user.password_hash = generate_password_hash(new_password)
+            user.must_change_password = True
+            user.password_changed_at = datetime.now(timezone.utc)
 
         # Kullanıcı adı değişirse geçmiş raporlardaki "Kaydeden Kullanıcı" etiketi de
         # yeni hesap adıyla eşitlenir; rapor içeriği ve doktor kaydı korunur.
@@ -4089,12 +4564,14 @@ def clinical_center():
             PatientFile.identity_number.ilike(needle), PatientFile.phone.ilike(needle),
         ))
     patients = patients_query.order_by(PatientFile.updated_at.desc()).limit(100).all()
+    open_tasks = sum(1 for item in tasks if item.status not in {"completed", "cancelled"})
     return render_template(
         "clinical_center.html", system_name=SYSTEM_NAME, user=user, section=section,
         tasks=tasks, patients=patients, search=search,
         open_tasks=open_tasks,
         task_status_labels=TASK_STATUS_LABELS, task_priority_labels=TASK_PRIORITY_LABELS,
         task_category_labels=TASK_CATEGORY_LABELS, patient_status_labels=PATIENT_STATUS_LABELS,
+        patient_priority_labels=PATIENT_PRIORITY_LABELS,
         task_checklist_value=task_checklist_value, task_updates_by_task=task_updates_by_task,
     )
 
@@ -4145,13 +4622,22 @@ def clinical_create_patient():
     if not user or (user.rank or "").strip() not in ALLOWED_USER_RANKS:
         return redirect(url_for("login_page"))
     full_name = request.form.get("full_name", "").strip()
+    identity_number = normalize_identity(request.form.get("identity_number"))
+    date_of_birth = normalize_birth_date(request.form.get("date_of_birth"))
     if not full_name:
         flash("Hasta adı ve soyadı zorunludur.", "error")
         return redirect(url_for("clinical_center", section="patients"))
+    duplicate = duplicate_patient_query(PatientFile, identity_number, full_name, date_of_birth)
+    if duplicate:
+        flash(f"Benzer hasta dosyası bulundu: {duplicate.patient_number} — {duplicate.full_name}", "warning")
+        return redirect(url_for("patient_file_view", patient_id=duplicate.id))
+    clinical_priority = request.form.get("clinical_priority", "stable").strip()
+    if clinical_priority not in PATIENT_PRIORITY_LABELS:
+        clinical_priority = "stable"
     patient = PatientFile(
         patient_number=next_patient_number(), full_name=full_name,
-        identity_number=request.form.get("identity_number", "").strip() or None,
-        date_of_birth=request.form.get("date_of_birth", "").strip() or None,
+        identity_number=identity_number or None,
+        date_of_birth=date_of_birth or None,
         gender=request.form.get("gender", "").strip() or None,
         phone=request.form.get("phone", "").strip() or None,
         address=request.form.get("address", "").strip() or None,
@@ -4163,9 +4649,12 @@ def clinical_create_patient():
         emergency_contact=request.form.get("emergency_contact", "").strip() or None,
         emergency_phone=request.form.get("emergency_phone", "").strip() or None,
         risk_notes=request.form.get("risk_notes", "").strip() or None,
+        clinical_priority=clinical_priority,
         created_by_username=user.username,
     )
     db.session.add(patient)
+    db.session.flush()
+    record_audit_event("PATIENT_CREATED", "patient_file", patient.id, None, {"patient_number": patient.patient_number, "full_name": patient.full_name, "identity_number": patient.identity_number, "date_of_birth": patient.date_of_birth})
     db.session.commit()
     write_log("INFO", "PATIENT_FILE_CREATED", f"username={user.username}; patient_id={patient.id}")
     flash(f"{patient.patient_number} numaralı hasta dosyası oluşturuldu.", "success")
@@ -4191,13 +4680,17 @@ def patient_file_view(patient_id: int):
     linked_reports = {report.id: report for report in Report.query.filter(
         Report.id.in_([entry.linked_report_id for entry in entries if entry.linked_report_id])
     ).all()} if entries else {}
+    patient_reports = Report.query.filter_by(patient_file_id=patient.id).order_by(Report.updated_at.desc()).all()
     return render_template(
         "patient_file_view.html", system_name=SYSTEM_NAME, patient=patient, entries=entries,
         tasks=tasks, user=user, admin_mode=admin_mode,
         patient_status_labels=PATIENT_STATUS_LABELS,
         clinical_entry_labels=CLINICAL_ENTRY_LABELS,
         task_status_labels=TASK_STATUS_LABELS,
+        patient_priority_labels=PATIENT_PRIORITY_LABELS,
         patient_vitals_value=patient_vitals_value, linked_reports=linked_reports,
+        patient_reports=patient_reports,
+        report_type_labels=REPORT_TYPE_LABELS,
     )
 
 
@@ -4212,18 +4705,39 @@ def clinical_update_patient(patient_id: int):
     if not patient:
         flash("Hasta dosyası bulunamadı.", "error")
         return redirect(url_for("clinical_center"))
+    proposed_name = request.form.get("full_name", patient.full_name).strip()
+    proposed_identity = normalize_identity(request.form.get("identity_number"))
+    proposed_birth = normalize_birth_date(request.form.get("date_of_birth"))
+    duplicate = duplicate_patient_query(PatientFile, proposed_identity, proposed_name, proposed_birth, exclude_id=patient.id)
+    if duplicate:
+        flash(f"Bu bilgiler başka hasta dosyasıyla eşleşiyor: {duplicate.patient_number}", "error")
+        return redirect(url_for("patient_file_view", patient_id=patient.id))
+    before_snapshot = {"full_name": patient.full_name, "identity_number": patient.identity_number, "date_of_birth": patient.date_of_birth, "status": patient.status, "clinical_priority": patient.clinical_priority}
     for field in [
         "full_name", "identity_number", "date_of_birth", "gender", "phone", "address",
         "blood_type", "allergies", "chronic_conditions", "current_medications",
         "surgical_history", "family_history", "medical_history", "emergency_contact",
-        "emergency_phone", "risk_notes", "status",
+        "emergency_phone", "risk_notes", "status", "clinical_priority",
+        "discharge_summary", "prescription_plan", "follow_up_date",
     ]:
         value = request.form.get(field, "").strip()
         if field == "status" and value not in PATIENT_STATUS_LABELS:
             continue
+        if field == "clinical_priority" and value not in PATIENT_PRIORITY_LABELS:
+            continue
+        if field == "date_of_birth":
+            value = normalize_birth_date(value)
+        if field == "identity_number":
+            value = normalize_identity(value)
         if field == "full_name" and not value:
             continue
         setattr(patient, field, value or None)
+    if patient.status == "discharged" and not patient.discharged_at:
+        patient.discharged_at = datetime.now(timezone.utc)
+    if patient.status != "discharged":
+        patient.discharged_at = None
+    after_snapshot = {"full_name": patient.full_name, "identity_number": patient.identity_number, "date_of_birth": patient.date_of_birth, "status": patient.status, "clinical_priority": patient.clinical_priority}
+    record_audit_event("PATIENT_UPDATED", "patient_file", patient.id, before_snapshot, after_snapshot)
     db.session.commit()
     actor = user.username if user else session.get("admin_username", "")
     write_log("INFO", "PATIENT_FILE_UPDATED", f"actor={actor}; patient_id={patient.id}")
@@ -4523,9 +5037,10 @@ def admin_audit_log():
         try: query = query.filter(AppLog.created_at < datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc) + timedelta(days=1))
         except ValueError: pass
     logs = query.order_by(AppLog.created_at.desc()).limit(500).all()
+    audit_events = AuditEvent.query.order_by(AuditEvent.created_at.desc()).limit(300).all()
     events = [row[0] for row in db.session.query(AppLog.event).distinct().order_by(AppLog.event.asc()).all()]
     return render_template(
-        "admin_audit_log.html", system_name=SYSTEM_NAME, logs=logs, events=events,
+        "admin_audit_log.html", system_name=SYSTEM_NAME, logs=logs, audit_events=audit_events, events=events,
         filters={"level": level, "event": event, "q": q, "date_from": date_from, "date_to": date_to},
     )
 
@@ -4543,4 +5058,23 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1.5"}, 200
+    try:
+        db.session.execute(text("SELECT 1"))
+        return {
+            "status": "ok", "service": SYSTEM_NAME, "version": "V26.0",
+            "database": "reachable",
+        }, 200
+    except Exception:
+        db.session.rollback()
+        logger.exception("HEALTH_DATABASE_CHECK_FAILED")
+        return {
+            "status": "degraded", "service": SYSTEM_NAME, "version": "V26.0",
+            "database": "unreachable",
+        }, 503
+
+
+def create_app(config_overrides=None):
+    """Test and deployment bridge for the modular V26 service layer."""
+    if config_overrides:
+        app.config.update(config_overrides)
+    return app

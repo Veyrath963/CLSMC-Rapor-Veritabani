@@ -4,29 +4,29 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CLSMC Klinik Paneli</title>
 <script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script>
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.5') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.5') }}">
-<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.5') }}"></script>
-</head>
-<body class="his-app-page his-user-app">
+
+
+
+
+<meta name="csrf-token" content="{{ csrf_token() }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_core.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_components.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_user.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_admin.css',v='26.0') }}"><link rel="stylesheet" href="{{ url_for('static',filename='his_responsive.css',v='26.0') }}"></head>
+<body class="his-app-page his-user-app"><a class="his-skip-link" href="#main-content">Ana içeriğe geç</a>
 {% from '_his_icons.html' import his_icon %}
 {% include '_user_his_sidebar.html' %}
 <div class="his-page" id="workspace-root">
 <header class="his-topbar">
   <div class="his-topbar-identity">
     <span class="his-topbar-logo-shell">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.5') }}" alt="CLSMC kurum logosu">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='26.0') }}" alt="CLSMC kurum logosu">
     </span>
     <div class="his-topbar-title"><h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1><p>Giriş yapan: <strong>{{ username }}</strong> — {{ user_rank or 'Rütbe Atanmadı' }}</p></div>
   </div>
   <div class="his-topbar-actions">
     <a class="his-topbar-action badge" href="{{ url_for('panel') }}#notifications">{{ his_icon('bell') }} Bildirimler {% if unread_notification_count %}<b>{{ unread_notification_count }}</b>{% endif %}</a>
     <a class="his-topbar-action" href="{{ url_for('settings') }}">{{ his_icon('settings') }} Ayarlar</a>
-    <form method="post" action="{{ url_for('logout') }}"><button class="his-topbar-action danger" type="submit">{{ his_icon('logout') }} Çıkış Yap</button></form>
+    <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="his-topbar-action danger" type="submit">{{ his_icon('logout') }} Çıkış Yap</button></form>
   </div>
 </header>
-<main class="his-content">
+<main id="main-content" class="his-content">
 {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}" style="margin-bottom:12px;padding:11px 13px;border:1px solid #dbe5ed;border-radius:7px;background:white">{{ message }}</div>{% endfor %}{% endwith %}
 <section class="his-module" data-dashboard-panel="overview">
   <section class="his-shift-banner">
@@ -52,7 +52,7 @@
   </section>
   <section class="his-main-grid">
     <article class="his-card"><div class="his-card-head"><h3>Güncel Hasta Listesi</h3><a href="{{ url_for('clinical_center',section='patients') }}">Tümünü Gör ›</a></div><div class="his-card-body">
-      {% if dashboard_patients %}<table class="his-table"><thead><tr><th>Hasta Adı</th><th>Dosya No</th><th>Durum</th><th>Öncelik</th><th>Sorumlu Personel</th></tr></thead><tbody>{% for patient in dashboard_patients %}<tr><td><a href="{{ url_for('patient_file_view',patient_id=patient.id) }}">{{ his_icon('patient','his-inline-row-icon') }} {{ patient.full_name }}</a></td><td>{{ patient.patient_number }}</td><td><span class="his-status {{ patient.status }}">{{ patient_status_labels.get(patient.status,patient.status) }}</span></td><td><span class="his-priority {% if patient.status in ['observation','deceased'] or patient.risk_notes %}high{% elif patient.status=='active' %}normal{% else %}low{% endif %}">● {% if patient.status in ['observation','deceased'] or patient.risk_notes %}Yüksek{% elif patient.status=='active' %}Orta{% else %}Düşük{% endif %}</span></td><td>{{ patient.created_by_username }}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="his-empty">Henüz hasta dosyası bulunmuyor.</div>{% endif %}
+      {% if dashboard_patients %}<table class="his-table"><thead><tr><th>Hasta Adı</th><th>Dosya No</th><th>Durum</th><th>Öncelik</th><th>Sorumlu Personel</th></tr></thead><tbody>{% for patient in dashboard_patients %}<tr><td><a href="{{ url_for('patient_file_view',patient_id=patient.id) }}">{{ his_icon('patient','his-inline-row-icon') }} {{ patient.full_name }}</a></td><td>{{ patient.patient_number }}</td><td><span class="his-status {{ patient.status }}">{{ patient_status_labels.get(patient.status,patient.status) }}</span></td><td><span class="his-priority {{ patient.clinical_priority }}">● {{ patient_priority_labels.get(patient.clinical_priority,patient.clinical_priority) }}</span></td><td>{{ patient.created_by_username }}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="his-empty">Henüz hasta dosyası bulunmuyor.</div>{% endif %}
     </div></article>
     <article class="his-card"><div class="his-card-head"><h3>Son Rapor Hareketleri</h3><a href="{{ url_for('user_report_center') }}">Tümünü Gör ›</a></div><div class="his-card-body his-report-list">{% for report in recent_reports[:5] %}<div class="his-report-item"><span class="his-list-icon">{{ his_icon('file-text') }}</span><div><strong>{{ report_type_labels.get(report.report_type,report.report_type) }} #{{ report.report_number }}</strong><small>{{ report.doctor_name }}</small></div><div class="his-report-time">{{ report.updated_at.strftime('%H:%M') if report.updated_at else '—' }}<span class="his-status {{ report.workflow_status }}">{{ report_status_labels.get(report.workflow_status,report.workflow_status) }}</span></div></div>{% else %}<div class="his-empty">Henüz rapor hareketi yok.</div>{% endfor %}</div></article>
     <article class="his-card"><div class="his-card-head"><h3>Duyuru ve Bildirimler</h3><a href="{{ url_for('panel') }}#notifications">Tümünü Gör ›</a></div><div class="his-card-body his-message-list">{% for item in announcements[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag {% if loop.first %}important{% endif %}">{% if loop.first %}ÖNEMLİ{% else %}DUYURU{% endif %}</span>{{ item.title }}</strong><small>{{ item.body|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in notifications[:3] %}<div class="his-message-item"><div><strong><span class="his-message-tag">BİLDİRİM</span>{{ item.title }}</strong><small>{{ item.message|truncate(88) }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not announcements and not notifications %}<div class="his-empty">Yeni duyuru veya bildirim bulunmuyor.</div>{% endif %}</div></article>
@@ -62,15 +62,20 @@
   </section>
 </section>
 <section class="his-module" id="notifications" data-dashboard-panel="notifications" hidden>
-  <article class="his-card"><div class="his-card-head"><h2>Duyuru ve Bildirim Merkezi</h2><form method="post" action="{{ url_for('user_notifications_read_all') }}"><button class="his-topbar-action" type="submit">Tümünü Okundu İşaretle</button></form></div><div class="his-card-body his-message-list">{% for item in notifications %}<div class="his-message-item"><div><strong>{{ item.title }}</strong><small>{{ item.message }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in announcements %}<div class="his-message-item"><div><strong><span class="his-message-tag">DUYURU</span>{{ item.title }}</strong><small>{{ item.body }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not notifications and not announcements %}<div class="his-empty">Bildirim bulunmuyor.</div>{% endif %}</div></article>
+  <article class="his-card"><div class="his-card-head"><h2>Duyuru ve Bildirim Merkezi</h2><form method="post" action="{{ url_for('user_notifications_read_all') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="his-topbar-action" type="submit">Tümünü Okundu İşaretle</button></form></div><div class="his-card-body his-message-list">{% for item in notifications %}<div class="his-message-item"><div><strong>{{ item.title }}</strong><small>{{ item.message }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% for item in announcements %}<div class="his-message-item"><div><strong><span class="his-message-tag">DUYURU</span>{{ item.title }}</strong><small>{{ item.body }}</small></div><span class="his-report-time">{{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}</span></div>{% endfor %}{% if not notifications and not announcements %}<div class="his-empty">Bildirim bulunmuyor.</div>{% endif %}</div></article>
 </section>
 <section class="his-module" id="leave-center" data-dashboard-panel="leave" hidden>
-  <div class="his-bottom-grid"><article class="his-card"><div class="his-card-head"><h2>İzin Talebi Oluştur</h2></div><div class="his-card-body"><form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form"><div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div><div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div><div class="field"><label>Bitiş Tarihi</label><input type="date" name="end_date" required></div><div class="field wide"><label>Açıklama</label><textarea name="reason" required></textarea></div><div class="wide"><button class="btn btn-primary" type="submit">İzin Talebini Gönder</button></div></form></div></article><article class="his-card"><div class="his-card-head"><h2>İzin Geçmişim</h2></div><div class="his-card-body his-message-list">{% for item in leave_requests %}<div class="his-message-item"><div><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><small>{{ item.start_date }} — {{ item.end_date }} · {{ item.reason }}</small></div><span class="his-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div>{% else %}<div class="his-empty">İzin talebiniz bulunmuyor.</div>{% endfor %}</div></article></div>
+  <div class="his-bottom-grid"><article class="his-card"><div class="his-card-head"><h2>İzin Talebi Oluştur</h2></div><div class="his-card-body"><form method="post" action="{{ url_for('user_create_leave_request') }}" class="v23-leave-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><div class="field"><label>İzin Türü</label><select name="leave_type" required>{% for key,label in leave_type_labels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div><div class="field"><label>Başlangıç Tarihi</label><input type="date" name="start_date" required></div><div class="field"><label>Bitiş Tarihi</label><input type="date" name="end_date" required></div><div class="field wide"><label>Açıklama</label><textarea name="reason" required></textarea></div><div class="wide"><button class="btn btn-primary" type="submit">İzin Talebini Gönder</button></div></form></div></article><article class="his-card"><div class="his-card-head"><h2>İzin Geçmişim</h2></div><div class="his-card-body his-message-list">{% for item in leave_requests %}<div class="his-message-item"><div><strong>{{ leave_type_labels.get(item.leave_type,item.leave_type) }}</strong><small>{{ item.start_date }} — {{ item.end_date }} · {{ item.reason }}</small></div><span class="his-status {{ item.status }}">{{ leave_status_labels.get(item.status,item.status) }}</span></div>{% else %}<div class="his-empty">İzin talebiniz bulunmuyor.</div>{% endfor %}</div></article></div>
 </section>
 <div class="his-module" data-dashboard-panel="report" hidden>
 <section class="hero v242-report-intro" id="report-creator" data-dashboard-panel="report" hidden>
       <h1>Klinik dokümantasyon</h1>
       <p>Doküman türünü seçin, klinik bilgileri tamamlayın ve standart BBCode çıktısını oluşturun.</p>
+      <div class="v26-patient-selector" style="margin-top:14px">
+        <label for="reportPatientFileId">Hasta Dosyasından Otomatik Doldur</label>
+        <select id="reportPatientFileId" onchange="applySelectedPatient()"><option value="">Hasta dosyası seçilmedi</option>{% for patient in report_patient_options %}<option value="{{ patient.id }}">{{ patient.patient_number }} — {{ patient.full_name }}{% if patient.identity_number %} · {{ patient.identity_number }}{% endif %}</option>{% endfor %}</select>
+        <small id="patientSelectorNote">Vaka, Adli Vaka ve EMS formundaki hasta bilgileri seçilen dosyadan doldurulur.</small>
+      </div>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
         <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
         <strong>{{ username }} — {{ user_rank or "Rütbe Atanmadı" }}</strong>
@@ -258,6 +263,8 @@ let currentType = INITIAL_REPORT_TYPE;
 
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
 const CURRENT_DOCTOR_RANK = {{ user_rank|tojson }};
+const REPORT_PATIENTS = {{ report_patient_options|tojson }};
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 let hasUnsavedChanges = false;
 
 function escapeHtml(value){
@@ -267,6 +274,35 @@ function escapeHtml(value){
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function selectedPatient(){
+  const selectedId = Number(document.getElementById('reportPatientFileId')?.value || 0);
+  return REPORT_PATIENTS.find(item => Number(item.id) === selectedId) || null;
+}
+
+function setFieldValue(fieldName, value){
+  const element=document.querySelector(`[data-field="${fieldName}"]`);
+  if(element && value !== undefined && value !== null){
+    element.value=value;
+  }
+}
+
+function applySelectedPatient(){
+  const patient=selectedPatient();
+  const selector=document.getElementById('reportPatientFileId');
+  const note=document.getElementById('patientSelectorNote');
+  const living=['vaka','adli','ems'].includes(currentType);
+  if(selector) selector.disabled=!living;
+  if(note) note.textContent=living ? 'Hasta kimliği ve iletişim bilgileri otomatik doldurulur.' : 'Ex ve Otopsi raporlarında hasta kimlik alanları otomatik doldurulmaz.';
+  if(!patient || !living){ renderBBCode(); return; }
+  const maps={
+    vaka:{adsoyad:'full_name',kimlik_no:'identity_number',dogum_tarihi:'date_of_birth',cinsiyet:'gender',telefon:'phone',adres:'address'},
+    adli:{adli_adsoyad:'full_name',adli_kimlik_no:'identity_number',adli_dogum_tarihi:'date_of_birth',adli_cinsiyet:'gender',adli_telefon:'phone',adli_adres:'address'},
+    ems:{ems_adsoyad:'full_name',ems_kimlik_no:'identity_number',ems_dogum_tarihi:'date_of_birth'}
+  };
+  Object.entries(maps[currentType] || {}).forEach(([field,attribute])=>setFieldValue(field,patient[attribute] || ''));
+  renderBBCode();
 }
 
 function doctorIdentityHtml(label){
@@ -1540,7 +1576,7 @@ async function saveReportAutomatically(bbcode){
 
   const response = await fetch('/api/reports', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN},
     credentials: 'same-origin',
     body: JSON.stringify({
       report_type: currentType,
@@ -1549,6 +1585,7 @@ async function saveReportAutomatically(bbcode){
       doctor_rank: meta.doctor_rank || '',
       report_date: meta.report_date || '',
       bbcode: bbcode,
+      patient_file_id: document.getElementById('reportPatientFileId')?.value || null,
       form_data: collectFormData()
     })
   });
