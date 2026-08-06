@@ -5,9 +5,9 @@
 <title>CLSMC Klinik Paneli</title>
 <script>document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';</script>
 <link rel="stylesheet" href="{{ url_for('static',filename='clsmc_modern.css') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.4') }}">
-<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.4') }}">
-<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.4') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_v24.css',v='25.1.5') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='clsmc_his_light_v251.css',v='25.1.5') }}">
+<script defer src="{{ url_for('static',filename='clsmc_theme_toggle.js',v='25.1.5') }}"></script>
 </head>
 <body class="his-app-page his-user-app">
 {% from '_his_icons.html' import his_icon %}
@@ -16,7 +16,7 @@
 <header class="his-topbar">
   <div class="his-topbar-identity">
     <span class="his-topbar-logo-shell">
-      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.4') }}" alt="CLSMC kurum logosu">
+      <img src="{{ url_for('static',filename='clsmc_logo.png',v='25.1.5') }}" alt="CLSMC kurum logosu">
     </span>
     <div class="his-topbar-title"><h1>CLSMC Merkezi Takip ve Raporlama Sistemi</h1><p>Giriş yapan: <strong>{{ username }}</strong> — {{ user_rank or 'Rütbe Atanmadı' }}</p></div>
   </div>
@@ -299,6 +299,10 @@ const reportConfig = {
           <input data-field="kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 42851936" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Cinsiyet</label>
           <select data-field="cinsiyet" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -405,6 +409,10 @@ const reportConfig = {
         <div class="field">
           <label>Kimlik Numarası</label>
           <input data-field="adli_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 73190524" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="adli_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -821,6 +829,10 @@ const reportConfig = {
           <input data-field="ems_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 59128476" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="ems_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Bilinç Durumu</label>
           <select data-field="ems_bilinc" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -1005,6 +1017,9 @@ ${textOrDash(getVal('adsoyad'))}
 [b][color=#4C88A8]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('kimlik_no'))}
 
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('dogum_tarihi'))}
+
 [b][color=#4C88A8]Cinsiyet:[/color][/b]
 ${getVal('cinsiyet') || 'Erkek / Kadın / Diğer'}
 
@@ -1088,6 +1103,9 @@ ${textOrDash(getVal('adli_adsoyad'))}
 
 [b][color=#943C3C]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('adli_kimlik_no'))}
+
+[b][color=#943C3C]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('adli_dogum_tarihi'))}
 
 [b][color=#943C3C]Cinsiyet:[/color][/b]
 ${getVal('adli_cinsiyet') || 'Erkek / Kadın / Diğer'}
@@ -1396,6 +1414,9 @@ ${textOrDash(getVal('ems_adsoyad'))}
 [b][color=#4C88A8]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('ems_kimlik_no'))}
 
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('ems_dogum_tarihi'))}
+
 [b][color=#4C88A8]Bilinç Durumu:[/color][/b]
 ${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}
 
@@ -1603,6 +1624,7 @@ function fillSample(){
     rapor_no: 'CLSMC-VKR-0017',
     adsoyad: 'Peter Burrington',
     kimlik_no: '42851936',
+    dogum_tarihi: '1992-04-17',
     tarih: '2026-07-26T19:48',
     olayyeri: 'Central Los Santos Medical Center — Hasta Odası',
     basvuru: 'Acil Giriş',
@@ -1635,6 +1657,7 @@ function fillAdliSample(){
     adli_rapor_no: 'CLSMC-ADL-0001',
     adli_adsoyad: 'Katarina Belrova',
     adli_kimlik_no: '73190524',
+    adli_dogum_tarihi: '1988-11-03',
     adli_tarih: '2026-07-26T04:11',
     adli_vaka_turu: 'Diğer',
     adli_vaka_diger: 'Travmatik yüz ve burun yaralanması',
@@ -1675,6 +1698,7 @@ function fillEmsSample(){
     ems_ihbar: 'İki araçlı trafik kazası ve bir yaralı ihbarı üzerine ekip olay yerine sevk edildi.',
     ems_adsoyad: 'John Doe',
     ems_kimlik_no: '59128476',
+    ems_dogum_tarihi: '1996-07-21',
     ems_bilinc: 'Açık',
     ems_genel_durum: 'Stabil',
     ems_bulgular: 'Sağ ön kolda yüzeysel laserasyon, hafif baş dönmesi ve hassasiyet tespit edildi. Solunum ve dolaşım bulguları stabildi.',

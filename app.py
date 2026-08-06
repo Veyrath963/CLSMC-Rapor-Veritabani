@@ -1306,25 +1306,50 @@ REPORT_IDENTITY_FIELDS = {
     "ems": "ems_kimlik_no",
 }
 
+REPORT_BIRTH_DATE_FIELDS = {
+    "vaka": "dogum_tarihi",
+    "adli": "adli_dogum_tarihi",
+    "ems": "ems_dogum_tarihi",
+}
+
 REPORT_FORM_FIELD_LABELS = {
     "kimlik_no": "Kimlik Numarası",
     "adli_kimlik_no": "Kimlik Numarası",
     "ems_kimlik_no": "Kimlik Numarası",
+    "dogum_tarihi": "Doğum Tarihi",
+    "adli_dogum_tarihi": "Doğum Tarihi",
+    "ems_dogum_tarihi": "Doğum Tarihi",
 }
 
 
 def normalize_report_form_data(report_type: str, form_data: dict) -> dict:
-    """Normalize identity data and prevent it from leaking to Ex/Otopsi reports."""
+    """Normalize patient identity fields and exclude them from Ex/Otopsi reports."""
     normalized = dict(form_data or {})
     allowed_identity_field = REPORT_IDENTITY_FIELDS.get(report_type)
+    allowed_birth_date_field = REPORT_BIRTH_DATE_FIELDS.get(report_type)
 
     for identity_field in REPORT_IDENTITY_FIELDS.values():
         if identity_field != allowed_identity_field:
             normalized.pop(identity_field, None)
 
+    for birth_date_field in REPORT_BIRTH_DATE_FIELDS.values():
+        if birth_date_field != allowed_birth_date_field:
+            normalized.pop(birth_date_field, None)
+
     if allowed_identity_field:
         identity_number = str(normalized.get(allowed_identity_field, "") or "").strip()
         normalized[allowed_identity_field] = identity_number[:80]
+
+    if allowed_birth_date_field:
+        birth_date_value = str(
+            normalized.get(allowed_birth_date_field, "") or ""
+        ).strip()
+        if birth_date_value:
+            try:
+                birth_date_value = date.fromisoformat(birth_date_value).isoformat()
+            except ValueError:
+                birth_date_value = ""
+        normalized[allowed_birth_date_field] = birth_date_value
 
     return normalized
 
@@ -2875,7 +2900,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V25.1.4",
+        "version": "V25.1.5",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -4518,4 +4543,4 @@ def admin_logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1.4"}, 200
+    return {"status": "ok", "service": SYSTEM_NAME, "version": "V25.1.5"}, 200

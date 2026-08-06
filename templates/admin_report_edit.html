@@ -428,6 +428,10 @@ const reportConfig = {
           <input data-field="kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 42851936" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Cinsiyet</label>
           <select data-field="cinsiyet" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -534,6 +538,10 @@ const reportConfig = {
         <div class="field">
           <label>Kimlik Numarası</label>
           <input data-field="adli_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 73190524" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="adli_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -949,6 +957,10 @@ const reportConfig = {
           <input data-field="ems_kimlik_no" inputmode="numeric" maxlength="80" placeholder="Örn. 59128476" autocomplete="off" oninput="renderBBCode()">
         </div>
         <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="ems_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
           <label>Bilinç Durumu</label>
           <select data-field="ems_bilinc" onchange="renderBBCode()">
             <option value="">Seçiniz</option>
@@ -1135,6 +1147,9 @@ ${textOrDash(getVal('adsoyad'))}
 [b][color=#4C88A8]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('kimlik_no'))}
 
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('dogum_tarihi'))}
+
 [b][color=#4C88A8]Cinsiyet:[/color][/b]
 ${getVal('cinsiyet') || 'Erkek / Kadın / Diğer'}
 
@@ -1218,6 +1233,9 @@ ${textOrDash(getVal('adli_adsoyad'))}
 
 [b][color=#943C3C]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('adli_kimlik_no'))}
+
+[b][color=#943C3C]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('adli_dogum_tarihi'))}
 
 [b][color=#943C3C]Cinsiyet:[/color][/b]
 ${getVal('adli_cinsiyet') || 'Erkek / Kadın / Diğer'}
@@ -1525,6 +1543,9 @@ ${textOrDash(getVal('ems_adsoyad'))}
 
 [b][color=#4C88A8]Kimlik Numarası:[/color][/b]
 ${textOrDash(getVal('ems_kimlik_no'))}
+
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('ems_dogum_tarihi'))}
 
 [b][color=#4C88A8]Bilinç Durumu:[/color][/b]
 ${getVal('ems_bilinc') || 'Açık / Bulanık / Kapalı'}

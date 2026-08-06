@@ -1,0 +1,36 @@
+CLSMC V25.1.5 — RAPORLARA DOĞUM TARİHİ EKLENDİ
+====================================================
+
+Doğum Tarihi alanı eklenen raporlar:
+- Vaka Raporu
+- Adli Vaka Raporu
+- EMS Saha Raporu
+
+Doğum Tarihi alanı eklenmeyen raporlar:
+- Ölüm (Ex) Raporu
+- Otopsi Raporu
+
+Yeni davranış:
+- Doğum Tarihi, Kimlik Numarasının hemen altında gösterilir.
+- Tarayıcının yerleşik tarih seçicisi kullanılır.
+- Veri YYYY-MM-DD biçiminde saklanır.
+- BBCode çıktısında tarih GG.AA.YYYY biçiminde gösterilir.
+- Admin rapor düzenleme ekranında görüntülenir ve değiştirilebilir.
+- Rapor detayları ve arşiv ekranlarında "Doğum Tarihi" etiketiyle gösterilir.
+- Rapor Merkezi doğum tarihiyle aramayı destekler.
+
+Backend güvenliği:
+- Vaka: dogum_tarihi
+- Adli Vaka: adli_dogum_tarihi
+- EMS: ems_dogum_tarihi
+- Geçersiz tarih değeri boş değere dönüştürülür.
+- Ex veya Otopsi raporuna gönderilen doğum tarihi backend tarafından kaldırılır.
+- Rapor türü değiştirilirse diğer türlere ait kimlik/doğum alanları temizlenir.
+
+Veritabanı:
+- Yeni sütun veya migration yoktur.
+- Doğum tarihi mevcut form_data JSON alanında saklanır.
+- Eski raporlar boş doğum tarihiyle açılır ve düzenlenebilir.
+
+Sürüm: V25.1.5
+Developer: Veyrath
