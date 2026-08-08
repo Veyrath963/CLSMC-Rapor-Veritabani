@@ -318,6 +318,9 @@ input:focus,select:focus,textarea:focus{
       <div class="card" data-type="vaka" onclick="setReportType('vaka', this)">
         <div class="icon">🩺</div><h3>Vaka Raporu</h3><p>Hasta, muayene, tanı ve sonuç bilgileri.</p>
       </div>
+      <div class="card" data-type="saglik" onclick="setReportType('saglik', this)">
+        <div class="icon">✚</div><h3>Sağlık Raporu</h3><p>Genel sağlık ve yeterlilik değerlendirmesi.</p>
+      </div>
       <div class="card" data-type="adli" onclick="setReportType('adli', this)">
         <div class="icon">⚖️</div><h3>Adli Vaka Raporu</h3><p>Adli vaka, bildirim, delil ve teslim bilgileri.</p>
       </div>
@@ -514,6 +517,108 @@ const reportConfig = {
       <div class="field">
         <label>Dijital İmza</label>
         <input data-field="imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()">
+      </div>`
+  },
+  saglik: {
+    title: 'Sağlık Raporu',
+    fields: `
+      <div class="grid2">
+        <div class="field">
+          <label>Rapor Numarası</label>
+          <input data-field="saglik_rapor_no" value="${escapeHtml(typeof SAGLIK_DEFAULT_REPORT_NUMBER !== 'undefined' ? SAGLIK_DEFAULT_REPORT_NUMBER : 'CLSMC-SGL-0001')}" oninput="renderBBCode()" required>
+        </div>
+        <div class="field">
+          <label>Rapor Amacı</label>
+          <select data-field="saglik_rapor_amaci" onchange="renderBBCode()" required>
+            <option value="">Seçiniz</option>
+            <option>İş Başvurusu</option>
+            <option>Silah Ruhsatı</option>
+            <option>Sürücü Belgesi</option>
+            <option>Özel Güvenlik Görevlisi</option>
+            <option>Spor / Lisans</option>
+            <option>Eğitim / Okul / Kurs</option>
+            <option>Resmî Kurum / Atama</option>
+            <option>Genel Sağlık / Yeterlilik</option>
+            <option>Diğer</option>
+          </select>
+          <div class="footer-note" style="margin-top:7px">Sağlık Raporu tek rapor türüdür; kullanım amacı buradan seçilir.</div>
+        </div>
+        <div class="field">
+          <label>Hasta / Başvuru Sahibi Adı Soyadı</label>
+          <input data-field="saglik_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="saglik_kimlik_no" inputmode="numeric" maxlength="80" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="saglik_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Cinsiyet</label>
+          <select data-field="saglik_cinsiyet" onchange="renderBBCode()">
+            <option value="">Seçiniz</option><option>Erkek</option><option>Kadın</option><option>Diğer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Telefon</label>
+          <input data-field="saglik_telefon" placeholder="123-456" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Adres</label>
+          <input data-field="saglik_adres" placeholder="Adres bilgisi" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Başvuru Kurumu / Amaç Açıklaması</label>
+          <input data-field="saglik_amac_aciklama" placeholder="Örn. Los Santos Police Department / İşe giriş" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Muayene Tarihi ve Saati</label>
+          <input data-field="saglik_muayene_tarih" type="datetime-local" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      <div class="form-section-title">Fiziksel Değerlendirme</div>
+      <div class="grid2">
+        <div class="field"><label>Genel Sağlık Durumu</label><select data-field="saglik_genel_saglik" onchange="renderBBCode()"><option value="">Seçiniz</option><option>İyi</option><option>Orta</option><option>Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Kronik Hastalık Beyanı</label><select data-field="saglik_kronik" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Düzenli İlaç Kullanımı</label><select data-field="saglik_ilac" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Görme Değerlendirmesi</label><select data-field="saglik_gorme" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>İşitme Değerlendirmesi</label><select data-field="saglik_isitme" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Hareket / Motor Değerlendirmesi</label><select data-field="saglik_hareket" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+      </div>
+      <div class="field"><label>Kronik Hastalık Açıklaması</label><textarea data-field="saglik_kronik_aciklama" placeholder="Varsa bilinen kronik hastalıklar..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>İlaç Açıklaması</label><textarea data-field="saglik_ilac_aciklama" placeholder="Varsa düzenli kullanılan ilaçlar..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>Fiziksel Muayene Bulguları</label><textarea data-field="saglik_fiziksel_bulgular" placeholder="Genel fiziksel muayene, vital bulgular ve gözlemler..." oninput="renderBBCode()"></textarea></div>
+
+      <div class="form-section-title">Zihinsel ve Davranışsal Değerlendirme</div>
+      <div class="grid2">
+        <div class="field"><label>Bilinç ve Yönelim</label><select data-field="saglik_bilinc" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Açık ve Tam Oryante</option><option>Kısmi Oryante</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>İletişim ve İş Birliği</label><select data-field="saglik_iletisim" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Uygun</option><option>Kısmen Uygun</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Psikiyatrik Tedavi Geçmişi Beyanı</label><select data-field="saglik_psikiyatrik_gecmis" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Madde Kullanımı Beyanı</label><select data-field="saglik_madde_beyani" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+      </div>
+      <div class="field"><label>Zihinsel / Davranışsal Değerlendirme Notu</label><textarea data-field="saglik_ruh_bulgular" placeholder="Görüşme sırasındaki genel gözlem ve değerlendirme..." oninput="renderBBCode()"></textarea></div>
+
+      <div class="form-section-title">Sonuç</div>
+      <div class="field">
+        <label>Hekim Kanaati</label>
+        <select data-field="saglik_sonuc" onchange="renderBBCode()" required>
+          <option value="">Seçiniz</option>
+          <option>Uygundur</option>
+          <option>Şartlı Uygundur</option>
+          <option>Uygun Değildir</option>
+          <option>İleri Değerlendirme Gereklidir</option>
+        </select>
+        <div class="footer-note" style="margin-top:7px">Sonuç otomatik hesaplanmaz; muayene eden hekim tarafından seçilir.</div>
+      </div>
+      <div class="field"><label>Kısıtlama / Ek Not</label><textarea data-field="saglik_kisitlama" placeholder="Varsa kısıtlama, ek tetkik veya uzman değerlendirmesi notu..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>Ekran Görüntüsü Linki</label><input data-field="saglik_ekran" placeholder="https://..." oninput="renderBBCode()"></div>
+      ${doctorIdentityHtml('Raporlayan Hekim')}
+      <div class="grid2">
+        <div class="field"><label>Rapor Tarihi</label><input data-field="saglik_rapor_tarihi" type="datetime-local" oninput="renderBBCode()"></div>
+        <div class="field"><label>Dijital İmza</label><input data-field="saglik_imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()"></div>
       </div>`
   },
   adli: {
@@ -1205,6 +1310,123 @@ ${textOrDash(getVal('imza'))}
 [size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=65][i][color=#7A8891]Tıbbi Vaka Kayıt Sistemi[/color][/i][/size]
 [/center]`;
+  } else if(currentType === 'saglik'){
+    out = `[center]
+[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=140][b][color=#2B7A78]SAĞLIK RAPORU[/color][/b][/size]
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+[/center]
+
+[quote]
+[center][size=125][b][color=#183B56]RAPOR VE KİŞİ BİLGİLERİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Rapor Numarası:[/color][/b]
+${textOrDash(getVal('saglik_rapor_no'))}
+
+[b][color=#4C88A8]Rapor Amacı:[/color][/b]
+${textOrDash(getVal('saglik_rapor_amaci'))}
+
+[b][color=#4C88A8]Başvuru Kurumu / Amaç Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_amac_aciklama'))}
+
+[b][color=#4C88A8]Adı Soyadı:[/color][/b]
+${textOrDash(getVal('saglik_adsoyad'))}
+
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('saglik_kimlik_no'))}
+
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_dogum_tarihi'))}
+
+[b][color=#4C88A8]Cinsiyet:[/color][/b]
+${textOrDash(getVal('saglik_cinsiyet'))}
+
+[b][color=#4C88A8]Telefon:[/color][/b]
+${textOrDash(getVal('saglik_telefon'))}
+
+[b][color=#4C88A8]Adres:[/color][/b]
+${textOrDash(getVal('saglik_adres'))}
+
+[b][color=#4C88A8]Muayene Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_muayene_tarih'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]FİZİKSEL DEĞERLENDİRME[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Genel Sağlık Durumu:[/color][/b]
+${textOrDash(getVal('saglik_genel_saglik'))}
+
+[b][color=#4C88A8]Kronik Hastalık Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_kronik'))}
+
+[b][color=#4C88A8]Kronik Hastalık Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_kronik_aciklama'))}
+
+[b][color=#4C88A8]Düzenli İlaç Kullanımı:[/color][/b]
+${textOrDash(getVal('saglik_ilac'))}
+
+[b][color=#4C88A8]İlaç Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_ilac_aciklama'))}
+
+[b][color=#4C88A8]Görme Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_gorme'))}
+
+[b][color=#4C88A8]İşitme Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_isitme'))}
+
+[b][color=#4C88A8]Hareket / Motor Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_hareket'))}
+
+[b][color=#4C88A8]Fiziksel Muayene Bulguları:[/color][/b]
+${textOrDash(getVal('saglik_fiziksel_bulgular'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]ZİHİNSEL VE DAVRANIŞSAL DEĞERLENDİRME[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Bilinç ve Yönelim:[/color][/b]
+${textOrDash(getVal('saglik_bilinc'))}
+
+[b][color=#4C88A8]İletişim ve İş Birliği:[/color][/b]
+${textOrDash(getVal('saglik_iletisim'))}
+
+[b][color=#4C88A8]Psikiyatrik Tedavi Geçmişi Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_psikiyatrik_gecmis'))}
+
+[b][color=#4C88A8]Madde Kullanımı Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_madde_beyani'))}
+
+[b][color=#4C88A8]Değerlendirme Notu:[/color][/b]
+${textOrDash(getVal('saglik_ruh_bulgular'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]HEKİM KANAATİ[/color][/b][/size][/center]
+
+[b][color=#2B7A78]Sonuç:[/color][/b]
+[b]${textOrDash(getVal('saglik_sonuc'))}[/b]
+
+[b][color=#4C88A8]Kısıtlama / Ek Not:[/color][/b]
+${textOrDash(getVal('saglik_kisitlama'))}
+
+[b][color=#4C88A8]Raporlayan Hekim:[/color][/b]
+${CURRENT_DOCTOR_NAME} — ${CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı'}
+
+[b][color=#4C88A8]Rapor Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_rapor_tarihi'))}
+
+[b][color=#4C88A8]Dijital İmza:[/color][/b]
+${textOrDash(getVal('saglik_imza'))}
+[/quote]
+
+[spoiler="Ekran Görüntüsü"]
+${getVal('saglik_ekran') || 'Ekran görüntüsü veya bağlantısı'}
+[/spoiler]
+
+[center]
+[size=68][color=#6C7A84]Bu belge, seçilen rapor amacı kapsamında muayene eden hekimin değerlendirmesini içerir.[/color][/size]
+[/center]`;
   } else if(currentType === 'adli'){
     out = `[center]
 [size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
@@ -1643,6 +1865,12 @@ function getReportMetadataAdmin(){
     vaka: {
       report_number: getVal('rapor_no'),
       report_date: getVal('rapor_tarihi') || getVal('tarih')
+    },
+    saglik: {
+      report_number: getVal('saglik_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
+      report_date: getVal('saglik_rapor_tarihi') || getVal('saglik_muayene_tarih')
     },
     adli: {
       report_number: getVal('adli_rapor_no'),

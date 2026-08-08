@@ -43,6 +43,7 @@
       <div class="his-metric"><span class="his-metric-icon">{{ his_icon('bell') }}</span><div><small>Aktif Bildirimler</small><strong>{{ unread_notification_count }}</strong><span>Okunmamış mesaj</span></div></div>
     </div>
     <article class="his-card his-quick-card"><div class="his-card-head"><h3>Hızlı İşlemler</h3></div><div class="his-card-body">
+      {% if "saglik" in allowed_report_types %}<a class="his-quick-action cyan" href="{{ url_for('panel') }}#report-creator">{{ his_icon('shield') }} Sağlık Raporu</a>{% endif %}
       <a class="his-quick-action" href="{{ url_for('panel') }}#report-creator">{{ his_icon('file-plus') }} Yeni Vaka Raporu</a>
       <a class="his-quick-action cyan" href="{{ url_for('panel') }}#report-creator">{{ his_icon('scales') }} Adli Vaka Raporu</a>
       <a class="his-quick-action red" href="{{ url_for('panel') }}#report-creator">{{ his_icon('heart') }} Ölüm (Ex) Raporu</a>
@@ -73,8 +74,8 @@
       <p>Doküman türünü seçin, klinik bilgileri tamamlayın ve standart BBCode çıktısını oluşturun.</p>
       <div class="v26-patient-selector" style="margin-top:14px">
         <label for="reportPatientFileId">Hasta Dosyasından Otomatik Doldur</label>
-        <select id="reportPatientFileId" onchange="applySelectedPatient()"><option value="">Otomatik eşleştir / yeni hasta dosyası oluştur</option>{% for patient in report_patient_options %}<option value="{{ patient.id }}">{{ patient.patient_number }} — {{ patient.full_name }}{% if patient.identity_number %} · {{ patient.identity_number }}{% endif %}</option>{% endfor %}</select>
-        <small id="patientSelectorNote">Hasta seçmek zorunlu değildir. Sistem rapor kaydında hastayı otomatik eşleştirir; eşleşme yoksa tek bir hasta dosyası oluşturur.</small>
+        <select id="reportPatientFileId" onchange="applySelectedPatient()"><option value="">Hasta dosyası seçilmedi</option>{% for patient in report_patient_options %}<option value="{{ patient.id }}">{{ patient.patient_number }} — {{ patient.full_name }}{% if patient.identity_number %} · {{ patient.identity_number }}{% endif %}</option>{% endfor %}</select>
+        <small id="patientSelectorNote">Vaka, Adli Vaka, Sağlık ve EMS formundaki hasta bilgileri seçilen dosyadan doldurulur.</small>
       </div>
       <div class="doctor-identity {% if not user_rank %}warning{% endif %}" style="margin-top:14px">
         <span class="doctor-label">Raporlayan Personel — Hesaptan Otomatik</span>
@@ -91,6 +92,13 @@
         <div class="icon">{{ his_icon('system-health') }}</div>
         <h3>Vaka Raporu</h3>
         <p>Hasta/vaka bilgileri, muayene, müdahale ve sonuç alanları.</p>
+      </div>
+      {% endif %}
+      {% if "saglik" in allowed_report_types %}
+      <div class="card" data-type="saglik" onclick="setReportType('saglik', this)">
+        <div class="icon">{{ his_icon('shield') }}</div>
+        <h3>Sağlık Raporu</h3>
+        <p>İş başvurusu, silah ruhsatı ve diğer amaçlar için fiziksel ve zihinsel değerlendirme.</p>
       </div>
       {% endif %}
       {% if "adli" in allowed_report_types %}
@@ -137,6 +145,7 @@
             {% if not is_ems_user %}
             <button class="btn btn-secondary" onclick="fillSample()">Örnek Veriyi Doldur</button>
             <button class="btn btn-secondary" onclick="fillAdliSample()">Adli Örneği Doldur</button>
+            <button class="btn btn-secondary" onclick="fillSaglikSample()">Sağlık Örneğini Doldur</button>
             {% endif %}
             {% if is_ems_user %}
             <button class="btn btn-secondary" onclick="fillEmsSample()">EMS Örneğini Doldur</button>
@@ -147,7 +156,7 @@
             {% if is_ems_user %}
               EMS rütbeli hesaplar yalnızca EMS Saha Raporu oluşturabilir.
             {% else %}
-              Tıbbi rütbeli hesaplar Vaka, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarını oluşturabilir.
+              Tıbbi rütbeli hesaplar Vaka, Sağlık, Adli Vaka, Otopsi ve Ölüm (Ex) raporlarını oluşturabilir.
             {% endif %}
           </div>
         </div>
@@ -259,6 +268,7 @@ window.addEventListener('DOMContentLoaded',function(){
 const ALLOWED_REPORT_TYPES = {{ allowed_report_types|tojson }};
 const INITIAL_REPORT_TYPE = {{ initial_report_type|tojson }};
 let EMS_DEFAULT_REPORT_NUMBER = {{ ems_report_number|tojson }};
+let SAGLIK_DEFAULT_REPORT_NUMBER = {{ saglik_report_number|tojson }};
 let currentType = INITIAL_REPORT_TYPE;
 
 const CURRENT_DOCTOR_NAME = {{ username|tojson }};
@@ -292,13 +302,14 @@ function applySelectedPatient(){
   const patient=selectedPatient();
   const selector=document.getElementById('reportPatientFileId');
   const note=document.getElementById('patientSelectorNote');
-  const living=['vaka','adli','ems'].includes(currentType);
+  const living=['vaka','adli','saglik','ems'].includes(currentType);
   if(selector) selector.disabled=!living;
   if(note) note.textContent=living ? 'Hasta kimliği ve iletişim bilgileri otomatik doldurulur.' : 'Ex ve Otopsi raporlarında hasta kimlik alanları otomatik doldurulmaz.';
   if(!patient || !living){ renderBBCode(); return; }
   const maps={
     vaka:{adsoyad:'full_name',kimlik_no:'identity_number',dogum_tarihi:'date_of_birth',cinsiyet:'gender',telefon:'phone',adres:'address'},
     adli:{adli_adsoyad:'full_name',adli_kimlik_no:'identity_number',adli_dogum_tarihi:'date_of_birth',adli_cinsiyet:'gender',adli_telefon:'phone',adli_adres:'address'},
+    saglik:{saglik_adsoyad:'full_name',saglik_kimlik_no:'identity_number',saglik_dogum_tarihi:'date_of_birth',saglik_cinsiyet:'gender',saglik_telefon:'phone',saglik_adres:'address'},
     ems:{ems_adsoyad:'full_name',ems_kimlik_no:'identity_number',ems_dogum_tarihi:'date_of_birth'}
   };
   Object.entries(maps[currentType] || {}).forEach(([field,attribute])=>setFieldValue(field,patient[attribute] || ''));
@@ -328,7 +339,7 @@ const reportConfig = {
         </div>
         <div class="field">
           <label>Hasta Adı ve Soyadı</label>
-          <input data-field="adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()" required>
+          <input data-field="adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Kimlik Numarası</label>
@@ -430,6 +441,108 @@ const reportConfig = {
         <input data-field="imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()">
       </div>`
   },
+  saglik: {
+    title: 'Sağlık Raporu',
+    fields: `
+      <div class="grid2">
+        <div class="field">
+          <label>Rapor Numarası</label>
+          <input data-field="saglik_rapor_no" value="${escapeHtml(typeof SAGLIK_DEFAULT_REPORT_NUMBER !== 'undefined' ? SAGLIK_DEFAULT_REPORT_NUMBER : 'CLSMC-SGL-0001')}" oninput="renderBBCode()" required>
+        </div>
+        <div class="field">
+          <label>Rapor Amacı</label>
+          <select data-field="saglik_rapor_amaci" onchange="renderBBCode()" required>
+            <option value="">Seçiniz</option>
+            <option>İş Başvurusu</option>
+            <option>Silah Ruhsatı</option>
+            <option>Sürücü Belgesi</option>
+            <option>Özel Güvenlik Görevlisi</option>
+            <option>Spor / Lisans</option>
+            <option>Eğitim / Okul / Kurs</option>
+            <option>Resmî Kurum / Atama</option>
+            <option>Genel Sağlık / Yeterlilik</option>
+            <option>Diğer</option>
+          </select>
+          <div class="footer-note" style="margin-top:7px">Sağlık Raporu tek rapor türüdür; kullanım amacı buradan seçilir.</div>
+        </div>
+        <div class="field">
+          <label>Hasta / Başvuru Sahibi Adı Soyadı</label>
+          <input data-field="saglik_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Kimlik Numarası</label>
+          <input data-field="saglik_kimlik_no" inputmode="numeric" maxlength="80" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Doğum Tarihi</label>
+          <input data-field="saglik_dogum_tarihi" type="date" autocomplete="off" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Cinsiyet</label>
+          <select data-field="saglik_cinsiyet" onchange="renderBBCode()">
+            <option value="">Seçiniz</option><option>Erkek</option><option>Kadın</option><option>Diğer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Telefon</label>
+          <input data-field="saglik_telefon" placeholder="123-456" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Adres</label>
+          <input data-field="saglik_adres" placeholder="Adres bilgisi" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Başvuru Kurumu / Amaç Açıklaması</label>
+          <input data-field="saglik_amac_aciklama" placeholder="Örn. Los Santos Police Department / İşe giriş" oninput="renderBBCode()">
+        </div>
+        <div class="field">
+          <label>Muayene Tarihi ve Saati</label>
+          <input data-field="saglik_muayene_tarih" type="datetime-local" oninput="renderBBCode()">
+        </div>
+      </div>
+
+      <div class="form-section-title">Fiziksel Değerlendirme</div>
+      <div class="grid2">
+        <div class="field"><label>Genel Sağlık Durumu</label><select data-field="saglik_genel_saglik" onchange="renderBBCode()"><option value="">Seçiniz</option><option>İyi</option><option>Orta</option><option>Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Kronik Hastalık Beyanı</label><select data-field="saglik_kronik" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Düzenli İlaç Kullanımı</label><select data-field="saglik_ilac" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Görme Değerlendirmesi</label><select data-field="saglik_gorme" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>İşitme Değerlendirmesi</label><select data-field="saglik_isitme" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Hareket / Motor Değerlendirmesi</label><select data-field="saglik_hareket" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Normal</option><option>Kısıtlı</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+      </div>
+      <div class="field"><label>Kronik Hastalık Açıklaması</label><textarea data-field="saglik_kronik_aciklama" placeholder="Varsa bilinen kronik hastalıklar..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>İlaç Açıklaması</label><textarea data-field="saglik_ilac_aciklama" placeholder="Varsa düzenli kullanılan ilaçlar..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>Fiziksel Muayene Bulguları</label><textarea data-field="saglik_fiziksel_bulgular" placeholder="Genel fiziksel muayene, vital bulgular ve gözlemler..." oninput="renderBBCode()"></textarea></div>
+
+      <div class="form-section-title">Zihinsel ve Davranışsal Değerlendirme</div>
+      <div class="grid2">
+        <div class="field"><label>Bilinç ve Yönelim</label><select data-field="saglik_bilinc" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Açık ve Tam Oryante</option><option>Kısmi Oryante</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>İletişim ve İş Birliği</label><select data-field="saglik_iletisim" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Uygun</option><option>Kısmen Uygun</option><option>İleri Değerlendirme Gerektiriyor</option></select></div>
+        <div class="field"><label>Psikiyatrik Tedavi Geçmişi Beyanı</label><select data-field="saglik_psikiyatrik_gecmis" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+        <div class="field"><label>Madde Kullanımı Beyanı</label><select data-field="saglik_madde_beyani" onchange="renderBBCode()"><option value="">Seçiniz</option><option>Yok</option><option>Var</option><option>Beyan Edilmedi</option></select></div>
+      </div>
+      <div class="field"><label>Zihinsel / Davranışsal Değerlendirme Notu</label><textarea data-field="saglik_ruh_bulgular" placeholder="Görüşme sırasındaki genel gözlem ve değerlendirme..." oninput="renderBBCode()"></textarea></div>
+
+      <div class="form-section-title">Sonuç</div>
+      <div class="field">
+        <label>Hekim Kanaati</label>
+        <select data-field="saglik_sonuc" onchange="renderBBCode()" required>
+          <option value="">Seçiniz</option>
+          <option>Uygundur</option>
+          <option>Şartlı Uygundur</option>
+          <option>Uygun Değildir</option>
+          <option>İleri Değerlendirme Gereklidir</option>
+        </select>
+        <div class="footer-note" style="margin-top:7px">Sonuç otomatik hesaplanmaz; muayene eden hekim tarafından seçilir.</div>
+      </div>
+      <div class="field"><label>Kısıtlama / Ek Not</label><textarea data-field="saglik_kisitlama" placeholder="Varsa kısıtlama, ek tetkik veya uzman değerlendirmesi notu..." oninput="renderBBCode()"></textarea></div>
+      <div class="field"><label>Ekran Görüntüsü Linki</label><input data-field="saglik_ekran" placeholder="https://..." oninput="renderBBCode()"></div>
+      ${doctorIdentityHtml('Raporlayan Hekim')}
+      <div class="grid2">
+        <div class="field"><label>Rapor Tarihi</label><input data-field="saglik_rapor_tarihi" type="datetime-local" oninput="renderBBCode()"></div>
+        <div class="field"><label>Dijital İmza</label><input data-field="saglik_imza" placeholder="Örn. D. Blackwell" oninput="renderBBCode()"></div>
+      </div>`
+  },
   adli: {
     title: 'Adli Vaka Raporu',
     fields: `
@@ -440,7 +553,7 @@ const reportConfig = {
         </div>
         <div class="field">
           <label>Hasta Adı ve Soyadı</label>
-          <input data-field="adli_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()" required>
+          <input data-field="adli_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Kimlik Numarası</label>
@@ -579,7 +692,7 @@ const reportConfig = {
         </div>
         <div class="field">
           <label>Adı ve Soyadı</label>
-          <input data-field="otp_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()" required>
+          <input data-field="otp_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -720,7 +833,7 @@ const reportConfig = {
         </div>
         <div class="field">
           <label>Hastanın Adı ve Soyadı</label>
-          <input data-field="ex_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()" required>
+          <input data-field="ex_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Cinsiyet</label>
@@ -858,7 +971,7 @@ const reportConfig = {
       <div class="grid2">
         <div class="field">
           <label>Hastanın Adı ve Soyadı</label>
-          <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()" required>
+          <input data-field="ems_adsoyad" placeholder="Ad Soyad" oninput="renderBBCode()">
         </div>
         <div class="field">
           <label>Kimlik Numarası</label>
@@ -1117,6 +1230,123 @@ ${textOrDash(getVal('imza'))}
 [center]
 [size=75][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
 [size=65][i][color=#7A8891]Tıbbi Vaka Kayıt Sistemi[/color][/i][/size]
+[/center]`;
+  } else if(currentType === 'saglik'){
+    out = `[center]
+[size=180][b][color=#183B56]CENTRAL LOS SANTOS MEDICAL CENTER[/color][/b][/size]
+[size=140][b][color=#2B7A78]SAĞLIK RAPORU[/color][/b][/size]
+[color=#AAB8C2]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+[/center]
+
+[quote]
+[center][size=125][b][color=#183B56]RAPOR VE KİŞİ BİLGİLERİ[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Rapor Numarası:[/color][/b]
+${textOrDash(getVal('saglik_rapor_no'))}
+
+[b][color=#4C88A8]Rapor Amacı:[/color][/b]
+${textOrDash(getVal('saglik_rapor_amaci'))}
+
+[b][color=#4C88A8]Başvuru Kurumu / Amaç Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_amac_aciklama'))}
+
+[b][color=#4C88A8]Adı Soyadı:[/color][/b]
+${textOrDash(getVal('saglik_adsoyad'))}
+
+[b][color=#4C88A8]Kimlik Numarası:[/color][/b]
+${textOrDash(getVal('saglik_kimlik_no'))}
+
+[b][color=#4C88A8]Doğum Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_dogum_tarihi'))}
+
+[b][color=#4C88A8]Cinsiyet:[/color][/b]
+${textOrDash(getVal('saglik_cinsiyet'))}
+
+[b][color=#4C88A8]Telefon:[/color][/b]
+${textOrDash(getVal('saglik_telefon'))}
+
+[b][color=#4C88A8]Adres:[/color][/b]
+${textOrDash(getVal('saglik_adres'))}
+
+[b][color=#4C88A8]Muayene Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_muayene_tarih'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]FİZİKSEL DEĞERLENDİRME[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Genel Sağlık Durumu:[/color][/b]
+${textOrDash(getVal('saglik_genel_saglik'))}
+
+[b][color=#4C88A8]Kronik Hastalık Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_kronik'))}
+
+[b][color=#4C88A8]Kronik Hastalık Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_kronik_aciklama'))}
+
+[b][color=#4C88A8]Düzenli İlaç Kullanımı:[/color][/b]
+${textOrDash(getVal('saglik_ilac'))}
+
+[b][color=#4C88A8]İlaç Açıklaması:[/color][/b]
+${textOrDash(getVal('saglik_ilac_aciklama'))}
+
+[b][color=#4C88A8]Görme Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_gorme'))}
+
+[b][color=#4C88A8]İşitme Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_isitme'))}
+
+[b][color=#4C88A8]Hareket / Motor Değerlendirmesi:[/color][/b]
+${textOrDash(getVal('saglik_hareket'))}
+
+[b][color=#4C88A8]Fiziksel Muayene Bulguları:[/color][/b]
+${textOrDash(getVal('saglik_fiziksel_bulgular'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]ZİHİNSEL VE DAVRANIŞSAL DEĞERLENDİRME[/color][/b][/size][/center]
+
+[b][color=#4C88A8]Bilinç ve Yönelim:[/color][/b]
+${textOrDash(getVal('saglik_bilinc'))}
+
+[b][color=#4C88A8]İletişim ve İş Birliği:[/color][/b]
+${textOrDash(getVal('saglik_iletisim'))}
+
+[b][color=#4C88A8]Psikiyatrik Tedavi Geçmişi Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_psikiyatrik_gecmis'))}
+
+[b][color=#4C88A8]Madde Kullanımı Beyanı:[/color][/b]
+${textOrDash(getVal('saglik_madde_beyani'))}
+
+[b][color=#4C88A8]Değerlendirme Notu:[/color][/b]
+${textOrDash(getVal('saglik_ruh_bulgular'))}
+[/quote]
+
+[quote]
+[center][size=125][b][color=#183B56]HEKİM KANAATİ[/color][/b][/size][/center]
+
+[b][color=#2B7A78]Sonuç:[/color][/b]
+[b]${textOrDash(getVal('saglik_sonuc'))}[/b]
+
+[b][color=#4C88A8]Kısıtlama / Ek Not:[/color][/b]
+${textOrDash(getVal('saglik_kisitlama'))}
+
+[b][color=#4C88A8]Raporlayan Hekim:[/color][/b]
+${CURRENT_DOCTOR_NAME} — ${CURRENT_DOCTOR_RANK || 'Rütbe Atanmadı'}
+
+[b][color=#4C88A8]Rapor Tarihi:[/color][/b]
+${fmtDateTR(getVal('saglik_rapor_tarihi'))}
+
+[b][color=#4C88A8]Dijital İmza:[/color][/b]
+${textOrDash(getVal('saglik_imza'))}
+[/quote]
+
+[spoiler="Ekran Görüntüsü"]
+${getVal('saglik_ekran') || 'Ekran görüntüsü veya bağlantısı'}
+[/spoiler]
+
+[center]
+[size=68][color=#6C7A84]Bu belge, seçilen rapor amacı kapsamında muayene eden hekimin değerlendirmesini içerir.[/color][/size]
 [/center]`;
   } else if(currentType === 'adli'){
     out = `[center]
@@ -1536,6 +1766,12 @@ function getReportMetadata(){
       doctor_rank: CURRENT_DOCTOR_RANK,
       report_date: getVal('rapor_tarihi') || getVal('tarih')
     },
+    saglik: {
+      report_number: getVal('saglik_rapor_no'),
+      doctor_name: CURRENT_DOCTOR_NAME,
+      doctor_rank: CURRENT_DOCTOR_RANK,
+      report_date: getVal('saglik_rapor_tarihi') || getVal('saglik_muayene_tarih')
+    },
     adli: {
       report_number: getVal('adli_rapor_no'),
       doctor_name: CURRENT_DOCTOR_NAME,
@@ -1620,6 +1856,9 @@ async function copyBBCode(){
     if(currentType === 'ems' && saveResult.next_report_number){
       EMS_DEFAULT_REPORT_NUMBER = saveResult.next_report_number;
     }
+    if(currentType === 'saglik' && saveResult.next_report_number){
+      SAGLIK_DEFAULT_REPORT_NUMBER = saveResult.next_report_number;
+    }
 
     hasUnsavedChanges = false;
     showCopyToast();
@@ -1684,6 +1923,46 @@ function fillSample(){
   });
   renderBBCode();
   setStatus('Örnek vaka verisi yüklendi');
+}
+
+
+function fillSaglikSample(){
+  const card = document.querySelector('.card[data-type="saglik"]');
+  setReportType('saglik', card);
+  const values = {
+    saglik_rapor_no: SAGLIK_DEFAULT_REPORT_NUMBER,
+    saglik_rapor_amaci: 'İş Başvurusu',
+    saglik_adsoyad: 'John Carter',
+    saglik_kimlik_no: '84219035',
+    saglik_dogum_tarihi: '1995-06-12',
+    saglik_cinsiyet: 'Erkek',
+    saglik_telefon: '123-456',
+    saglik_adres: 'Los Santos',
+    saglik_amac_aciklama: 'İşe giriş sağlık değerlendirmesi',
+    saglik_muayene_tarih: '2026-08-08T19:30',
+    saglik_genel_saglik: 'İyi',
+    saglik_kronik: 'Yok',
+    saglik_ilac: 'Yok',
+    saglik_gorme: 'Normal',
+    saglik_isitme: 'Normal',
+    saglik_hareket: 'Normal',
+    saglik_fiziksel_bulgular: 'Genel fiziksel muayenede belirgin kısıtlılık gözlenmedi. Vital bulgular klinik değerlendirme kapsamında kaydedildi.',
+    saglik_bilinc: 'Açık ve Tam Oryante',
+    saglik_iletisim: 'Uygun',
+    saglik_psikiyatrik_gecmis: 'Yok',
+    saglik_madde_beyani: 'Yok',
+    saglik_ruh_bulgular: 'Görüşme sırasında iletişim ve iş birliği uygun bulundu. Belirgin davranışsal uyumsuzluk gözlenmedi.',
+    saglik_sonuc: 'Uygundur',
+    saglik_kisitlama: '',
+    saglik_rapor_tarihi: '2026-08-08T19:35',
+    saglik_imza: 'D. Blackwell'
+  };
+  Object.entries(values).forEach(([key,value])=>{
+    const el=document.querySelector(`[data-field="${key}"]`);
+    if(el) el.value=value;
+  });
+  renderBBCode();
+  setStatus('Sağlık raporu örneği yüklendi');
 }
 
 function fillAdliSample(){
@@ -1764,6 +2043,10 @@ function clearForm(){
   if(currentType === 'ems'){
     const reportNo = document.querySelector('[data-field="ems_rapor_no"]');
     if(reportNo) reportNo.value = EMS_DEFAULT_REPORT_NUMBER;
+  }
+  if(currentType === 'saglik'){
+    const reportNo = document.querySelector('[data-field="saglik_rapor_no"]');
+    if(reportNo) reportNo.value = SAGLIK_DEFAULT_REPORT_NUMBER;
   }
   renderBBCode();
   setStatus('Form temizlendi');

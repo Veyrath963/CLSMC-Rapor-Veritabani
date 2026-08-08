@@ -19,18 +19,7 @@ from clsmc.security import (
     verify_totp,
 )
 from clsmc.services.audit import json_text
-from clsmc.services.patients import (
-    duplicate_patient_query,
-    normalize_birth_date,
-    normalize_identity,
-    normalize_name,
-    patient_payload,
-)
-from clsmc.services.report_patients import (
-    extract_report_patient_snapshot,
-    has_meaningful_clinical_content,
-    normalize_person_name,
-)
+from clsmc.services.patients import (duplicate_patient_query, normalize_birth_date, normalize_identity, patient_payload)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -798,331 +787,6 @@ def next_patient_number() -> str:
     return f"CLSMC-HST-{highest + 1:04d}"
 
 
-
-REPORT_PATIENT_BACKFILL_EVENT = "PATIENT_REPORT_BACKFILL_V26_0_3"
-
-
-def _patient_exact_name_matches(full_name: str):
-    normalized = normalize_person_name(full_name)
-    if not normalized:
-        return []
-    return [
-        patient
-        for patient in PatientFile.query.order_by(PatientFile.id.asc()).all()
-        if normalize_person_name(patient.full_name) == normalized
-    ]
-
-
-def resolve_patient_for_report(snapshot: dict, *, legacy_name_fallback: bool = False):
-    """Resolve a patient without asking legacy reports for an identity number.
-
-    New reports prefer identity -> name + birth date -> exact name.
-    Legacy/backfill records deliberately accept exact normalized name matching
-    even when no identity number exists, per the V26.0.3 migration rule.
-    """
-    full_name = (snapshot.get("full_name") or "").strip()
-    identity = normalize_identity(snapshot.get("identity_number"))
-    birth_date = normalize_birth_date(snapshot.get("date_of_birth"))
-
-    if identity:
-        patient = PatientFile.query.filter_by(identity_number=identity).order_by(PatientFile.id.asc()).first()
-        if patient:
-            return patient
-
-    if full_name and birth_date:
-        patient = duplicate_patient_query(PatientFile, "", full_name, birth_date)
-        if patient:
-            # A new report carrying a different non-empty identity must not
-            # silently overwrite another person's existing identity.
-            if not identity or not patient.identity_number or patient.identity_number == identity:
-                return patient
-
-    name_matches = _patient_exact_name_matches(full_name)
-    if name_matches:
-        if legacy_name_fallback or not identity:
-            return name_matches[0]
-        # New report with identity: reuse a same-name legacy file only if that
-        # file does not already belong to another identity.
-        for patient in name_matches:
-            if not (patient.identity_number or "").strip():
-                return patient
-
-    return None
-
-
-def enrich_patient_from_report(patient: PatientFile, snapshot: dict, report_type: str) -> None:
-    """Fill only missing patient master data; never overwrite staff corrections."""
-    for patient_attr, snapshot_key in (
-        ("identity_number", "identity_number"),
-        ("date_of_birth", "date_of_birth"),
-        ("gender", "gender"),
-        ("phone", "phone"),
-        ("address", "address"),
-    ):
-        current = str(getattr(patient, patient_attr, "") or "").strip()
-        incoming = str(snapshot.get(snapshot_key, "") or "").strip()
-        if not current and incoming:
-            setattr(patient, patient_attr, incoming)
-
-    if report_type in {"ex", "otopsi"}:
-        patient.status = "deceased"
-
-
-def _history_summary_line(report_type: str, report_number: str, report_date: str | None, snapshot: dict) -> str:
-    diagnosis = str(snapshot.get("diagnosis", "") or "").strip()
-    if not diagnosis:
-        return ""
-    label = REPORT_TYPE_LABELS.get(report_type, report_type)
-    date_text = (report_date or "").strip()
-    prefix = f"{date_text} · " if date_text else ""
-    return f"{prefix}{label} {report_number} — {diagnosis}"
-
-
-def append_report_medical_history(patient: PatientFile, report_type: str, report_number: str, report_date: str | None, snapshot: dict) -> None:
-    """Append a diagnosis/history summary once, preserving manually written history."""
-    line = _history_summary_line(report_type, report_number, report_date, snapshot)
-    if not line:
-        return
-    existing = (patient.medical_history or "").strip()
-    # Report number is the idempotency key inside the human-readable summary.
-    if report_number and report_number.casefold() in existing.casefold():
-        return
-    patient.medical_history = f"{existing}\n{line}".strip() if existing else line
-
-
-def sync_report_clinical_entry(report: Report, patient: PatientFile, snapshot: dict) -> None:
-    """Create or refresh one automatic clinical timeline entry per active report."""
-    title = f"Otomatik Rapor Kaydı — {report.report_number}"
-    entry = (
-        PatientClinicalEntry.query
-        .filter_by(linked_report_id=report.id, title=title)
-        .order_by(PatientClinicalEntry.id.asc())
-        .first()
-    )
-    if not entry:
-        entry = PatientClinicalEntry(
-            patient_file_id=patient.id,
-            entry_type="other",
-            title=title,
-            clinical_note="",
-            linked_report_id=report.id,
-            created_by_user_id=report.created_by_user_id,
-            created_by_username=report.created_by_username or report.doctor_name or "Sistem",
-            created_by_rank=report.doctor_rank,
-        )
-        db.session.add(entry)
-
-    note = str(snapshot.get("clinical_note", "") or "").strip()
-    if not note:
-        note = f"{REPORT_TYPE_LABELS.get(report.report_type, report.report_type)} {report.report_number} hasta dosyasına otomatik bağlandı."
-
-    entry.patient_file_id = patient.id
-    entry.clinical_note = note
-    entry.diagnosis = str(snapshot.get("diagnosis", "") or "").strip() or None
-    entry.treatment = str(snapshot.get("treatment", "") or "").strip() or None
-    entry.medication = str(snapshot.get("medication", "") or "").strip() or None
-
-
-def sync_archive_clinical_entry(archive: ReportArchive, patient: PatientFile, snapshot: dict) -> None:
-    """Create one idempotent timeline item for an archive-only historic report."""
-    title = f"Otomatik Arşiv Raporu — {archive.report_type}:{archive.report_number}"
-    entry = (
-        PatientClinicalEntry.query
-        .filter_by(patient_file_id=patient.id, linked_report_id=None, title=title)
-        .order_by(PatientClinicalEntry.id.asc())
-        .first()
-    )
-    if not entry:
-        note = str(snapshot.get("clinical_note", "") or "").strip()
-        if not note:
-            note = f"Arşivdeki {REPORT_TYPE_LABELS.get(archive.report_type, archive.report_type)} {archive.report_number} hasta dosyasına otomatik bağlandı."
-        db.session.add(PatientClinicalEntry(
-            patient_file_id=patient.id,
-            entry_type="other",
-            title=title,
-            clinical_note=note,
-            diagnosis=str(snapshot.get("diagnosis", "") or "").strip() or None,
-            treatment=str(snapshot.get("treatment", "") or "").strip() or None,
-            medication=str(snapshot.get("medication", "") or "").strip() or None,
-            linked_report_id=None,
-            created_by_user_id=archive.created_by_user_id,
-            created_by_username=archive.created_by_username or archive.doctor_name or "Sistem",
-            created_by_rank=archive.doctor_rank,
-            created_at=archive.source_created_at or archive.archived_at or datetime.now(timezone.utc),
-        ))
-
-
-def create_patient_from_report_snapshot(snapshot: dict, report_type: str, created_by_username: str) -> PatientFile:
-    full_name = str(snapshot.get("full_name", "") or "").strip()
-    patient = PatientFile(
-        patient_number=next_patient_number(),
-        full_name=full_name,
-        identity_number=normalize_identity(snapshot.get("identity_number")) or None,
-        date_of_birth=normalize_birth_date(snapshot.get("date_of_birth")) or None,
-        gender=str(snapshot.get("gender", "") or "").strip() or None,
-        phone=str(snapshot.get("phone", "") or "").strip() or None,
-        address=str(snapshot.get("address", "") or "").strip() or None,
-        status="deceased" if report_type in {"ex", "otopsi"} else "active",
-        clinical_priority="stable",
-        created_by_username=(created_by_username or "Sistem").strip() or "Sistem",
-    )
-    db.session.add(patient)
-    db.session.flush()
-    return patient
-
-
-def ensure_patient_for_report(
-    report_type: str,
-    form_data: dict,
-    bbcode: str,
-    *,
-    selected_patient: PatientFile | None = None,
-    created_by_username: str = "Sistem",
-    legacy_name_fallback: bool = False,
-):
-    snapshot = extract_report_patient_snapshot(report_type, form_data, bbcode)
-    if not snapshot.get("full_name"):
-        return None, snapshot
-
-    patient = selected_patient or resolve_patient_for_report(
-        snapshot,
-        legacy_name_fallback=legacy_name_fallback,
-    )
-    if not patient:
-        patient = create_patient_from_report_snapshot(
-            snapshot,
-            report_type,
-            created_by_username,
-        )
-    enrich_patient_from_report(patient, snapshot, report_type)
-    return patient, snapshot
-
-
-def backfill_report_patient_files_once() -> dict:
-    """One-time V26.0.3 import for old reports and archive-only records.
-
-    No identity number is required for historic reports. Exact normalized
-    first+last name matching is enough; otherwise one patient file is created
-    for that name and subsequent matching reports reuse it.
-    """
-    marker = AppLog.query.filter_by(event=REPORT_PATIENT_BACKFILL_EVENT).first()
-    if marker:
-        return {"skipped": True}
-
-    stats = {
-        "active_reports_linked": 0,
-        "archive_groups_linked": 0,
-        "patients_created": 0,
-        "reports_without_name": 0,
-    }
-
-    try:
-        active_reports = Report.query.order_by(Report.id.asc()).all()
-        active_keys = {(item.report_type, item.report_number) for item in active_reports}
-
-        for report in active_reports:
-            selected = db.session.get(PatientFile, report.patient_file_id) if report.patient_file_id else None
-            before_patient_count = PatientFile.query.count()
-            patient, snapshot = ensure_patient_for_report(
-                report.report_type,
-                report.form_data,
-                report.bbcode,
-                selected_patient=selected,
-                created_by_username=report.created_by_username or "Sistem",
-                legacy_name_fallback=True,
-            )
-            if not patient:
-                stats["reports_without_name"] += 1
-                continue
-            if PatientFile.query.count() > before_patient_count:
-                stats["patients_created"] += 1
-
-            report.patient_file_id = patient.id
-            append_report_medical_history(
-                patient, report.report_type, report.report_number, report.report_date, snapshot
-            )
-            sync_report_clinical_entry(report, patient, snapshot)
-
-            ReportArchive.query.filter(
-                db.or_(
-                    ReportArchive.source_report_id == report.id,
-                    db.and_(
-                        ReportArchive.report_type == report.report_type,
-                        ReportArchive.report_number == report.report_number,
-                    ),
-                )
-            ).update(
-                {ReportArchive.patient_file_id: patient.id},
-                synchronize_session=False,
-            )
-            stats["active_reports_linked"] += 1
-
-        # Reports that exist only in the archive are grouped by type+number so
-        # old snapshots do not create duplicate patient files or history items.
-        archive_rows = ReportArchive.query.order_by(
-            ReportArchive.archived_at.desc(),
-            ReportArchive.id.desc(),
-        ).all()
-        latest_archive_by_key = {}
-        for archive in archive_rows:
-            key = (archive.report_type, archive.report_number)
-            if key in active_keys or key in latest_archive_by_key:
-                continue
-            latest_archive_by_key[key] = archive
-
-        for key, archive in latest_archive_by_key.items():
-            selected = db.session.get(PatientFile, archive.patient_file_id) if archive.patient_file_id else None
-            before_patient_count = PatientFile.query.count()
-            patient, snapshot = ensure_patient_for_report(
-                archive.report_type,
-                archive.form_data,
-                archive.bbcode,
-                selected_patient=selected,
-                created_by_username=archive.created_by_username or "Sistem",
-                legacy_name_fallback=True,
-            )
-            if not patient:
-                stats["reports_without_name"] += 1
-                continue
-            if PatientFile.query.count() > before_patient_count:
-                stats["patients_created"] += 1
-
-            ReportArchive.query.filter_by(
-                report_type=archive.report_type,
-                report_number=archive.report_number,
-            ).update(
-                {ReportArchive.patient_file_id: patient.id},
-                synchronize_session=False,
-            )
-            append_report_medical_history(
-                patient,
-                archive.report_type,
-                archive.report_number,
-                archive.report_date,
-                snapshot,
-            )
-            sync_archive_clinical_entry(archive, patient, snapshot)
-            stats["archive_groups_linked"] += 1
-
-        db.session.add(AppLog(
-            level="INFO",
-            event=REPORT_PATIENT_BACKFILL_EVENT,
-            message=(
-                "completed; "
-                f"active_reports_linked={stats['active_reports_linked']}; "
-                f"archive_groups_linked={stats['archive_groups_linked']}; "
-                f"patients_created={stats['patients_created']}; "
-                f"reports_without_name={stats['reports_without_name']}"
-            ),
-        ))
-        db.session.commit()
-        return stats
-    except Exception:
-        db.session.rollback()
-        logger.exception("PATIENT_REPORT_BACKFILL_FAILED")
-        return {**stats, "failed": True}
-
-
 def current_user_account() -> User | None:
     user_id = session.get("user_id")
     return db.session.get(User, user_id) if user_id else None
@@ -1529,12 +1193,6 @@ with app.app_context():
             initial_archive_count,
         )
 
-    # V26.0.3: Tek seferlik eski rapor -> hasta dosyası eşleştirmesi.
-    # Kimlik numarası gerektirmez; tam normalize ad-soyad eşleşmesi yeterlidir.
-    patient_backfill_result = backfill_report_patient_files_once()
-    if not patient_backfill_result.get("skipped"):
-        logger.info("PATIENT_REPORT_BACKFILL_V26_0_3 | %s", patient_backfill_result)
-
     auto_archive_expired_leave_requests()
 
 
@@ -1662,6 +1320,11 @@ def panel():
         next_report_number("ems", "CLSMC-EMS")
         if "ems" in allowed_report_types
         else "CLSMC-EMS-0001"
+    )
+    saglik_report_number = (
+        next_report_number("saglik", "CLSMC-SGL")
+        if "saglik" in allowed_report_types
+        else "CLSMC-SGL-0001"
     )
 
     own_filter = db.or_(
@@ -1810,6 +1473,7 @@ def panel():
         allowed_report_types=allowed_report_types,
         initial_report_type=initial_report_type,
         ems_report_number=ems_report_number,
+        saglik_report_number=saglik_report_number,
         is_ems_user=initial_report_type == "ems",
         personal_stats=personal_stats,
         recent_reports=own_reports[:8],
@@ -1859,7 +1523,7 @@ EMS_USER_RANKS = {
 
 ALLOWED_USER_RANKS = MEDICAL_USER_RANKS | EMS_USER_RANKS
 
-MEDICAL_REPORT_TYPES = {"vaka", "adli", "otopsi", "ex"}
+MEDICAL_REPORT_TYPES = {"vaka", "adli", "otopsi", "ex", "saglik"}
 EMS_REPORT_TYPES = {"ems"}
 
 
@@ -1897,6 +1561,7 @@ REPORT_TYPE_LABELS = {
     "otopsi": "Otopsi Raporu",
     "ex": "Ölüm (Ex) Raporu",
     "ems": "EMS Saha Raporu",
+    "saglik": "Sağlık Raporu",
 }
 
 # Kimlik numarası yalnızca yaşayan hasta değerlendirmesi içeren raporlarda tutulur.
@@ -1905,21 +1570,83 @@ REPORT_IDENTITY_FIELDS = {
     "vaka": "kimlik_no",
     "adli": "adli_kimlik_no",
     "ems": "ems_kimlik_no",
+    "saglik": "saglik_kimlik_no",
 }
 
 REPORT_BIRTH_DATE_FIELDS = {
     "vaka": "dogum_tarihi",
     "adli": "adli_dogum_tarihi",
     "ems": "ems_dogum_tarihi",
+    "saglik": "saglik_dogum_tarihi",
 }
 
 REPORT_FORM_FIELD_LABELS = {
     "kimlik_no": "Kimlik Numarası",
     "adli_kimlik_no": "Kimlik Numarası",
     "ems_kimlik_no": "Kimlik Numarası",
+    "saglik_kimlik_no": "Kimlik Numarası",
     "dogum_tarihi": "Doğum Tarihi",
     "adli_dogum_tarihi": "Doğum Tarihi",
     "ems_dogum_tarihi": "Doğum Tarihi",
+    "saglik_dogum_tarihi": "Doğum Tarihi",
+    "saglik_rapor_amaci": "Rapor Amacı",
+    "saglik_amac_aciklama": "Başvuru Kurumu / Amaç Açıklaması",
+    "saglik_adsoyad": "Ad Soyad",
+    "saglik_cinsiyet": "Cinsiyet",
+    "saglik_telefon": "Telefon",
+    "saglik_adres": "Adres",
+    "saglik_muayene_tarih": "Muayene Tarihi",
+    "saglik_genel_saglik": "Genel Sağlık Durumu",
+    "saglik_kronik": "Kronik Hastalık Beyanı",
+    "saglik_kronik_aciklama": "Kronik Hastalık Açıklaması",
+    "saglik_ilac": "Düzenli İlaç Kullanımı",
+    "saglik_ilac_aciklama": "İlaç Açıklaması",
+    "saglik_gorme": "Görme Değerlendirmesi",
+    "saglik_isitme": "İşitme Değerlendirmesi",
+    "saglik_hareket": "Hareket / Motor Değerlendirmesi",
+    "saglik_fiziksel_bulgular": "Fiziksel Muayene Bulguları",
+    "saglik_bilinc": "Bilinç ve Yönelim",
+    "saglik_iletisim": "İletişim ve İş Birliği",
+    "saglik_psikiyatrik_gecmis": "Psikiyatrik Tedavi Geçmişi Beyanı",
+    "saglik_madde_beyani": "Madde Kullanımı Beyanı",
+    "saglik_ruh_bulgular": "Zihinsel / Davranışsal Değerlendirme",
+    "saglik_sonuc": "Hekim Kanaati",
+    "saglik_kisitlama": "Kısıtlama / Ek Not",
+    "saglik_rapor_tarihi": "Rapor Tarihi",
+    "saglik_imza": "Dijital İmza",
+    "saglik_ekran": "Ekran Görüntüsü",
+}
+
+HEALTH_REPORT_PURPOSES = {
+    "İş Başvurusu",
+    "Silah Ruhsatı",
+    "Sürücü Belgesi",
+    "Özel Güvenlik Görevlisi",
+    "Spor / Lisans",
+    "Eğitim / Okul / Kurs",
+    "Resmî Kurum / Atama",
+    "Genel Sağlık / Yeterlilik",
+    "Diğer",
+}
+
+HEALTH_REPORT_RESULTS = {
+    "Uygundur",
+    "Şartlı Uygundur",
+    "Uygun Değildir",
+    "İleri Değerlendirme Gereklidir",
+}
+
+HEALTH_REPORT_FIELDS = {
+    "saglik_rapor_no", "saglik_adsoyad", "saglik_kimlik_no",
+    "saglik_dogum_tarihi", "saglik_cinsiyet", "saglik_telefon",
+    "saglik_adres", "saglik_rapor_amaci", "saglik_amac_aciklama",
+    "saglik_muayene_tarih", "saglik_genel_saglik", "saglik_kronik",
+    "saglik_kronik_aciklama", "saglik_ilac", "saglik_ilac_aciklama",
+    "saglik_gorme", "saglik_isitme", "saglik_hareket",
+    "saglik_fiziksel_bulgular", "saglik_bilinc", "saglik_iletisim",
+    "saglik_psikiyatrik_gecmis", "saglik_madde_beyani",
+    "saglik_ruh_bulgular", "saglik_sonuc", "saglik_kisitlama",
+    "saglik_rapor_tarihi", "saglik_imza", "saglik_ekran",
 }
 
 
@@ -1951,6 +1678,15 @@ def normalize_report_form_data(report_type: str, form_data: dict) -> dict:
             except ValueError:
                 birth_date_value = ""
         normalized[allowed_birth_date_field] = birth_date_value
+
+    if report_type != "saglik":
+        for health_field in HEALTH_REPORT_FIELDS:
+            normalized.pop(health_field, None)
+    else:
+        purpose = str(normalized.get("saglik_rapor_amaci", "") or "").strip()
+        result = str(normalized.get("saglik_sonuc", "") or "").strip()
+        normalized["saglik_rapor_amaci"] = purpose if purpose in HEALTH_REPORT_PURPOSES else ""
+        normalized["saglik_sonuc"] = result if result in HEALTH_REPORT_RESULTS else ""
 
     return normalized
 
@@ -1984,43 +1720,23 @@ def save_report():
         return {"ok": False, "message": "Geçersiz rapor türü."}, 400
 
     form_data_raw = normalize_report_form_data(report_type, form_data_raw)
-    selected_patient = None
+    patient_file = None
     if patient_file_id_raw not in (None, ""):
         try:
-            selected_patient = db.session.get(PatientFile, int(patient_file_id_raw))
+            patient_file = db.session.get(PatientFile, int(patient_file_id_raw))
         except (TypeError, ValueError):
-            selected_patient = None
-        if not selected_patient:
+            patient_file = None
+        if not patient_file:
             return {"ok": False, "message": "Seçilen hasta dosyası bulunamadı."}, 400
-
-    # Hasta seçmek artık zorunlu değildir. Sistem her raporda hasta adını
-    # kullanarak mevcut dosyayı bulur veya otomatik yeni dosya oluşturur.
-    patient_file, patient_snapshot = ensure_patient_for_report(
-        report_type,
-        form_data_raw,
-        bbcode,
-        selected_patient=selected_patient,
-        created_by_username=current_user.username,
-        legacy_name_fallback=False,
-    )
-    if not patient_file:
-        return {
-            "ok": False,
-            "message": "Hasta Adı ve Soyadı zorunludur. Rapor kaydedilmeden önce hasta adını girin.",
-        }, 400
-
-    # Hasta ana dosyasında bulunan eksik demografik bilgiler rapor formuna
-    # geri doldurulur. Ex ve Otopsi kimlik/doğum alanı kullanmaz.
-    living_field_map = {
-        "vaka": {"adsoyad": "full_name", "kimlik_no": "identity_number", "dogum_tarihi": "date_of_birth", "cinsiyet": "gender", "telefon": "phone", "adres": "address"},
-        "adli": {"adli_adsoyad": "full_name", "adli_kimlik_no": "identity_number", "adli_dogum_tarihi": "date_of_birth", "adli_cinsiyet": "gender", "adli_telefon": "phone", "adli_adres": "address"},
-        "ems": {"ems_adsoyad": "full_name", "ems_kimlik_no": "identity_number", "ems_dogum_tarihi": "date_of_birth"},
-        "ex": {"ex_adsoyad": "full_name", "ex_cinsiyet": "gender"},
-        "otopsi": {"otp_adsoyad": "full_name", "otp_cinsiyet": "gender"},
-    }
-    for form_key, patient_attr in living_field_map.get(report_type, {}).items():
-        if not str(form_data_raw.get(form_key, "") or "").strip():
-            form_data_raw[form_key] = getattr(patient_file, patient_attr, "") or ""
+        living_field_map = {
+            "vaka": {"adsoyad": "full_name", "kimlik_no": "identity_number", "dogum_tarihi": "date_of_birth", "cinsiyet": "gender", "telefon": "phone", "adres": "address"},
+            "adli": {"adli_adsoyad": "full_name", "adli_kimlik_no": "identity_number", "adli_dogum_tarihi": "date_of_birth", "adli_cinsiyet": "gender", "adli_telefon": "phone", "adli_adres": "address"},
+            "ems": {"ems_adsoyad": "full_name", "ems_kimlik_no": "identity_number", "ems_dogum_tarihi": "date_of_birth"},
+            "saglik": {"saglik_adsoyad": "full_name", "saglik_kimlik_no": "identity_number", "saglik_dogum_tarihi": "date_of_birth", "saglik_cinsiyet": "gender", "saglik_telefon": "phone", "saglik_adres": "address"},
+        }
+        for form_key, patient_attr in living_field_map.get(report_type, {}).items():
+            if not str(form_data_raw.get(form_key, "") or "").strip():
+                form_data_raw[form_key] = getattr(patient_file, patient_attr, "") or ""
     form_data_json = json.dumps(form_data_raw, ensure_ascii=False)
 
     allowed_report_types = allowed_report_types_for_rank(doctor_rank)
@@ -2034,6 +1750,12 @@ def save_report():
             "ok": False,
             "message": "Rütbeniz bu rapor türünü oluşturma yetkisine sahip değil.",
         }, 403
+
+    if report_type == "saglik":
+        if not str(form_data_raw.get("saglik_rapor_amaci", "") or "").strip():
+            return {"ok": False, "message": "Sağlık raporu amacı seçilmelidir."}, 400
+        if not str(form_data_raw.get("saglik_sonuc", "") or "").strip():
+            return {"ok": False, "message": "Sağlık raporu için hekim kanaati seçilmelidir."}, 400
 
     if not report_number:
         return {"ok": False, "message": "Rapor numarası zorunludur."}, 400
@@ -2066,7 +1788,7 @@ def save_report():
                 bbcode=bbcode,
                 form_data=form_data_json,
                 created_by_user_id=session["user_id"],
-                patient_file_id=patient_file.id,
+                patient_file_id=patient_file.id if patient_file else None,
                 created_by_username=session.get("username", ""),
                 workflow_status="completed",
             )
@@ -2082,21 +1804,13 @@ def save_report():
             report.report_date = report_date or None
             report.bbcode = bbcode
             report.form_data = form_data_json
-            report.patient_file_id = patient_file.id
+            report.patient_file_id = patient_file.id if patient_file else report.patient_file_id
             # Kullanıcı kaydı anında tamamlanır; ayrıca yönetici/rütbeli onayı beklemez.
             report.workflow_status = "completed"
 
         # Yeni kayıtta rapor kimliğinin oluşması için flush yapılır; ardından
         # kullanıcının gönderdiği tam veri arşiv tablosuna ayrı kopya olarak eklenir.
         db.session.flush()
-        append_report_medical_history(
-            patient_file,
-            report.report_type,
-            report.report_number,
-            report.report_date,
-            patient_snapshot,
-        )
-        sync_report_clinical_entry(report, patient_file, patient_snapshot)
         add_report_archive_snapshot(
             report,
             "created" if is_new else "updated",
@@ -2115,12 +1829,11 @@ def save_report():
             "ok": True,
             "message": "Rapor kaydedildi." if is_new else "Rapor kaydı güncellendi.",
             "created": is_new,
-            "patient_file_id": patient_file.id,
-            "patient_number": patient_file.patient_number,
-            "patient_file_created_or_matched": True,
             "next_report_number": (
                 next_report_number("ems", "CLSMC-EMS")
                 if report_type == "ems"
+                else next_report_number("saglik", "CLSMC-SGL")
+                if report_type == "saglik"
                 else None
             ),
         }, 201 if is_new else 200
@@ -2763,6 +2476,7 @@ def admin_dashboard():
                 "otopsi_count": 0,
                 "ex_count": 0,
                 "ems_count": 0,
+                "saglik_count": 0,
                 "last_report": report.report_number,
                 "last_updated": report.updated_at,
             }
@@ -4164,6 +3878,7 @@ def admin_user_statistics():
         "otopsi": [],
         "ex": [],
         "ems": [],
+        "saglik": [],
     }
 
     stats = {
@@ -4173,6 +3888,7 @@ def admin_user_statistics():
         "otopsi": 0,
         "ex": 0,
         "ems": 0,
+        "saglik": 0,
     }
 
     if selected_name and not selected_user:
@@ -4834,6 +4550,7 @@ def admin_edit_report(report_id: int):
             "otopsi": "otp_rapor_no",
             "ex": "ex_rapor_no",
             "ems": "ems_rapor_no",
+            "saglik": "saglik_rapor_no",
         }
         date_fields = {
             "vaka": "rapor_tarihi",
@@ -4841,6 +4558,7 @@ def admin_edit_report(report_id: int):
             "otopsi": "otp_otopsi_tarih",
             "ex": "ex_olum_tarih",
             "ems": "ems_vaka_tarih",
+            "saglik": "saglik_rapor_tarihi",
         }
         if report.report_type in number_fields:
             fallback[number_fields[report.report_type]] = report.report_number or ""

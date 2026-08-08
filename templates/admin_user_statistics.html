@@ -304,6 +304,7 @@ input:focus,select:focus,textarea:focus{
           <div class="metric"><span>Otopsi</span><strong>{{ stats.otopsi }}</strong></div>
           <div class="metric"><span>Ölüm (Ex)</span><strong>{{ stats.ex }}</strong></div>
           <div class="metric"><span>EMS</span><strong>{{ stats.ems }}</strong></div>
+          <div class="metric"><span>Sağlık</span><strong>{{ stats.saglik }}</strong></div>
         </section>
 
         {% set categories = [
@@ -311,7 +312,8 @@ input:focus,select:focus,textarea:focus{
           ('adli', '⚖️ Adli Vaka Raporları'),
           ('otopsi', '🔬 Otopsi Raporları'),
           ('ex', '📄 Ölüm (Ex) Raporları'),
-          ('ems', '🚑 EMS Saha Raporları')
+          ('ems', '🚑 EMS Saha Raporları'),
+          ('saglik', '✚ Sağlık Raporları')
         ] %}
 
         {% for key, title in categories %}
