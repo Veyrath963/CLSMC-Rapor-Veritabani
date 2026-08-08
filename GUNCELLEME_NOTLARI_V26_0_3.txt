@@ -1,0 +1,57 @@
+CLSMC V26.0.3 — OTOMATİK HASTA DOSYASI VE ESKİ RAPOR EŞLEŞTİRME
+====================================================================
+
+ANA KURAL
+- Her yeni rapor kaydında sistem bir hasta dosyasına bağlanmayı zorunlu hale getirir.
+- Kullanıcı rapor oluşturmadan önce hasta dosyası seçmek zorunda değildir.
+- Hasta adı girildikten sonra sistem mevcut hastayı bulur veya otomatik hasta dosyası oluşturur.
+- Vaka, Adli Vaka, EMS, Ölüm (Ex) ve Otopsi raporlarının tamamı bu kapsamdadır.
+
+YENİ RAPOR EŞLEŞTİRME SIRASI
+1. Kimlik numarası varsa kimlik numarası
+2. Ad Soyad + Doğum Tarihi
+3. Tam Ad Soyad
+4. Eşleşme yoksa yeni hasta dosyası
+
+Kimlik numarası olan yeni bir rapor, aynı isimli fakat farklı dolu kimlik numarasına
+sahip başka bir hastayla yanlışlıkla birleştirilmez.
+
+ESKİ RAPOR KURALI
+- Eski raporlardan kimlik numarası istenmez.
+- Büyük/küçük harf ve fazla boşluklar normalize edilir.
+- Tam ad-soyad eşleşiyorsa doğrudan mevcut hasta dosyasına bağlanır.
+- Eşleşme yoksa o ad-soyad için bir hasta dosyası oluşturulur.
+- Aynı isimli sonraki eski raporlar aynı dosyaya bağlanır.
+- Kısmi veya benzer isim (fuzzy) eşleştirme yapılmaz.
+
+TEK SEFERLİK GEÇMİŞ AKTARIMI
+- V26.0.3 ilk açılışında mevcut aktif raporlar taranır.
+- Yalnızca arşivde kalan eski raporlar da taranır.
+- Aynı raporun çok sayıda arşiv sürümü tek hasta dosyası oluşturur.
+- Aktarım tamamlandığında AppLog içine PATIENT_REPORT_BACKFILL_V26_0_3 işareti yazılır.
+- Sonraki deploylarda aynı toplu aktarım tekrar çalışmaz.
+- İşlem idempotent tasarlanmıştır; eski rapor veya hasta kaydı silinmez.
+
+HASTA GEÇMİŞİ
+- Raporun tanı/klinik bulgusu hasta dosyasındaki Tıbbi Geçmiş alanına tek kez eklenir.
+- Her aktif rapor için Kronolojik Klinik Kayıt Geçmişi içinde tek otomatik kayıt oluşturulur.
+- Tanı, tedavi/işlem, ilaç ve klinik not mevcutsa otomatik klinik kayda aktarılır.
+- Aynı rapor yeniden kaydedildiğinde ayrı ikinci kayıt açılmaz; otomatik kayıt güncellenir.
+- Manuel yazılmış hasta geçmişi silinmez veya üzerine yazılmaz.
+
+DEMOGRAFİK BİLGİLER
+- Hasta dosyasında boş olan kimlik, doğum tarihi, cinsiyet, telefon ve adres rapordan doldurulur.
+- Personelin daha önce düzelttiği dolu hasta bilgileri otomatik işlem tarafından ezilmez.
+- Ex ve Otopsi hastaları otomatik olarak Ex durumuna alınır.
+- Ex ve Otopsi için kimlik/doğum tarihi zorunlu değildir ve önceki kural korunur.
+
+VERİ GÜVENLİĞİ
+- Eski raporlar silinmez.
+- Rapor arşivleri silinmez.
+- Hasta dosyaları silinmez.
+- Yeni migration sütunu gerekmez.
+- Mevcut patient_file_id alanı kullanılır.
+- Neon veritabanı şeması değiştirilmez.
+
+Sürüm: V26.0.3
+Developer: Veyrath
