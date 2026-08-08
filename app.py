@@ -9,7 +9,15 @@ import secrets
 from datetime import date, datetime, timedelta, timezone
 
 from flask import Flask, abort, flash, jsonify, redirect, render_template, request, session, url_for
-from clsmc.security import (AttemptLimiter, generate_csrf_token, generate_totp_secret, validate_csrf_token, verify_totp)
+from clsmc.security import (
+    AttemptLimiter,
+    build_totp_provisioning_uri,
+    generate_csrf_token,
+    generate_qr_svg_data_uri,
+    generate_totp_secret,
+    validate_csrf_token,
+    verify_totp,
+)
 from clsmc.services.audit import json_text
 from clsmc.services.patients import (duplicate_patient_query, normalize_birth_date, normalize_identity, patient_payload)
 from flask_sqlalchemy import SQLAlchemy
@@ -659,6 +667,10 @@ def add_security_headers(response):
         "connect-src 'self'; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'none'; form-action 'self'",
     )
+    if request.path == "/admin/accounts" and session.get("pending_totp_secret"):
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     if request.is_secure or os.environ.get("RENDER"):
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
@@ -2702,6 +2714,21 @@ def admin_accounts():
 
     accounts = AdminAccount.query.order_by(AdminAccount.created_at.asc()).all()
     active_admin_count = sum(1 for account in accounts if account.is_active)
+    current_admin = current_admin_account()
+    pending_totp_secret = session.get("pending_totp_secret", "")
+    pending_totp_uri = None
+    pending_totp_qr_data_uri = None
+    if current_admin and pending_totp_secret:
+        try:
+            pending_totp_uri = build_totp_provisioning_uri(
+                pending_totp_secret,
+                current_admin.username,
+                issuer="CLSMC Medical Center",
+            )
+            pending_totp_qr_data_uri = generate_qr_svg_data_uri(pending_totp_uri)
+        except Exception:
+            logger.exception("ADMIN_2FA_QR_GENERATION_ERROR | admin_id=%s", current_admin.id)
+
     return render_template(
         "admin_accounts.html",
         system_name=SYSTEM_NAME,
@@ -2710,8 +2737,10 @@ def admin_accounts():
         accounts=accounts,
         active_admin_count=active_admin_count,
         admin_role_labels=ADMIN_ROLE_LABELS,
-        current_admin_account_obj=current_admin_account(),
-        pending_totp_secret=session.get("pending_totp_secret"),
+        current_admin_account_obj=current_admin,
+        pending_totp_secret=pending_totp_secret,
+        pending_totp_uri=pending_totp_uri,
+        pending_totp_qr_data_uri=pending_totp_qr_data_uri,
     )
 
 
@@ -2722,7 +2751,17 @@ def admin_2fa_setup():
         return redirect(url_for("admin_login"))
     secret = generate_totp_secret()
     session["pending_totp_secret"] = secret
-    flash("Doğrulayıcı uygulamanıza aşağıdaki anahtarı ekleyip 6 haneli kodu doğrulayın.", "info")
+    flash("Authenticator uygulamanızla QR kodunu tarayın ve oluşan 6 haneli kodu doğrulayın.", "info")
+    return redirect(url_for("admin_accounts") + "#security")
+
+
+@app.post("/admin/security/2fa/cancel")
+def admin_2fa_cancel():
+    admin = current_admin_account()
+    if not admin_required("admin_accounts") or not admin:
+        return redirect(url_for("admin_login"))
+    session.pop("pending_totp_secret", None)
+    flash("2FA kurulumu iptal edildi. Herhangi bir anahtar etkinleştirilmedi.", "info")
     return redirect(url_for("admin_accounts") + "#security")
 
 
@@ -3370,7 +3409,7 @@ def admin_export_system_data():
 
     payload = {
         "system": SYSTEM_NAME,
-        "version": "V26.0.1",
+        "version": "V26.0.2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "security_note": "Parolalar ve parola özetleri bu dışa aktarıma dahil edilmez.",
         "summary": {
@@ -5071,14 +5110,14 @@ def health():
     try:
         db.session.execute(text("SELECT 1"))
         return {
-            "status": "ok", "service": SYSTEM_NAME, "version": "V26.0.1",
+            "status": "ok", "service": SYSTEM_NAME, "version": "V26.0.2",
             "database": "reachable",
         }, 200
     except Exception:
         db.session.rollback()
         logger.exception("HEALTH_DATABASE_CHECK_FAILED")
         return {
-            "status": "degraded", "service": SYSTEM_NAME, "version": "V26.0.1",
+            "status": "degraded", "service": SYSTEM_NAME, "version": "V26.0.2",
             "database": "unreachable",
         }, 503
 

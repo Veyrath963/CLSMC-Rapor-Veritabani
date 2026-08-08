@@ -604,3 +604,33 @@ body.clsmc-medical-admin-ui{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* CLSMC V26.0.2 — QR based TOTP setup */
+.v2602-two-factor-card{min-width:0}
+.v2602-security-title{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.v2602-security-title h4{margin:0 0 4px}
+.v2602-security-title p{margin:0;color:var(--muted);font-size:12px}
+.v2602-2fa-status{display:inline-flex;align-items:center;min-height:28px;padding:5px 10px;border:1px solid #c7d6e2;border-radius:999px;background:#fff;color:#61768b;font-size:11px;font-weight:850}
+.v2602-2fa-status.is-enabled{border-color:#9fd8bc;background:#eaf8f1;color:#247a52}
+.v2602-success-notice{border-color:#a9dac3!important;background:#eefaf4!important;color:#245f44!important}
+.v2602-setup-steps{margin:0 0 15px;padding-left:20px;color:#405b73;font-size:12px;line-height:1.6}
+.v2602-setup-steps li+li{margin-top:4px}
+.v2602-qr-layout{display:grid;grid-template-columns:minmax(220px,270px) minmax(0,1fr);gap:18px;align-items:start;margin:12px 0 16px}
+.v2602-qr-panel{display:grid;justify-items:center;gap:8px;padding:13px;border:1px solid #c6d7e3;border-radius:10px;background:#fff}
+.v2602-qr-image{width:min(240px,100%);height:auto;display:block;aspect-ratio:1;image-rendering:crisp-edges}
+.v2602-qr-caption{color:#697f93;font-size:9px;text-align:center}
+.v2602-manual-panel{min-width:0;padding:14px;border:1px solid #d3e0e9;border-radius:10px;background:#f4f8fb}
+.v2602-manual-panel h5{margin:0 0 6px;color:#173b61;font-size:13px}
+.v2602-manual-panel p{margin:0 0 10px;color:#637a8f;font-size:11px;line-height:1.5}
+.v2602-secret-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.v2602-secret-row .v26-secret{margin:0;display:flex;align-items:center;min-height:42px;color:#123b62;font-family:"Cascadia Mono",Consolas,monospace;font-size:12px;font-weight:750;letter-spacing:.08em}
+.v2602-totp-details{display:grid;gap:6px;margin:12px 0 0}
+.v2602-totp-details>div{display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px;padding-top:6px;border-top:1px solid #d7e3eb}
+.v2602-totp-details dt{color:#6b8093;font-size:9px;font-weight:850;text-transform:uppercase}
+.v2602-totp-details dd{margin:0;color:#254a6d;font-size:10px;font-weight:700;overflow-wrap:anywhere}
+.v2602-confirm-form{padding-top:14px;border-top:1px solid #d4e0e8}
+.v2602-confirm-form input[name="otp_code"],.v2602-two-factor-card input[name="otp_code"]{max-width:230px;font-family:"Cascadia Mono",Consolas,monospace;font-size:20px;font-weight:850;letter-spacing:.3em;text-align:center}
+.v2602-cancel-form{margin-top:8px!important}
+.v2602-2fa-benefits{display:grid;gap:6px;margin:12px 0 15px;color:#365a77;font-size:11px}
+@media(max-width:760px){.v2602-qr-layout{grid-template-columns:1fr}.v2602-qr-panel{max-width:330px;width:100%;margin:auto}.v2602-secret-row{grid-template-columns:1fr}.v2602-security-title{align-items:flex-start}.v2602-confirm-form input[name="otp_code"]{max-width:100%}}
